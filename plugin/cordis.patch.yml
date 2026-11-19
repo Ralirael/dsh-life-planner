@@ -1,0 +1,6 @@
+- insert:
+    - id: life-planner
+      name: '@local/dsh-life-planner'
+      config:
+        studyMode: true
+        studyPanel: true

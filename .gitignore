@@ -1,0 +1,28 @@
+# Dependencies (install per profile with pnpm)
+node_modules/
+
+# Build output that must not be committed for the plugin package
+dist/
+*.zip
+
+# Local data / logs
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.log
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Local dev caches
+.pnpm-store/
+MacOS/
+node_modules/

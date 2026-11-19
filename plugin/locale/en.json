@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Life planner & study",
+    "description": "Plan document, today's tasks and a category-rooted task tree; includes study mode (workspace knowledge base, 0-10 mastery, mistake book, weekly study time). A per-chat switch decides whether the planner tools are available; due reminders show inside the plugin and also fire a desktop notification when the system allows it."
+  }
+}

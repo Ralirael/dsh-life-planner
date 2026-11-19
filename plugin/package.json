@@ -1,0 +1,43 @@
+{
+  "name": "@local/dsh-life-planner",
+  "version": "0.9.37",
+  "private": true,
+  "dependencies": {
+    "@deepseek-ai/schemastery": "~3.19.0",
+    "@deepseek-ai/cosmokit": "~1.9.0"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.5",
+    "dsh": ">=0.2.1-rc.4"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "build-client.mjs",
+    "src",
+    "assets",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "templates/*.md",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  }
+}
