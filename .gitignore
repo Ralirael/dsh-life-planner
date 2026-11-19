@@ -1,7 +1,7 @@
 # Dependencies (install per profile with pnpm)
 node_modules/
 
-# Build output that must not be committed for the plugin package
+# Build output / release artifacts
 dist/
 *.zip
 
@@ -22,7 +22,19 @@ desktop.ini
 .vscode/
 *.swp
 
-# Local dev caches
-.pnpm-store/
+# Local-only workspace material (never published)
+local/
+github-repo/
 MacOS/
-node_modules/
+.pnpm-store/
+docs/CHANGELOG.md
+
+# Internal notes and history kept on this machine only
+docs/archive/
+docs/学习模式对话设计.md
+docs/学习计划设计.md
+docs/审计与工作计划.md
+docs/进度与下一步计划.md
+docs/audit/2026-11-15-学习模式全面审计.md
+docs/audit/2026-11-15-审计报告.md
+docs/audit/修复记录.md
