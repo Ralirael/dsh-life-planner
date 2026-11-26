@@ -24,7 +24,7 @@
 8. [安装与排查](./安装与排查.md) —— 两个 bundle 的职责、自检顺序、macOS 注意事项与日志关键字。
 9. [工具与路由](./工具与路由.md) —— 43 个工具、`/life-planner/api`、门控规则。
 10. [开发与验证](./开发与验证.md) —— 构建、冒烟、发布流程、验收清单。
-11. [CHANGELOG](../CHANGELOG.md) → [macOS 兼容分析](./audit/2026-11-16-macOS兼容分析.md)。
+11. [CHANGELOG](../CHANGELOG.md) → [macOS 安装和兼容性](./安装与排查.md)。
 
 ## 3. 维护约定
 

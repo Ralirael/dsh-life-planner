@@ -30,6 +30,7 @@ function Switch(props) {
     {
       type: 'button',
       role: 'switch',
+      'aria-label': props.label,
       'aria-checked': String(on),
       className: 'lp-toggle',
       'data-on': String(on),
@@ -74,6 +75,8 @@ function Modal(props) {
     const first = focusables()[0];
     if (first && typeof first.focus === 'function') first.focus();
     const onKeyDown = (event) => {
+      const dialogs = document.querySelectorAll('.lp-backdrop .lp-modal');
+      if (dialogs[dialogs.length - 1] !== node || event.defaultPrevented) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         if (typeof closeRef.current === 'function') closeRef.current();
@@ -126,6 +129,7 @@ function Modal(props) {
         role: 'dialog',
         'aria-modal': 'true',
         'aria-label': typeof props.title === 'string' ? props.title : undefined,
+        'data-lp-confirm': props.confirm ? 'centered' : undefined,
         ref: panelRef,
         style: props.wide ? { width: 'min(760px,100%)' } : undefined,
         onClick: (event) => event.stopPropagation(),
@@ -142,6 +146,20 @@ function Modal(props) {
 // count) or resizes, and removed as soon as the menu closes.
 let anchoredMenuSeq = 0;
 
+function anchoredMenuPosition(rect, viewport, { minWidth, maxHeight, height, align }) {
+  const margin = 8;
+  const gap = 4;
+  const width = Math.min(Math.max(rect.width, minWidth), Math.max(0, viewport.width - 2 * margin));
+  const left = Math.max(margin, Math.min(align === 'end' ? rect.right - width : rect.left, viewport.width - width - margin));
+  const below = Math.max(0, viewport.height - margin - rect.bottom - gap);
+  const above = Math.max(0, rect.top - gap - margin);
+  const desired = Math.min(maxHeight, height);
+  const openBelow = below >= desired || below >= above;
+  const cap = Math.min(maxHeight, openBelow ? below : above);
+  const top = openBelow ? rect.bottom + gap : rect.top - gap - Math.min(desired, cap);
+  return { left, top, width, maxHeight: cap };
+}
+
 function useAnchoredMenu(config) {
   const options = React.useRef(config);
   options.current = config;
@@ -150,25 +168,25 @@ function useAnchoredMenu(config) {
   const [active, setActive] = React.useState(-1);
   const [menuId] = React.useState(() => `lp-menu-${(anchoredMenuSeq += 1)}`);
   const anchorRef = React.useRef(null);
+  const menuRef = React.useRef(null);
 
   const measure = () => {
     const node = anchorRef.current;
-    if (!node || typeof window === 'undefined') return null;
+    if (!node || !node.isConnected || typeof window === 'undefined') return null;
     const current = options.current || {};
     const count = Number(current.count) || 0;
     const rect = node.getBoundingClientRect();
-    const width = Math.max(rect.width, Number(current.minWidth) || 190);
-    const height = Math.min(
-      Number(current.maxHeight) || 240,
-      count * (Number(current.itemHeight) || 34) + 12,
-    );
-    const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - width - 8));
-    const below = rect.bottom + 4;
-    const top = below + height + 8 <= window.innerHeight ? below : Math.max(8, rect.top - height - 4);
-    return { left, top, width };
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight || rect.right <= 0 || rect.left >= window.innerWidth) return null;
+    return anchoredMenuPosition(rect, { width: window.innerWidth, height: window.innerHeight }, {
+      minWidth: Number(current.minWidth) || 190,
+      maxHeight: Number(current.maxHeight) || 240,
+      height: menuRef.current ? menuRef.current.scrollHeight + 2 : Math.max(1, count) * (Number(current.itemHeight) || 34) + 12,
+      align: current.align,
+    });
   };
 
-  const show = () => {
+  const show = (anchor) => {
+    if (typeof anchor?.getBoundingClientRect === 'function') anchorRef.current = anchor;
     const current = options.current || {};
     const next = measure();
     if (next) setPos(next);
@@ -178,9 +196,11 @@ function useAnchoredMenu(config) {
     setOpen(true);
   };
 
-  const hide = () => {
+  const hide = (restoreFocus = false) => {
     setOpen(false);
     setActive(-1);
+    options.current.onClose?.();
+    if (restoreFocus === true) anchorRef.current?.focus();
   };
 
   const toggle = () => (open ? hide() : show());
@@ -205,6 +225,10 @@ function useAnchoredMenu(config) {
       if (event.nativeEvent && typeof event.nativeEvent.stopImmediatePropagation === 'function') {
         event.nativeEvent.stopImmediatePropagation();
       }
+      hide(true);
+      return;
+    }
+    if (open && event.key === 'Tab') {
       hide();
       return;
     }
@@ -242,27 +266,50 @@ function useAnchoredMenu(config) {
     if (!open) return undefined;
     const place = () => {
       const next = measure();
-      if (!next) return;
+      if (!next) {
+        hide();
+        return;
+      }
       setPos((previous) =>
-        previous && previous.left === next.left && previous.top === next.top && previous.width === next.width
+        previous && previous.left === next.left && previous.top === next.top && previous.width === next.width &&
+          previous.maxHeight === next.maxHeight
           ? previous
           : next,
       );
     };
+    const outside = (event) => {
+      if (!anchorRef.current?.contains(event.target) && !menuRef.current?.contains(event.target)) hide();
+    };
+    const escape = (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      hide(true);
+    };
     place();
+    document.addEventListener('pointerdown', outside, true);
+    document.addEventListener('keydown', escape, true);
     window.addEventListener('scroll', place, true);
     window.addEventListener('resize', place);
+    const observer = anchorRef.current && typeof IntersectionObserver === 'function'
+      ? new IntersectionObserver(([entry]) => { if (entry && !entry.isIntersecting) hide(); })
+      : null;
+    if (observer) observer.observe(anchorRef.current);
     return () => {
       window.removeEventListener('scroll', place, true);
       window.removeEventListener('resize', place);
+      document.removeEventListener('pointerdown', outside, true);
+      document.removeEventListener('keydown', escape, true);
+      observer?.disconnect();
     };
-  }, [open]);
+  }, [open, config.count]);
 
   return {
     open,
     pos,
     active,
     anchorRef,
+    menuRef,
     menuId,
     show,
     hide,
@@ -330,15 +377,15 @@ function Dropdown(props) {
       ? h(
           'div',
           null,
-          h('div', { className: 'lp-pop-backdrop', onClick: menu.hide }),
           h(
             'div',
             {
               className: 'lp-dd-menu',
               role: 'listbox',
+              ref: menu.menuRef,
               id: menu.menuId,
               tabIndex: -1,
-              style: { left: menu.pos.left, top: menu.pos.top, width: menu.pos.width },
+              style: menu.pos,
               onKeyDown: menu.onKeyDown,
             },
             options.map((option, index) =>

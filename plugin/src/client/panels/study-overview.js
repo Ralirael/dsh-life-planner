@@ -4,17 +4,15 @@ function StudyOverview(props) {
   const data = props.data || null;
   const [tip, setTip] = React.useState(null);
   const [error, setError] = React.useState('');
+  const loadTip = () => api('tip').then(setTip).catch((err) => setError(err.message));
   const reload = () => {
     if (typeof props.onReload === 'function') props.onReload();
-    return api('tip')
-      .then((next) => {
-        setTip(next);
-        setError('');
-      })
-      .catch((err) => setError(err.message));
+    return loadTip();
   };
   React.useEffect(() => {
-    reload();
+    loadTip();
+    const timer = setInterval(loadTip, 30000);
+    return () => clearInterval(timer);
   }, []);
   const finishPlan = (entry) =>
     api('plan.done', { id: entry.id })
@@ -37,18 +35,17 @@ function StudyOverview(props) {
     'div',
     { className: 'lp-body' },
     error ? h('div', { className: 'lp-err' }, error) : null,
-    tip && tip.text
-      ? h(
+    h(
           'div',
           { className: 'lp-card', style: { marginBottom: 8 } },
           h('div', { className: 'lp-card-title' }, t('studyTipTitle')),
+          tip ? h('div', { className: 'lp-meta' }, t(tip.source === 'deepseek' ? 'tipDeepSeek' : 'tipLocal')) : null,
           h(
             'div',
             { className: 'lp-card-meta', style: { whiteSpace: 'pre-wrap', lineHeight: 1.6 } },
-            tip.text,
+            tip?.text || t('tipPending'),
           ),
-        )
-      : null,
+    ),
     h(
       'div',
       { className: 'lp-toolbar' },

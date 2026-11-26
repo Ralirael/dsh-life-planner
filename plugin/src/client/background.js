@@ -1,11 +1,8 @@
-// Reminders must keep firing while the page is open even if the planner
-// panel is not the visible one, so the poller lives outside the component.
-// The mounted panel owns delivery (toast list, throttled system notifications,
-// ack); this module only decides when to ask the host for a new batch.
-const background = { listeners: new Set() };
+const background = { listeners: new Set(), systemSent: new Set() };
 
 const describeReminder = (note, t) => {
-  const title = note.kind === 'long' ? t('notifyLong') : t('notifyShort');
+  const title = note.kind === 'study' ? t('notifyStudy') : note.kind === 'long' ? t('notifyLong') : t('notifyShort');
+  if (note.kind === 'study') return { title, body: note.title };
   const parts = [note.title];
   if (note.dueAt) {
     parts.push(`${t('dueLabel')} ${toLocalInput(note.dueAt).replace('T', ' ')}`);
@@ -20,17 +17,30 @@ const describeReminder = (note, t) => {
   return { title, body: parts.join(' · ') };
 };
 
-// Ask the host once and hand the whole batch to every mounted panel. The ack is
-// the panel's job, so a batch that arrives while no panel is mounted simply
-// stays queued on the host and is delivered again on the next poll.
-const pullReminders = () => {
+const pullReminders = (t) => {
   if (typeof document === 'undefined') return;
   api('notifications')
     .then((list) => {
       if (!Array.isArray(list) || list.length === 0) return;
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        const note = list.find((entry) => entry.browserFallback && !background.systemSent.has(entry.id));
+        if (note) {
+          try {
+            const notice = describeReminder(note, t);
+            new Notification(notice.title, { body: notice.body, tag: note.id });
+            background.systemSent.add(note.id);
+            if (background.systemSent.size > 100) background.systemSent.delete(background.systemSent.values().next().value);
+            api('notifications.system', { id: note.id }).catch(() => {});
+          } catch {
+            // The in-app reminder remains available.
+          }
+        }
+      }
+      const pending = list.filter((entry) => entry.inAppPending !== false);
+      if (!pending.length) return;
       for (const listener of Array.from(background.listeners)) {
         try {
-          listener(list);
+          listener(pending);
         } catch {
           // One broken panel must not stop the reminder loop.
         }
@@ -39,7 +49,7 @@ const pullReminders = () => {
     .catch(() => {});
 };
 
-const startBackgroundReminders = () => {
-  pullReminders();
-  return setInterval(pullReminders, 30000);
+const startBackgroundReminders = (t) => {
+  pullReminders(t);
+  return setInterval(() => pullReminders(t), 30000);
 };

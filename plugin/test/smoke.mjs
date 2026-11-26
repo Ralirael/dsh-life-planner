@@ -9,6 +9,7 @@ import { mkdtemp, mkdir } from 'node:fs/promises'
 import { readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { shouldRefreshCalendar } from '../src/host/calendar-advice.js'
 
 const home = await mkdtemp(join(tmpdir(), 'life-planner-smoke-'))
 process.env.DSH_HOME = home
@@ -50,7 +51,9 @@ const ctx = {
   },
   // Cold boot: neither service exists yet, which is exactly the state that made
   // the page see 404s after a restart.
-  get() {
+  get(key) {
+    if (key === 'agents') return { get: (id) => id === 'study-active' ? { session: { id, preset: 'study-teach' } } : undefined }
+    if (key === 'agentPresets') return { presetForSession: (session) => session.preset }
     return undefined
   },
   inject(deps, callback) {
@@ -638,27 +641,22 @@ const placedItem = placedSnap.json.data.items.find((item) => item.id === placed.
 assert(Boolean(placedItem.startAt), 'a start time is stored')
 assert(placedItem.location === '图书馆三楼', 'the location comes back from the snapshot')
 
-// --- study plan generation --------------------------------------------------
-const examSubject = await request('POST', '/life-planner/api/subject.add', {
-  title: '线性代数',
-  examDate: new Date(Date.now() + 10 * 86400000).toISOString().slice(0, 10),
-})
-await request('POST', '/life-planner/api/topic.add', { subjectId: examSubject.json.data.id, title: '矩阵' })
-await request('POST', '/life-planner/api/topic.add', { subjectId: examSubject.json.data.id, title: '行列式' })
-const generated = await request('POST', '/life-planner/api/plan.generate', {
-  subjectId: examSubject.json.data.id,
-})
-assert(generated.json.data.created > 0, 'a study plan is generated')
-assert(generated.json.data.unscheduled === 0, 'every topic fits before the exam')
-const planSnap = await request('GET', '/life-planner/api/snapshot')
-assert(
-  planSnap.json.data.items.some((item) => item.title.startsWith('矩阵')),
-  'plan entries become tasks',
-)
-assert(
-  planSnap.json.data.items.some((item) => item.title === '学习' && !item.parentId),
-  'the study root node exists',
-)
+// --- preserve legacy plans; retire generation -------------------------------
+const examSubject = await request('POST', '/life-planner/api/subject.add', { title: '线性代数' })
+const examId = examSubject.json.data.id
+const examTopic = await request('POST', '/life-planner/api/topic.add', { subjectId: examId, title: '矩阵' })
+const oldMirror = (await request('POST', '/life-planner/api/item.add', { title: '矩阵 · 学习' })).json.data
+const local = new Date()
+if (local.getHours() < 4) local.setDate(local.getDate() - 1)
+const todayKey = [local.getFullYear(), local.getMonth() + 1, local.getDate()].map((value) => String(value).padStart(2, '0')).join('-')
+const legacyPlanDb = new DatabaseSync(join(home, 'life-planner', 'data.db'))
+legacyPlanDb.prepare('INSERT INTO study_plan (id,date,subject_id,topic_id,title,kind,minutes,task_id,created_at) VALUES (?,?,?,?,?,?,?,?,?)')
+  .run('legacy-1', todayKey, examId, examTopic.json.data.id, '矩阵 · 学习', 'learn', 30, oldMirror.id, new Date().toISOString())
+legacyPlanDb.close()
+const retired = await request('POST', '/life-planner/api/plan.generate', { subjectId: examId })
+assert(retired.status === 410 && !tools.has('study_plan_generate'), 'plan generation is retired in both entry points')
+const legacyPlan = await request('GET', '/life-planner/api/learning')
+assert(legacyPlan.json.data.plan.some((entry) => entry.id === 'legacy-1'), 'retiring generation keeps legacy plans')
 
 // --- bookshelf --------------------------------------------------------------
 const shelfUrl = await request('POST', '/life-planner/api/shelf.add', {
@@ -718,24 +716,11 @@ const removedMistake = await request('POST', '/life-planner/api/mistake.delete',
 assert(removedMistake.json.data.deleted === true, 'a mistake can be removed')
 
 // --- finishing a plan entry -------------------------------------------------
-const generatedAgain = await request('POST', '/life-planner/api/plan.generate', {
-  subjectId: examSubject.json.data.id,
-})
-assert(generatedAgain.json.data.created > 0, 'the plan can be regenerated')
-const studyRoots = (await request('GET', '/life-planner/api/snapshot')).json.data.items.filter(
-  (item) => !item.parentId && item.title === '学习',
-)
-assert(studyRoots.length === 1, 'regenerating the plan keeps a single study root')
 const todayPlan = await request('POST', '/life-planner/api/plan.today', {})
-assert(Array.isArray(todayPlan.json.data), 'today returns plan entries')
-if (todayPlan.json.data.length > 0) {
-  const entry = todayPlan.json.data[0]
-  const finished = await request('POST', '/life-planner/api/plan.done', { id: entry.id })
-  assert(Boolean(finished.json.data.doneAt), 'a plan entry can be completed')
-  if (entry.topicId) {
-    assert(finished.json.data.mastery && finished.json.data.mastery.mastery >= 5, 'completing raises mastery')
-  }
-}
+assert(todayPlan.json.data.some((entry) => entry.id === 'legacy-1'), 'today still returns legacy plan entries')
+const finished = await request('POST', '/life-planner/api/plan.done', { id: 'legacy-1' })
+assert(Boolean(finished.json.data.doneAt), 'a legacy plan can still be completed')
+assert(finished.json.data.mastery.mastery === 5, 'completing a legacy plan still raises topic mastery')
 
 // --- a manual shelf edit locks automatic naming ----------------------------
 const locked = await request('POST', '/life-planner/api/shelf.update', {
@@ -788,11 +773,23 @@ assert(withSummary.json.data.summary.total === 1200, 'the summary is stored')
 const taskList = await request('GET', '/life-planner/api/study-tasks')
 assert(taskList.json.data.length >= 1, 'study tasks are listed')
 
-// --- study habit beats ------------------------------------------------------
-await request('POST', '/life-planner/api/habit.beat', {})
-const habits = await request('GET', '/life-planner/api/habits')
-assert(Array.isArray(habits.json.data.days) && habits.json.data.days.length >= 1, 'a study beat is recorded')
-assert(habits.json.data.days[0].minutes >= 1, 'the beat counts at least one minute')
+// --- only visible study conversations accumulate time -----------------------
+const beat = (sessionId, tracker, active, at) =>
+  request('POST', '/life-planner/api/habit.beat', { sessionId, tracker, active, at })
+const beatTime = Date.now() - 45000
+assert((await beat('ordinary', 'ordinary', true, new Date(beatTime).toISOString())).status === 403,
+  'ordinary conversations are excluded from habit tracking')
+await beat('study-active', 'test', true, new Date(beatTime).toISOString())
+await beat('study-active', 'test', true, new Date(beatTime + 20000).toISOString())
+await beat('study-active', 'other', true, new Date(beatTime + 25000).toISOString())
+await beat('study-active', 'test', false, new Date(beatTime + 30000).toISOString())
+const habits = (await request('GET', '/life-planner/api/habits')).json.data
+assert(habits.sessions[0].seconds === 30 && habits.sessions.length === 1, 'focused session time is charged once, including its last partial interval')
+assert(!('legacyDays' in habits), 'the habit panel omits legacy panel-timing statistics')
+const localTip = await request('GET', '/life-planner/api/tip')
+assert(localTip.json.data.source === 'local' && localTip.json.data.day === todayKey, 'offline advice uses the study day and does not call a model')
+const regionTip = await request('POST', '/life-planner/api/tip.settings', { region: '上海', automatic: false })
+assert(regionTip.json.data.regionPreference === '上海' && regionTip.json.data.automatic === false, 'daily advice settings preserve the city override')
 
 const updatedTask = await request('POST', '/life-planner/api/studytask.update', {
   id: registered.json.data.id,
@@ -829,6 +826,7 @@ const outsideImport = await call('study_import_material', {
   taskId: earlyTaskId,
 })
 assert(outsideImport.copied === true, 'an outside folder is copied into learning/materials')
+
 
 console.log('\nsmoke test passed')
 const shelfFirst = await request('POST', '/life-planner/api/shelf.add', {
@@ -1204,7 +1202,7 @@ bankDb
   .prepare(
     'INSERT INTO questions (id,prompt,answer,options,explanation,kind,proficiency,learned,created_at) VALUES (?,?,?,?,?,?,?,?,?)',
   )
-  .run('q1', '室颤的首选处理是？', '电除颤', '["电除颤","利多卡因","补钾","观察"]', '室颤首选电除颤', 'choice', 4, 0, bankStamp)
+  .run('q1', '室颤的首选处理是？', '电除颤', '["电除颤","利多卡因","补钾","观察","转运"]', '室颤首选电除颤', 'choice', 4, 0, bankStamp)
 bankDb
   .prepare(
     'INSERT INTO questions (id,prompt,answer,options,explanation,kind,proficiency,learned,created_at) VALUES (?,?,?,?,?,?,?,?,?)',
@@ -1218,6 +1216,7 @@ bankDb
 bankDb.prepare('INSERT INTO question_points (question_id,point_id,weight) VALUES (?,?,?)').run('q1', 'p2', 1)
 bankDb.prepare('INSERT INTO question_points (question_id,point_id,weight) VALUES (?,?,?)').run('q3', 'p1', 1)
 bankDb.prepare('INSERT INTO question_points (question_id,point_id,weight) VALUES (?,?,?)').run('q2', 'p2', 0.8)
+bankDb.prepare('INSERT INTO points (id,title,created_at) VALUES (?,?,?)').run('q1', '与题目同编号的知识点', bankStamp)
 bankDb.close()
 
 const bankTask = await call('study_register_task', {
@@ -1230,9 +1229,11 @@ const bankTask = await call('study_register_task', {
 assert(bankTask.template === 'bank', 'the question-bank template is stored under its canonical name')
 const bankQuiz = await call('study_next_questions', { taskId: bankTask.id, count: 5, newCount: 1, reviewCount: 2 })
 assert(bankQuiz.kind === 'bank', 'a question-bank knowledge base is asked from its questions table')
+assert(bankQuiz.questions.length === 3 && new Set(bankQuiz.questions.map((item) => item.itemId)).size === 3,
+  'a short review pool never repeats questions to fill the round')
 const bankNew = bankQuiz.questions.find((item) => item.itemId === 'q1')
 assert(Boolean(bankNew && bankNew.isNew), 'an unlearned question is offered as new content')
-assert(Array.isArray(bankNew.options) && bankNew.options.includes('电除颤'), 'choice options are parsed for the question')
+assert(bankNew.options.join('|') === '电除颤|利多卡因|补钾|观察|转运', 'all original choice options are returned in order')
 const bankReview = bankQuiz.questions.find((item) => item.itemId === 'q2')
 assert(Boolean(bankReview && bankReview.options.length === 0), 'short-answer questions carry no options')
 const bankReviewIds = bankQuiz.questions.filter((item) => !item.isNew).map((item) => item.itemId)
@@ -1246,6 +1247,224 @@ const pointRow = bankCheck.prepare('SELECT proficiency, learned FROM points WHER
 bankCheck.close()
 assert(Number(questionRow.proficiency) === 5 && Number(questionRow.learned) === 1, 'the question itself scores and is marked learned')
 assert(Number(pointRow.proficiency) === 3, 'a covered knowledge point follows the answer')
+
+const singleTableSpace = join(home, 'single-table-bank')
+await mkdir(join(singleTableSpace, 'learning'), { recursive: true })
+const singleTableBank = new LearnDb(join(singleTableSpace, 'learning', 'knowledge.db'))
+singleTableBank.exec(`CREATE TABLE questions (
+  id TEXT PRIMARY KEY, prompt TEXT, answer TEXT, proficiency INTEGER DEFAULT 4, learned INTEGER DEFAULT 0, updated_at TEXT
+); INSERT INTO questions(id,prompt,answer) VALUES
+  ('s1','第一行' || char(10) || '第二行和完整条件','答一'), ('s2','另一个题目','答二');`)
+singleTableBank.close()
+const singleTableTask = await call('study_register_task', { title: '独立题库', workspacePath: singleTableSpace, template: 'bank' })
+const singleTableQuiz = await call('study_next_questions', { taskId: singleTableTask.id, count: 5, newCount: 1, reviewCount: 2 })
+assert(singleTableQuiz.questions.length === 2 && new Set(singleTableQuiz.questions.map((item) => item.itemId)).size === 2 &&
+  singleTableQuiz.questions.find((item) => item.itemId === 's1').prompt === '第一行\n第二行和完整条件',
+  'a standalone question bank fills from unique new questions and returns full multiline prompts')
+assert((await call('study_answer', { taskId: singleTableTask.id, itemId: 's1', verdict: 'correct' })).answeredToday === 1,
+  'grading standalone questions also records progress without a knowledge-point table')
+
+const post = (name, body) => request('POST', '/life-planner/api/' + name, body)
+const get = (name) => request('GET', '/life-planner/api/' + name)
+const taskA = (await post('item.add', { title: '看板 A', priority: 2 })).json.data
+const taskB = (await post('item.add', { title: '看板 B', priority: 9 })).json.data
+await post('item.board', { id: taskA.id, column: 'todo', anchorId: taskB.id })
+const board = (await get('snapshot')).json.data.items
+const cardA = board.find((item) => item.id === taskA.id)
+const cardB = board.find((item) => item.id === taskB.id)
+assert(cardA.boardOrder < cardB.boardOrder && cardA.priority === 2 && cardB.priority === 9 && cardA.order === taskA.order,
+  'board order persists independently of work-tree order and priority')
+assert((await post('item.board', { id: taskA.id, column: 'doing' })).json.data.item.status === 'doing', 'dragging sets the task status')
+await post('item.depends', { id: taskA.id, dependsOn: [taskB.id] })
+const unavailableMove = await post('item.board', { id: taskA.id, column: 'todo' })
+assert(unavailableMove.json.ok === false, 'moving a blocked card does not remove a dependency')
+const blockedMove = await post('item.board', { id: taskA.id, column: 'done' })
+assert(blockedMove.json.data.blocked && blockedMove.json.data.blockers.depends[0].id === taskB.id, 'board completion preserves the confirmation gate')
+const completedMove = await post('item.board', { id: taskA.id, column: 'done', force: true })
+assert(completedMove.json.data.item.derived.done, 'confirmed board move completes the task')
+assert((await get('habits')).json.data.planningCompleted > 0, 'completion contributes to planning habits')
+
+const otherSubject = (await post('subject.add', { title: '微积分' })).json.data
+await post('subject.move', { id: otherSubject.id, anchorId: examId })
+await post('subject.task', { subjectId: otherSubject.id, taskId: bankTask.id })
+const reorganized = (await get('learning')).json.data
+const orderedSubjectIds = reorganized.subjects.map((subject) => subject.id)
+assert(orderedSubjectIds.indexOf(otherSubject.id) === orderedSubjectIds.indexOf(examId) - 1 &&
+  reorganized.subjects.find((subject) => subject.id === otherSubject.id).taskIds.includes(bankTask.id),
+  'subject order and linked tasks persist')
+const mirrored = (await get('snapshot')).json.data.items.find((item) => item.id === bankTask.itemId)
+assert(mirrored.taskType === '学习' && mirrored.parentId === null, 'new study task is directly in the Learning category')
+assert((await get('study-tasks')).json.data.some((row) => row.id === bankTask.id), 'linking keeps the original task')
+await post('subject.task', { subjectId: examId, taskId: bankTask.id })
+const movedSubject = (await get('learning')).json.data.subjects.filter((subject) => subject.taskIds.includes(bankTask.id))
+assert(movedSubject.length === 1 && movedSubject[0].id === examId, 'linking to another subject replaces the previous association')
+assert((await get('snapshot')).json.data.items.find((item) => item.id === bankTask.itemId).derived.boardColumn === 'doing',
+  'ongoing studies appear in the doing column')
+await post('item.board', { id: bankTask.itemId, column: 'todo' })
+assert((await get('study-tasks')).json.data.find((row) => row.id === bankTask.id).state === 'todo',
+  'board postponement moves the study task to future arrangements')
+await post('item.board', { id: bankTask.itemId, column: 'doing' })
+assert((await get('study-tasks')).json.data.find((row) => row.id === bankTask.id).state === 'doing',
+  'starting a study task from the board clears its schedule')
+await post('studytask.schedule', { id: bankTask.id, future: true })
+await post('dev.scan', { at: new Date(Date.now() + 20000).toISOString() })
+assert((await get('study-tasks')).json.data.find((row) => row.id === bankTask.id).scheduled,
+  'undated future tasks wait for a manual start')
+assert(!(await get('notifications')).json.data.some((entry) => entry.itemId === bankTask.itemId),
+  'future study tasks do not enqueue ordinary task reminders')
+const startAt = new Date(Date.now() + 60000).toISOString()
+await post('studytask.schedule', { id: bankTask.id, future: true, startAt })
+await post('dev.scan', { at: startAt })
+await post('dev.scan', { at: startAt })
+assert((await get('study-tasks')).json.data.find((row) => row.id === bankTask.id).scheduled === false,
+  'scheduled study tasks become active at their start time')
+assert((await get('notifications')).json.data.filter((entry) => entry.kind === 'study' && entry.itemId === bankTask.itemId).length === 1,
+  'a scheduled task enqueues one start notification even when no panel is open')
+
+const partial = await call('study_answer', { taskId: bankTask.id, itemId: 'q1', verdict: 'partial' })
+assert(partial.correct === null && partial.grading === 'neutral', 'partial answers default to a neutral judgement')
+const score = () => {
+  const connection = new LearnDb(join(bankSpace, 'learning', 'knowledge.db'), { readOnly: true })
+  try { return connection.prepare("SELECT proficiency FROM questions WHERE id='q1'").get().proficiency }
+  finally { connection.close() }
+}
+assert(score() === 5, 'neutral grading keeps mastery unchanged')
+await post('studytask.update', { id: bankTask.id, patch: { grading: 'strict' } })
+assert((await call('study_answer', { taskId: bankTask.id, itemId: 'q1', verdict: 'partial' })).correct === false && score() === 4,
+  'strict grading subtracts mastery on partial answers')
+await post('studytask.update', { id: bankTask.id, patch: { grading: 'lenient' } })
+assert((await call('study_answer', { taskId: bankTask.id, itemId: 'q1', verdict: 'partial' })).correct === true && score() === 5,
+  'lenient grading adds mastery on partial answers')
+
+const citations = [{ table: 'questions', itemId: 'q1', shelfId: shelfUrl.json.data.id, section: '示例段落' },
+  { table: 'questions', itemId: 'q1', shelfId: shelfUrl.json.data.id, file: '手册.pdf', pdfPage: 4, bookPage: 'iii' }]
+await call('study_record_sources', { taskId: bankTask.id, entries: citations })
+await call('study_record_sources', { taskId: bankTask.id, entries: citations })
+await call('study_record_sources', { taskId: bankTask.id, entries: [
+  { table: 'points', itemId: 'q1', shelfId: shelfUrl.json.data.id, section: '同编号的另一出处' },
+] })
+const sourcedQuestion = (await call('study_next_questions', { taskId: bankTask.id, count: 5 })).questions
+  .find((item) => item.itemId === 'q1')
+assert(sourcedQuestion.sources.length === 2 && sourcedQuestion.sources.every((source) => source.section !== '同编号的另一出处'),
+  'a quiz keeps book and PDF references separate from those of other knowledge items with the same id')
+const citedMistake = await call('study_mistake_add', {
+  taskId: bankTask.id, itemId: 'q1', question: '原始完整题干\nA. 第一个选项\nB. 第二个选项', memoryTip: '用对比题回忆正确条件',
+})
+assert(citedMistake.sources.length === 2 && citedMistake.sources.some((source) => source.pdfPage === 4 && source.bookPage === 'iii'),
+  'multi-source page citations are stored once and follow the mistake')
+assert(citedMistake.sources[0].url === 'https://example.com/math' && citedMistake.memoryTip.length > 0,
+  'mistakes preserve their shelf URL and retrieval prompt')
+const brief = (await post('mistake.brief', { id: citedMistake.id })).json.data.prompt
+assert(brief.includes(citedMistake.question) && brief.includes(citedMistake.memoryTip) &&
+  brief.includes('PDF 第 4 页') && brief.includes('印刷页 iii') && brief.includes('https://example.com/math') &&
+  !brief.includes('同编号的另一出处'),
+  'quick explanation carries the full question, retrieval cue, and correct web, print, and PDF citations')
+
+await post('item.update', { id: bankTask.itemId, patch: { title: '同步改名' } })
+assert((await get('study-tasks')).json.data.find((row) => row.id === bankTask.id).title === '同步改名',
+  'renaming the work-tree mirror updates the learning panel')
+assert((await post('item.delete', { id: bankTask.itemId })).status === 400 &&
+  (await post('item.archive', { id: bankTask.itemId })).status === 400, 'planning cannot delete or hide a live study task')
+await call('study_finish_today', { taskId: bankTask.id })
+const dispatched = (await get('snapshot')).json.data.items.find((item) => item.id === bankTask.itemId)
+assert(dispatched.derived.boardColumn === 'done' && dispatched.derived.done, 'study progress completes the task everywhere')
+assert((await post('item.board', { id: bankTask.itemId, column: 'doing' })).status === 400 &&
+  (await post('item.complete', { id: bankTask.itemId, done: false })).status === 400,
+  'board and work tree both reject manual reopening of studies')
+assert((await post('studytask.schedule', { id: bankTask.id, future: true })).status === 400,
+  'completed studies cannot be rescheduled until the new day')
+const boundary = new Date(todayKey + 'T04:00:00')
+boundary.setDate(boundary.getDate() + 1)
+const boardAt = async (at) => (await get('snapshot?at=' + encodeURIComponent(at.toISOString()))).json.data.items
+assert((await boardAt(new Date(boundary.getTime() - 1))).find((item) => item.id === bankTask.itemId).derived.boardColumn === 'done',
+  'study completion remains through the last instant before 04:00')
+assert((await boardAt(boundary)).find((item) => item.id === bankTask.itemId).derived.boardColumn === 'doing',
+  'the open board restarts study tasks at 04:00 without waiting for a scan')
+const midnightTask = (await get('study-tasks?at=' + encodeURIComponent(boundary.toISOString()))).json.data.find((row) => row.id === bankTask.id)
+assert(midnightTask.state === 'doing' && midnightTask.answeredToday === 0, 'learning and planning start the same new day')
+
+const scheduledStart = new Date(Date.now() + 3600000)
+const datedTask = (await post('item.add', { title: '有开始时间', startAt: scheduledStart.toISOString() })).json.data
+assert(datedTask.derived.boardColumn === 'todo' &&
+  (await boardAt(scheduledStart)).find((item) => item.id === datedTask.id).derived.boardColumn === 'doing',
+  'a normal task is pending until its configured start time')
+const mixedGraphParent = (await post('item.add', { title: '父任务' })).json.data
+const mixedGraphChild = (await post('item.add', { title: '子任务', parentId: mixedGraphParent.id })).json.data
+const cycle = await post('item.update', { id: mixedGraphChild.id, patch: { title: '应回滚', dependsOn: [mixedGraphParent.id] } })
+assert(cycle.status === 400 && (await get('snapshot')).json.data.items.find((item) => item.id === mixedGraphChild.id).title === '子任务',
+  'combined hierarchy/dependency cycles are rejected without saving unrelated edits')
+const external = (await post('item.add', { title: '前置任务' })).json.data
+await post('item.depends', { id: mixedGraphChild.id, dependsOn: [external.id] })
+assert((await post('item.move', { id: mixedGraphChild.id, parentId: external.id })).status === 400,
+  'dragging into a prerequisite cannot create a mixed dependency cycle')
+
+const beforeNoon = new Date(2026, 10, 27, 11, 59, 59, 999)
+const noon = new Date(2026, 10, 27, 12)
+const cachedCalendar = { autoDay: '2026-11-26' }
+assert(!shouldRefreshCalendar(beforeNoon, '2026-11-27', cachedCalendar, true) &&
+  shouldRefreshCalendar(noon, '2026-11-27', cachedCalendar, true), 'calendar advice refreshes at noon')
+assert(!shouldRefreshCalendar(noon, '2026-11-27', { autoDay: '2026-11-27' }, true) &&
+  !shouldRefreshCalendar(noon, '2026-11-27', cachedCalendar, false), 'calendar refresh runs once per day and respects manual mode')
+
+const realFetch = globalThis.fetch
+let geocodings = 0
+let forecasts = 0
+globalThis.fetch = async (input) => {
+  const url = new URL(input)
+  if (url.hostname === 'geocoding-api.open-meteo.com') {
+    geocodings += 1
+    return Response.json({ results: [{ name: url.searchParams.get('name'), country_code: 'CN', latitude: 32, longitude: 118 }] })
+  }
+  if (url.hostname === 'api.open-meteo.com') {
+    forecasts += 1
+    const dates = [url.searchParams.get('start_date'), url.searchParams.get('end_date')]
+    return Response.json({ daily: { time: dates, weather_code: [63, 0], temperature_2m_min: [4, 8],
+      temperature_2m_max: [13, 17], precipitation_probability_max: [84, 5] } })
+  }
+  if (url.hostname === 'timor.tech') return Response.json({ code: 0, type: { type: 0, name: '工作日' } })
+  throw new Error('unexpected fetch: ' + url.hostname)
+}
+const waitForCalendar = async () => {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const context = (await get('calendar.context')).json.data
+    if (!context.updating) return context
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
+  throw new Error('calendar context did not settle')
+}
+try {
+  const planningTitle = '日历建议优先事项'
+  const due = new Date()
+  due.setHours(23, 59, 59, 999)
+  await post('item.add', { title: planningTitle, dueAt: due.toISOString(), priority: 9 })
+  const prefs = (await post('settings.save', {
+    adviceRegion: '  南京  ', adviceRegionLocked: true, calendarAutoRefresh: false, dailyAdvice: false,
+  })).json.data
+  const firstContext = await waitForCalendar()
+  assert(prefs.adviceRegion === '南京' && prefs.calendarAutoRefresh === false && prefs.adviceRegionLocked === true &&
+    firstContext.region === '南京' && firstContext.weather.precipitationProbability === 84 &&
+    firstContext.advice.weatherAdvice === 'rain' && firstContext.advice.top === planningTitle,
+    'changing region refreshes calendar weather and planning guidance even in manual mode')
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const nextDay = (await get('calendar.context?at=' + encodeURIComponent(tomorrow.toISOString()))).json.data
+  assert(nextDay.weather.wmoCode === 0 && nextDay.adviceDay === firstContext.day,
+    'tomorrow weather is available before the next noon without refreshing advice')
+  await post('settings.save', { adviceRegion: '南京' })
+  await waitForCalendar()
+  assert(forecasts === 1, 'saving an unchanged region does not refresh advice a second time')
+  await post('calendar.refresh', {})
+  const manuallyRefreshed = await waitForCalendar()
+  assert(manuallyRefreshed.region === '南京' && geocodings === 1 && forecasts === 2,
+    'refreshing a locked region reuses the saved coordinates and fetches its weather')
+  await post('settings.save', { adviceRegion: '杭州' })
+  assert((await waitForCalendar()).region === '杭州' && geocodings === 2 && forecasts === 3,
+    'the lock still allows an explicit change to a new city')
+  assert((await get('tip')).json.data.region === '杭州',
+    'the learning advice shares the latest region even when model generation is off')
+} finally {
+  globalThis.fetch = realFetch
+}
 
 console.log('\nsmoke test passed')
 // The host half starts its minute tick; this harness has no teardown, so exit.

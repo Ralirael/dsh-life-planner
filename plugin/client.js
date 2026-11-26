@@ -11,6 +11,88 @@ window.__ModuleLoader__.load({
 // i18n.js — dictionaries for both locales; edit only the strings here.
 const DICTS = {
   zh: {
+    studyStatusManaged: '完成状态由学习进度管理',
+    studyDoubleClick: '双击打开设置',
+    studyNoSubjectLink: '未关联科目',
+    boardDragHint: "拖动卡片排序或换列 · Alt + 方向键也可移动",
+    studyNoActive: "暂无进行中的学习任务",
+    studyDropFuture: "将学习任务拖到这里，安排稍后开始",
+    studyStartOptional: "开始时间（选填）",
+    studyStartHint: "到点自动开始并发送系统通知。留空时，可之后手动开始。",
+    studySetStart: "设置开始时间",
+    studyStartNow: "现在开始",
+    studySchedule: "安排稍后",
+    studyUnscheduledStart: "未设开始时间",
+    studyMoveUp: "科目上移",
+    studyMoveDown: "科目下移",
+    studyExistingPlans: "之前生成的计划",
+    studyGrading: "部分正确的判定",
+    studyGrading_strict: "严格 · 判错",
+    studyGrading_neutral: "适中 · 熟练度不变",
+    studyGrading_lenient: "宽松 · 判对",
+    notifyStudy: "学习任务开始",
+    habitSessions: "按学习对话统计",
+    habitHourly: "常用学习时段",
+    habitCompletion: "近 14 天完成情况",
+    habitStudyDone: "学习目标达成日数",
+    habitTaskDone: "完成规划任务",
+    habitOnTime: "到期前完成",
+    habitNoTime: "进入学习模式对话并保持窗口活动后，会记录使用时长。",
+    tipPending: "今日建议正在准备",
+    tipLocal: "本地综合建议",
+    tipDeepSeek: "DeepSeek 今日建议",
+    tipRegion: "所在地区",
+    tipRegionAuto: "自动识别",
+    tipRegionHint: "例如：上海或 Shanghai，留空自动识别",
+    calendarTodayInfo: "今日日期、天气与生活建议",
+    calendarTodayShort: "今日详情",
+    calendarFullDate: "{y}年{m}月{d}日",
+    calendarLunar: "农历",
+    calendarTemperature: "最低 / 最高",
+    calendarRain: "最高降水概率",
+    calendarWind: "最大风速",
+    calendarSun: "日出 / 日落",
+    calendarRegionUnknown: "地区待设置",
+    calendarLifeAdvice: "生活建议",
+    calendarAdviceUpdated: "更新于",
+    calendarRefreshing: "正在刷新日历信息…",
+    calendarAdvicePending: "刷新后会根据天气和规划给出建议。",
+    calendarAdviceTask: "优先安排「{n}」，并留出一段不被打断的时间。",
+    calendarAdviceOverdue: "有 {n} 项任务已过期。先决定哪些今天处理，哪些需要重新排期。",
+    calendarAdviceBlocked: "检查今天的任务有没有要先完成的事项，并为后续任务留出时间。",
+    calendarAdviceNoTasks: "今天没有待开始或到期的任务，可以留一段时间处理长期事项或休息。",
+    weatherClear: "晴",
+    weatherPartly: "晴间多云",
+    weatherCloud: "阴",
+    weatherFog: "雾",
+    weatherStorm: "雷阵雨",
+    weatherSnow: "雪",
+    weatherRain: "有雨",
+    weatherUnavailable: "暂无天气预报",
+    calendarAdvice_storm: "雷雨时段尽量安排室内事项，外出前看一下临近预报。",
+    calendarAdvice_snow: "如需出门，为步行和通勤留出余量。",
+    calendarAdvice_rain: "外出时带伞，给路上的安排多留些时间。",
+    calendarAdvice_heat: "需要外出的话，尽量安排在较凉爽的时段并带水。",
+    calendarAdvice_cold: "早晚外出多带一层衣物，给通勤留出时间。",
+    calendarAdvice_wind: "风较大，外出前确认交通和户外安排。",
+    calendarAdvice_fair: "可以把短散步安排在工作或学习间隙。",
+    settingsLocation: "地区与日历",
+    settingsCurrentRegion: "当前使用",
+    calendarRefreshMode: "日历刷新方式",
+    calendarRefreshAuto: "自动 · 每天中午 12 点",
+    calendarRefreshManual: "仅手动刷新",
+    calendarLockRegion: "锁定地区",
+    calendarLockHint: "保留已识别的地区，刷新时继续更新该地天气。手动填写可更改地区。",
+    calendarRefreshHint: "可随时手动更新日历天气与生活建议。",
+    calendarRefreshOnSave: "先保存此处改动。更改地区会立即刷新日历和学习建议。",
+    calendarRefreshNow: "立即刷新",
+    settingsStudyAdviceHint: "每天凌晨 4 点更新；手动更改地区时，用新地区重新生成一次。",
+    settingsNotifyWindows: "提醒时段与频率",
+    settingsNotifyLead: "提前提醒",
+    notifyPermission_granted: "已允许",
+    notifyPermission_denied: "已拒绝",
+    notifyPermission_default: "待授权",
+    notifyPermission_unsupported: "当前环境不支持",
     navLabel: '规划',
     loading: '正在加载…',
     tabCalendar: '日历',
@@ -82,7 +164,7 @@ const DICTS = {
     studyFinish: '完成',
     studyMistakeReview: '错题复习',
     studyNoMistake: '暂时没有到期的错题',
-    studyTaskList: '学习任务',
+    studyTaskList: '进行中的学习任务',
     studyNewLabel: '新学',
     studyReviewLabel: '复习',
     studyWeekPlan: '本周计划 {n} 分钟',
@@ -136,6 +218,10 @@ const DICTS = {
     mistakeTo: '结束日期',
     mistakeEdit: '编辑错题',
     mistakePreview: '错题详情',
+    mistakeMemoryTip: '记忆提示',
+    mistakeMaterialSource: '资料来源',
+    mistakePdfPage: 'PDF 第 {n} 页',
+    mistakeBookPage: '印刷页 {n}',
     mistakeDblClick: '双击放大查看',
     mistakeDeleteAsk: '删除这道错题？删除后不可恢复。',
     close: '关闭',
@@ -359,6 +445,88 @@ const DICTS = {
     wd6: '日',
   },
   en: {
+    studyStatusManaged: 'Completion follows study progress',
+    studyDoubleClick: 'Double-click to open settings',
+    studyNoSubjectLink: 'No subject',
+    boardDragHint: "Drag to reorder or move between columns · Alt + arrow keys also work",
+    studyNoActive: "No active study tasks",
+    studyDropFuture: "Drop a study task here to schedule it for later",
+    studyStartOptional: "Start time (optional)",
+    studyStartHint: "Scheduled tasks start automatically and send a notification. Leave blank to start manually.",
+    studySetStart: "Set start time",
+    studyStartNow: "Start now",
+    studySchedule: "Schedule for later",
+    studyUnscheduledStart: "No start time",
+    studyMoveUp: "Move subject up",
+    studyMoveDown: "Move subject down",
+    studyExistingPlans: "Previously generated plans",
+    studyGrading: "Grading for partially correct answers",
+    studyGrading_strict: "Strict · mark incorrect",
+    studyGrading_neutral: "Balanced · leave mastery unchanged",
+    studyGrading_lenient: "Lenient · mark correct",
+    notifyStudy: "Study task starting",
+    habitSessions: "By study conversation",
+    habitHourly: "Usual study hours",
+    habitCompletion: "Completion in the past 14 days",
+    habitStudyDone: "Study goal days achieved",
+    habitTaskDone: "Planning tasks completed",
+    habitOnTime: "Completed on time",
+    habitNoTime: "Time is recorded while a study conversation is open and the window is active.",
+    tipPending: "Preparing today’s advice",
+    tipLocal: "Local daily advice",
+    tipDeepSeek: "DeepSeek daily advice",
+    tipRegion: "Region",
+    tipRegionAuto: "Auto-detect",
+    tipRegionHint: "For example: Shanghai. Leave blank for automatic detection.",
+    calendarTodayInfo: "Today’s date, weather and life tips",
+    calendarTodayShort: "Today’s details",
+    calendarFullDate: "{y}/{m}/{d}",
+    calendarLunar: "Chinese lunar date",
+    calendarTemperature: "Low / High",
+    calendarRain: "Peak chance of rain",
+    calendarWind: "Peak wind",
+    calendarSun: "Sunrise / Sunset",
+    calendarRegionUnknown: "Set your region",
+    calendarLifeAdvice: "Life tips",
+    calendarAdviceUpdated: "Updated",
+    calendarRefreshing: "Refreshing calendar information…",
+    calendarAdvicePending: "Refresh to get tips based on weather and your plan.",
+    calendarAdviceTask: "Set aside an uninterrupted block for “{n}” first.",
+    calendarAdviceOverdue: "{n} tasks are overdue. Decide which to do today and which to reschedule.",
+    calendarAdviceBlocked: "Check what needs to happen before today’s tasks and reserve time for what follows.",
+    calendarAdviceNoTasks: "Nothing is due or scheduled to start today. Leave time for longer-term work or rest.",
+    weatherClear: "Clear",
+    weatherPartly: "Partly cloudy",
+    weatherCloud: "Overcast",
+    weatherFog: "Fog",
+    weatherStorm: "Thunderstorms",
+    weatherSnow: "Snow",
+    weatherRain: "Rain",
+    weatherUnavailable: "Forecast unavailable",
+    calendarAdvice_storm: "Plan indoor activities around thunderstorms and check the latest forecast before heading out.",
+    calendarAdvice_snow: "Allow extra time for walking and commuting if you need to go out.",
+    calendarAdvice_rain: "Take an umbrella and allow more travel time.",
+    calendarAdvice_heat: "If you need to go out, choose a cooler part of the day and bring water.",
+    calendarAdvice_cold: "Bring an extra layer in the morning or evening and leave time for travel.",
+    calendarAdvice_wind: "Expect strong winds. Check travel and outdoor plans before going out.",
+    calendarAdvice_fair: "Consider taking a short walk between work or study blocks.",
+    settingsLocation: "Region & calendar",
+    settingsCurrentRegion: "Current location",
+    calendarRefreshMode: "Calendar refresh",
+    calendarRefreshAuto: "Automatic · noon daily",
+    calendarRefreshManual: "Manual only",
+    calendarLockRegion: "Lock region",
+    calendarLockHint: "Keep the detected location while refreshing its forecast. You can still enter a different location.",
+    calendarRefreshHint: "You can refresh calendar weather and life tips at any time.",
+    calendarRefreshOnSave: "Save these changes first. A new location refreshes calendar and study advice immediately.",
+    calendarRefreshNow: "Refresh now",
+    settingsStudyAdviceHint: "Updates at 4 am. Entering a new region triggers one update using that region.",
+    settingsNotifyWindows: "Reminder windows & frequency",
+    settingsNotifyLead: "Advance reminders",
+    notifyPermission_granted: "Allowed",
+    notifyPermission_denied: "Denied",
+    notifyPermission_default: "Permission pending",
+    notifyPermission_unsupported: "Unavailable in this environment",
     navLabel: 'Planner',
     loading: 'Loading…',
     tabCalendar: 'Calendar',
@@ -430,7 +598,7 @@ const DICTS = {
     studyFinish: 'Finish',
     studyMistakeReview: 'Mistake review',
     studyNoMistake: 'No mistakes are due',
-    studyTaskList: 'Study tasks',
+    studyTaskList: 'Active study tasks',
     studyNewLabel: 'New',
     studyReviewLabel: 'Review',
     studyWeekPlan: 'Week plan {n} min',
@@ -484,6 +652,10 @@ const DICTS = {
     mistakeTo: 'To',
     mistakeEdit: 'Edit mistake',
     mistakePreview: 'Mistake details',
+    mistakeMemoryTip: 'Memory tip',
+    mistakeMaterialSource: 'Material sources',
+    mistakePdfPage: 'PDF page {n}',
+    mistakeBookPage: 'Print page {n}',
     mistakeDblClick: 'Double-click to enlarge',
     mistakeDeleteAsk: 'Delete this mistake? This cannot be undone.',
     close: 'Close',
@@ -778,6 +950,82 @@ const CSS = `
 .lp-study .lp-toolbar{padding:10px 0;border-bottom:1px solid var(--dsw-alias-border-l2);margin-bottom:4px;}
 .lp-study .lp-toolbar .lp-input{flex:1;min-width:140px;max-width:none;}
 .lp-study .lp-head .lp-meta{font-variant-numeric:tabular-nums;}
+.lp-board .lp-card[draggable],.lp-drag-handle{cursor:grab;}
+.lp-board .lp-col[data-drop="inside"],.lp-study-planner [data-drop="inside"]{outline:2px solid var(--lp-accent,var(--dsw-alias-brand-primary));outline-offset:-2px;}
+.lp-board .lp-card[data-drop="before"],.lp-study-subject-head[data-drop="before"]{box-shadow:0 -3px var(--lp-accent,var(--dsw-alias-brand-primary));}
+.lp-board .lp-card[data-drop="after"],.lp-study-subject-head[data-drop="after"]{box-shadow:0 3px var(--lp-accent,var(--dsw-alias-brand-primary));}
+.lp-study-planner,.lp-card.lp-study-section{display:grid;gap:12px;}
+.lp-study-planner-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:12px;align-items:start;}
+.lp-study-section{align-content:start;padding:12px;min-width:0;}
+.lp-study-section-head,.lp-study-subject-head,.lp-study-link{display:flex;gap:8px;align-items:center;min-width:0;}
+.lp-study-section-head h3{font-size:var(--lp-title-fs,15px);margin:0;}
+.lp-study-section-head>button{margin-inline-start:auto;}
+.lp-row.lp-study-task{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;min-width:0;}
+.lp-study-task + .lp-study-task{border-top:1px solid var(--dsw-alias-border-l2);}
+.lp-study-subject-head{border-bottom:1px solid var(--dsw-alias-border-l2);}
+.lp-study-task[data-status="done"]>.lp-drag-handle{cursor:default;color:var(--dsw-alias-state-success-primary);}
+.lp-study-actions>.lp-mini{min-width:24px;}
+.lp-study-planner .lp-row:hover .lp-actions,.lp-study-planner .lp-row:focus-within .lp-actions{opacity:1;}
+.lp-study-planner .lp-empty{min-height:80px;padding:12px;}
+.lp-study-task-main,.lp-study-subject-head>.lp-study-task-title,.lp-study-link>.lp-study-task-title{flex:1 1 120px;min-width:0;}
+.lp-study-task-title{border:0;background:none;color:inherit;font:inherit;font-weight:600;text-align:start;cursor:pointer;padding:0;overflow-wrap:anywhere;}
+.lp-study-task-title{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lp-study-task-title:hover{text-decoration:underline;}
+.lp-study-task-detail{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:2px;}
+.lp-study-links{margin:4px 0 0 15px;padding-left:12px;}
+.lp-study-link{justify-content:space-between;}
+.lp-study-link>.lp-input[type=date]{flex:0 1 160px;}
+.lp-study-section summary{cursor:pointer;}
+.lp-cal-side{min-width:0;}
+.lp-cal-side>.lp-btn-ghost,.lp-cal-side>.lp-iconbtn{flex:none;}
+.lp-day-title{flex-wrap:wrap;}
+.lp-cal-lunar{white-space:normal;}
+.lp-weather{min-width:0;}
+.lp-weather-trigger{display:inline-flex;align-items:center;gap:6px;max-width:100%;min-height:30px;padding:3px 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--lp-r,8px);background:var(--lp-control-bg);color:var(--dsw-alias-label-primary);font:inherit;font-size:var(--lp-fs-sm,12px);font-variant-numeric:tabular-nums;white-space:nowrap;cursor:pointer;}
+.lp-weather-trigger:hover,.lp-weather-trigger[aria-expanded="true"]{border-color:var(--lp-accent,var(--dsw-alias-brand-primary));}
+.lp-weather-icon{display:inline-grid;place-items:center;flex:none;width:1.65em;height:1.65em;font-size:16px;line-height:1;border-radius:7px;background:color-mix(in srgb,var(--lp-accent,var(--dsw-alias-brand-primary)) 12%,transparent);}
+.lp-weather-compact{overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.lp-weather-popup{position:fixed;z-index:80;display:flex;flex-direction:column;gap:7px;overflow:auto;overscroll-behavior:contain;box-sizing:border-box;padding:14px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--lp-r-lg,12px);background:var(--lp-modal-bg,var(--dsw-alias-bg-base));box-shadow:0 10px 30px #0003;font-size:var(--lp-fs,13px);text-align:left;}
+.lp-weather-date{font-weight:650;font-size:var(--lp-title-fs,15px);}
+.lp-weather-heading{display:flex;align-items:center;gap:9px;padding:9px 0 2px;border-top:1px solid var(--dsw-alias-border-l2);}
+.lp-weather-heading .lp-weather-icon{font-size:21px;}
+.lp-weather-heading button{margin-inline-start:auto;white-space:nowrap;}
+.lp-weather-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;}
+.lp-weather-details>div{min-width:0;padding:7px 8px;border-radius:var(--lp-r-sm,6px);background:var(--lp-control-bg,var(--dsw-alias-bg-layer-2));}
+.lp-weather-details dt{color:var(--dsw-alias-label-secondary);font-size:var(--lp-fs-sm,12px);}
+.lp-weather-details dd{margin:1px 0 0;font-variant-numeric:tabular-nums;}
+.lp-weather-advice{border-top:1px solid var(--dsw-alias-border-l2);padding-top:8px;overflow-wrap:anywhere;}
+.lp-weather-advice ul{padding-inline-start:18px;margin:5px 0 1px;}
+.lp-weather-advice li+li{margin-top:4px;}
+.lp-weather-advice p{margin:4px 0 0;}
+
+.lp-page .lp-modal.lp-settings{box-sizing:border-box;width:min(850px,100%);max-height:min(88vh,830px);gap:0;padding:0;overflow:hidden;}
+.lp-settings>.lp-modal-title{padding:16px 20px;border-bottom:1px solid var(--dsw-alias-border-l2);}
+.lp-settings-layout{display:grid;grid-template-columns:minmax(132px,20%) minmax(0,1fr);min-height:0;}
+.lp-settings-nav{display:flex;flex-direction:column;gap:4px;min-width:0;padding:12px;border-inline-end:1px solid var(--dsw-alias-border-l2);background:color-mix(in srgb,var(--dsw-alias-label-primary) 3%,transparent);}
+.lp-settings-nav-button{width:100%;border:1px solid transparent;border-radius:var(--lp-r,8px);padding:8px 9px;background:transparent;color:var(--dsw-alias-label-secondary);text-align:start;font:inherit;cursor:pointer;}
+.lp-settings-nav-button:hover{color:var(--dsw-alias-label-primary);background:var(--lp-control-bg,var(--dsw-alias-bg-layer-2));}
+.lp-settings-nav-button[aria-current="page"]{background:color-mix(in srgb,var(--lp-accent,var(--dsw-alias-brand-primary)) 13%,transparent);border-color:color-mix(in srgb,var(--lp-accent,var(--dsw-alias-brand-primary)) 35%,transparent);color:var(--dsw-alias-label-primary);font-weight:650;}
+.lp-page .lp-settings .lp-settings-body{min-height:min(42vh,330px);max-height:none;padding:14px 16px;}
+.lp-settings-sections,.lp-settings-group{display:grid;gap:10px;min-width:0;}
+.lp-settings-group{padding:12px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--lp-r-lg,12px);}
+.lp-settings-group .lp-form-section{margin:0;padding:0;border:0;color:var(--dsw-alias-label-primary);font:inherit;font-weight:650;}
+.lp-settings-switch{display:flex;justify-content:space-between;align-items:center;gap:12px;min-width:0;}
+.lp-settings-switch>div{min-width:0;}
+.lp-settings-switch .lp-meta{margin-top:2px;}
+.lp-settings-switch .lp-toggle{flex:none;}
+.lp-settings-classification{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;}
+.lp-settings-classification>.lp-field{grid-column:1 / -1;}
+.lp-settings-classification .lp-swatch-panel{border-radius:var(--lp-r-sm,6px);}
+.lp-settings-status{display:inline-block;border-radius:var(--lp-r-sm,6px);padding:3px 7px;color:var(--dsw-alias-label-secondary);background:var(--lp-control-bg,var(--dsw-alias-bg-layer-2));font-size:var(--lp-fs-sm,12px);}
+.lp-page .lp-settings>.lp-modal-actions{position:static;flex:none;margin:0;padding:10px 16px;background:transparent;}
+@media (max-width:660px){
+  .lp-settings-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);}
+  .lp-settings-nav{flex-direction:row;overflow:auto;padding:6px 8px;border-inline-end:0;border-bottom:1px solid var(--dsw-alias-border-l2);}
+  .lp-settings-nav-button{width:auto;flex:none;white-space:nowrap;}
+  .lp-page .lp-settings .lp-settings-body{min-height:0;padding:10px;}
+  .lp-cal-bar .lp-weather-compact{display:none;}
+}
 .lp-study .lp-tree-row{min-height:var(--lp-row);padding:4px 8px;border-color:transparent;border-radius:var(--lp-r-sm);gap:var(--lp-gap);}
 .lp-study .lp-tree-row:hover{background:color-mix(in srgb,var(--dsw-alias-label-primary) 7%,transparent);border-color:transparent;}
 .lp-study-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:8px;}
@@ -800,12 +1048,13 @@ const CSS = `
 .lp-mistake-preview{width:min(760px,100%);max-height:80vh;overflow:auto;}
 .lp-mistake-preview .lp-pre-block{margin-top:10px;}
 .lp-mistake-preview .lp-pre-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;padding:10px 12px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);}
+.lp-mistake-preview .lp-mistake-sources{margin:4px 0 0;padding-inline-start:28px;}
 .lp-bar{display:block;height:8px;min-width:2px;border-radius:4px;background:color-mix(in srgb,var(--dsw-alias-brand-primary) 55%,transparent);}
 .lp-dd{position:relative;display:flex;min-width:0;width:100%;}
 .lp-dd-btn{width:100%;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer;}
 .lp-dd-value{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lp-dd-caret{color:var(--dsw-alias-label-secondary);font-size:var(--lp-meta-fs,11px);}
-.lp-dd-menu{position:fixed;z-index:70;max-height:240px;overflow:auto;padding:6px;border-radius:12px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);box-shadow:0 12px 32px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:2px;}
+.lp-dd-menu{position:fixed;box-sizing:border-box;z-index:70;max-height:240px;overflow:auto;padding:6px;border-radius:12px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);box-shadow:0 12px 32px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:2px;}
 .lp-dd-item{flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;background:transparent;color:var(--dsw-alias-label-primary);font:inherit;font-size:var(--lp-fs,13px);line-height:1.4;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lp-dd-item:hover{background:color-mix(in srgb,var(--dsw-alias-label-primary) 10%,transparent);}
 .lp-dd-item[data-active="true"]{background:color-mix(in srgb,var(--dsw-alias-brand-primary) 16%,transparent);}
@@ -841,9 +1090,9 @@ const CSS = `
 .lp-meta{color:var(--dsw-alias-label-secondary);font-size:var(--lp-meta-fs,11px);white-space:nowrap;}
 .lp-meta[data-overdue="true"]{color:var(--dsw-alias-state-error-primary);}
 .lp-badge{font-size:var(--lp-meta-fs,11px);padding:1px 6px;border-radius:999px;border:1px solid var(--dsw-alias-state-warn-primary);color:var(--dsw-alias-state-warn-primary);white-space:nowrap;}
-.lp-menu{position:absolute;right:8px;top:32px;z-index:20;min-width:130px;padding:4px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);box-shadow:0 6px 24px rgba(0,0,0,.18);}
+.lp-menu{position:fixed;box-sizing:border-box;z-index:70;overflow:auto;padding:4px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);box-shadow:0 6px 24px rgba(0,0,0,.18);}
 .lp-menu button{display:block;width:100%;text-align:left;padding:6px 10px;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;}
-.lp-menu button:hover{background:var(--dsw-alias-bg-layer-2);background:color-mix(in srgb,var(--dsw-alias-brand-primary) 14%,transparent);}
+.lp-menu button:hover,.lp-menu button[data-active="true"]{background:var(--dsw-alias-bg-layer-2);background:color-mix(in srgb,var(--dsw-alias-brand-primary) 14%,transparent);}
 .lp-tree-row{position:relative;display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;border:1px solid transparent;}
 .lp-tree-row:hover{background:var(--dsw-alias-bg-layer-1);border-color:var(--dsw-alias-border-l2);}
 .lp-tree-row[data-done="true"] .lp-title{opacity:.5;text-decoration:line-through;}
@@ -934,17 +1183,16 @@ const CSS = `
 .lp-cell[data-priority="medium"]:not([data-selected="true"]){background:color-mix(in srgb,var(--lp-tone-medium) 12%,transparent);}
 .lp-cell[data-priority="high"]:not([data-selected="true"]){background:color-mix(in srgb,var(--lp-tone-high) 12%,transparent);}
 .lp-cell[data-priority="highest"]:not([data-selected="true"]){background:color-mix(in srgb,var(--lp-tone-highest) 14%,transparent);}
-.lp-pop{position:absolute;z-index:60;left:50%;top:50%;transform:translate(-50%,-50%);width:min(320px,calc(100% - 24px));padding:12px;border-radius:10px;border:1px solid var(--dsw-alias-border-l2);background:var(--lp-modal-bg,var(--lp-surface-bg,var(--dsw-alias-bg-base))) !important;box-shadow:0 10px 30px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:8px;}
-.lp-pop-title{font-weight:600;font-size:var(--lp-fs,13px);}
+.lp-modal.lp-confirm-modal{box-sizing:border-box;width:min(380px,100%);}
 .lp-pop-list{font-size:var(--lp-fs-sm,12px);color:var(--dsw-alias-label-secondary);max-height:180px;overflow:auto;display:flex;flex-direction:column;gap:2px;}
 .lp-pop-actions{display:flex;justify-content:flex-end;gap:6px;}
-.lp-pop-backdrop{position:absolute;inset:0;z-index:55;}
-.lp-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;align-items:start;}
-.lp-col{display:flex;flex-direction:column;gap:8px;min-width:0;}
+.lp-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;align-items:stretch;}
+.lp-col{display:flex;flex-direction:column;gap:8px;min-width:0;min-height:min(60vh,640px);border-radius:var(--lp-r,8px);}
+.lp-col-space{flex:1;min-height:52px;}
 .lp-col-head{font-size:var(--lp-title-fs,15px);color:var(--dsw-alias-label-secondary);padding:4px 2px;border-bottom:1px solid var(--dsw-alias-border-l2);}.lp-card{border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:8px;background:var(--lp-surface-bg,var(--dsw-alias-bg-layer-1));cursor:pointer;display:flex;flex-direction:column;gap:4px;align-items:flex-start;}
 .lp-card:hover{border-color:var(--dsw-alias-brand-primary);}
 .lp-card[data-done="true"]{opacity:.6;}
-.lp-card-title{font-size:var(--lp-task-fs,13px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lp-card-title{font-size:var(--lp-task-fs,13px);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lp-card-meta{display:flex;gap:8px;align-items:center;color:var(--dsw-alias-label-secondary);font-size:var(--lp-meta-fs,11px);}
 .lp-card-prio{font-variant-numeric:tabular-nums;font-weight:600;min-width:22px;flex:none;}
 .lp-switch{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:var(--lp-meta-fs,11px);cursor:pointer;white-space:nowrap;}
@@ -1015,7 +1263,6 @@ const CSS = `
 .lp-page .lp-board{padding:var(--lp-pad);gap:12px;}
 .lp-page .lp-modal{padding:20px;gap:14px;}
 .lp-page .lp-modal-title{font-size:var(--lp-title-fs,15px);}
-.lp-page .lp-pop{padding:14px;}
 .lp-page .lp-notices{top:56px;gap:8px;}
 .lp-page .lp-notice{padding:9px 11px;border-radius:var(--lp-r);}
 .lp-page .lp-menu{padding:5px;border-radius:var(--lp-r-lg);}
@@ -1598,8 +1845,9 @@ function fromLocalInput(value) {
 }
 
 function timeLabel(item) {
-  if (!item.dueAt) return '';
-  const date = new Date(item.dueAt);
+  const timestamp = item.dueAt || item.startAt;
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return '';
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
@@ -1675,8 +1923,9 @@ function topTask(items) {
 function groupByDay(items) {
   const map = new Map();
   for (const item of items) {
-    if (!item.dueAt) continue;
-    const date = new Date(item.dueAt);
+    const timestamp = item.dueAt || item.startAt;
+    if (!timestamp) continue;
+    const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) continue;
     const key = dayKey(date);
     if (!map.has(key)) map.set(key, []);
@@ -1686,7 +1935,7 @@ function groupByDay(items) {
     list.sort((a, b) => {
       const rank = priorityOf(b) - priorityOf(a);
       if (rank !== 0) return rank;
-      return String(a.dueAt).localeCompare(String(b.dueAt));
+      return String(a.dueAt || a.startAt).localeCompare(String(b.dueAt || b.startAt));
     });
   }
   return map;
@@ -1870,6 +2119,7 @@ function Switch(props) {
     {
       type: 'button',
       role: 'switch',
+      'aria-label': props.label,
       'aria-checked': String(on),
       className: 'lp-toggle',
       'data-on': String(on),
@@ -1914,6 +2164,8 @@ function Modal(props) {
     const first = focusables()[0];
     if (first && typeof first.focus === 'function') first.focus();
     const onKeyDown = (event) => {
+      const dialogs = document.querySelectorAll('.lp-backdrop .lp-modal');
+      if (dialogs[dialogs.length - 1] !== node || event.defaultPrevented) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         if (typeof closeRef.current === 'function') closeRef.current();
@@ -1966,6 +2218,7 @@ function Modal(props) {
         role: 'dialog',
         'aria-modal': 'true',
         'aria-label': typeof props.title === 'string' ? props.title : undefined,
+        'data-lp-confirm': props.confirm ? 'centered' : undefined,
         ref: panelRef,
         style: props.wide ? { width: 'min(760px,100%)' } : undefined,
         onClick: (event) => event.stopPropagation(),
@@ -1982,6 +2235,20 @@ function Modal(props) {
 // count) or resizes, and removed as soon as the menu closes.
 let anchoredMenuSeq = 0;
 
+function anchoredMenuPosition(rect, viewport, { minWidth, maxHeight, height, align }) {
+  const margin = 8;
+  const gap = 4;
+  const width = Math.min(Math.max(rect.width, minWidth), Math.max(0, viewport.width - 2 * margin));
+  const left = Math.max(margin, Math.min(align === 'end' ? rect.right - width : rect.left, viewport.width - width - margin));
+  const below = Math.max(0, viewport.height - margin - rect.bottom - gap);
+  const above = Math.max(0, rect.top - gap - margin);
+  const desired = Math.min(maxHeight, height);
+  const openBelow = below >= desired || below >= above;
+  const cap = Math.min(maxHeight, openBelow ? below : above);
+  const top = openBelow ? rect.bottom + gap : rect.top - gap - Math.min(desired, cap);
+  return { left, top, width, maxHeight: cap };
+}
+
 function useAnchoredMenu(config) {
   const options = React.useRef(config);
   options.current = config;
@@ -1990,25 +2257,25 @@ function useAnchoredMenu(config) {
   const [active, setActive] = React.useState(-1);
   const [menuId] = React.useState(() => `lp-menu-${(anchoredMenuSeq += 1)}`);
   const anchorRef = React.useRef(null);
+  const menuRef = React.useRef(null);
 
   const measure = () => {
     const node = anchorRef.current;
-    if (!node || typeof window === 'undefined') return null;
+    if (!node || !node.isConnected || typeof window === 'undefined') return null;
     const current = options.current || {};
     const count = Number(current.count) || 0;
     const rect = node.getBoundingClientRect();
-    const width = Math.max(rect.width, Number(current.minWidth) || 190);
-    const height = Math.min(
-      Number(current.maxHeight) || 240,
-      count * (Number(current.itemHeight) || 34) + 12,
-    );
-    const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - width - 8));
-    const below = rect.bottom + 4;
-    const top = below + height + 8 <= window.innerHeight ? below : Math.max(8, rect.top - height - 4);
-    return { left, top, width };
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight || rect.right <= 0 || rect.left >= window.innerWidth) return null;
+    return anchoredMenuPosition(rect, { width: window.innerWidth, height: window.innerHeight }, {
+      minWidth: Number(current.minWidth) || 190,
+      maxHeight: Number(current.maxHeight) || 240,
+      height: menuRef.current ? menuRef.current.scrollHeight + 2 : Math.max(1, count) * (Number(current.itemHeight) || 34) + 12,
+      align: current.align,
+    });
   };
 
-  const show = () => {
+  const show = (anchor) => {
+    if (typeof anchor?.getBoundingClientRect === 'function') anchorRef.current = anchor;
     const current = options.current || {};
     const next = measure();
     if (next) setPos(next);
@@ -2018,9 +2285,11 @@ function useAnchoredMenu(config) {
     setOpen(true);
   };
 
-  const hide = () => {
+  const hide = (restoreFocus = false) => {
     setOpen(false);
     setActive(-1);
+    options.current.onClose?.();
+    if (restoreFocus === true) anchorRef.current?.focus();
   };
 
   const toggle = () => (open ? hide() : show());
@@ -2045,6 +2314,10 @@ function useAnchoredMenu(config) {
       if (event.nativeEvent && typeof event.nativeEvent.stopImmediatePropagation === 'function') {
         event.nativeEvent.stopImmediatePropagation();
       }
+      hide(true);
+      return;
+    }
+    if (open && event.key === 'Tab') {
       hide();
       return;
     }
@@ -2082,27 +2355,50 @@ function useAnchoredMenu(config) {
     if (!open) return undefined;
     const place = () => {
       const next = measure();
-      if (!next) return;
+      if (!next) {
+        hide();
+        return;
+      }
       setPos((previous) =>
-        previous && previous.left === next.left && previous.top === next.top && previous.width === next.width
+        previous && previous.left === next.left && previous.top === next.top && previous.width === next.width &&
+          previous.maxHeight === next.maxHeight
           ? previous
           : next,
       );
     };
+    const outside = (event) => {
+      if (!anchorRef.current?.contains(event.target) && !menuRef.current?.contains(event.target)) hide();
+    };
+    const escape = (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      hide(true);
+    };
     place();
+    document.addEventListener('pointerdown', outside, true);
+    document.addEventListener('keydown', escape, true);
     window.addEventListener('scroll', place, true);
     window.addEventListener('resize', place);
+    const observer = anchorRef.current && typeof IntersectionObserver === 'function'
+      ? new IntersectionObserver(([entry]) => { if (entry && !entry.isIntersecting) hide(); })
+      : null;
+    if (observer) observer.observe(anchorRef.current);
     return () => {
       window.removeEventListener('scroll', place, true);
       window.removeEventListener('resize', place);
+      document.removeEventListener('pointerdown', outside, true);
+      document.removeEventListener('keydown', escape, true);
+      observer?.disconnect();
     };
-  }, [open]);
+  }, [open, config.count]);
 
   return {
     open,
     pos,
     active,
     anchorRef,
+    menuRef,
     menuId,
     show,
     hide,
@@ -2170,15 +2466,15 @@ function Dropdown(props) {
       ? h(
           'div',
           null,
-          h('div', { className: 'lp-pop-backdrop', onClick: menu.hide }),
           h(
             'div',
             {
               className: 'lp-dd-menu',
               role: 'listbox',
+              ref: menu.menuRef,
               id: menu.menuId,
               tabIndex: -1,
-              style: { left: menu.pos.left, top: menu.pos.top, width: menu.pos.width },
+              style: menu.pos,
               onKeyDown: menu.onKeyDown,
             },
             options.map((option, index) =>
@@ -2234,14 +2530,11 @@ function TypeChip(props) {
 }
 
 // ---- background.js ----
-// Reminders must keep firing while the page is open even if the planner
-// panel is not the visible one, so the poller lives outside the component.
-// The mounted panel owns delivery (toast list, throttled system notifications,
-// ack); this module only decides when to ask the host for a new batch.
-const background = { listeners: new Set() };
+const background = { listeners: new Set(), systemSent: new Set() };
 
 const describeReminder = (note, t) => {
-  const title = note.kind === 'long' ? t('notifyLong') : t('notifyShort');
+  const title = note.kind === 'study' ? t('notifyStudy') : note.kind === 'long' ? t('notifyLong') : t('notifyShort');
+  if (note.kind === 'study') return { title, body: note.title };
   const parts = [note.title];
   if (note.dueAt) {
     parts.push(`${t('dueLabel')} ${toLocalInput(note.dueAt).replace('T', ' ')}`);
@@ -2256,17 +2549,30 @@ const describeReminder = (note, t) => {
   return { title, body: parts.join(' · ') };
 };
 
-// Ask the host once and hand the whole batch to every mounted panel. The ack is
-// the panel's job, so a batch that arrives while no panel is mounted simply
-// stays queued on the host and is delivered again on the next poll.
-const pullReminders = () => {
+const pullReminders = (t) => {
   if (typeof document === 'undefined') return;
   api('notifications')
     .then((list) => {
       if (!Array.isArray(list) || list.length === 0) return;
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        const note = list.find((entry) => entry.browserFallback && !background.systemSent.has(entry.id));
+        if (note) {
+          try {
+            const notice = describeReminder(note, t);
+            new Notification(notice.title, { body: notice.body, tag: note.id });
+            background.systemSent.add(note.id);
+            if (background.systemSent.size > 100) background.systemSent.delete(background.systemSent.values().next().value);
+            api('notifications.system', { id: note.id }).catch(() => {});
+          } catch {
+            // The in-app reminder remains available.
+          }
+        }
+      }
+      const pending = list.filter((entry) => entry.inAppPending !== false);
+      if (!pending.length) return;
       for (const listener of Array.from(background.listeners)) {
         try {
-          listener(list);
+          listener(pending);
         } catch {
           // One broken panel must not stop the reminder loop.
         }
@@ -2275,9 +2581,9 @@ const pullReminders = () => {
     .catch(() => {});
 };
 
-const startBackgroundReminders = () => {
-  pullReminders();
-  return setInterval(pullReminders, 30000);
+const startBackgroundReminders = (t) => {
+  pullReminders(t);
+  return setInterval(() => pullReminders(t), 30000);
 };
 
 // ---- api.js ----
@@ -2287,8 +2593,8 @@ const startBackgroundReminders = () => {
 const API_TIMEOUT_MS = 15000;
 const API_INFLIGHT = new Map();
 
-function api(method, body) {
-  const key = body === undefined ? `GET ${method}` : '';
+function api(method, body, { fresh = false } = {}) {
+  const key = body === undefined && !fresh ? `GET ${method}` : '';
   if (key && API_INFLIGHT.has(key)) return API_INFLIGHT.get(key);
   const request = apiRequest(method, body, 2);
   if (key) {
@@ -2426,6 +2732,40 @@ function BoardView(props) {
   const [filterDim, setFilterDim] = React.useState('');
   const [filterValue, setFilterValue] = React.useState('');
   const [beforeDate, setBeforeDate] = React.useState('');
+  const dragging = React.useRef(null);
+  const [dropTarget, setDropTarget] = React.useState('');
+  const canMove = (item, from, to) => {
+    if (from === to) return true;
+    if (item.derived.studyTask) return from !== 'done' && (to === 'todo' || to === 'doing');
+    return !item.derived.studyManaged || (from !== 'done' && to !== 'done');
+  };
+  const endDrag = () => {
+    dragging.current = null;
+    setDropTarget('');
+  };
+  const drop = (event, column, anchorId, after) => {
+    const source = dragging.current;
+    if (!source) return;
+    event.preventDefault();
+    event.stopPropagation();
+    endDrag();
+    if (source.item.id !== anchorId && canMove(source.item, source.column, column)) {
+      props.onMove({ id: source.item.id, column, anchorId, after });
+    }
+  };
+  const dragOver = (event, column, key) => {
+    const source = dragging.current;
+    if (!source) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const allowed = canMove(source.item, source.column, column);
+    event.dataTransfer.dropEffect = allowed ? 'move' : 'none';
+    setDropTarget(allowed ? key : '');
+  };
+  const afterMiddle = (event) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    return event.clientY >= bounds.top + bounds.height / 2;
+  };
   const tagSet = new Set();
   const typeSet = new Set();
   for (const item of props.items) {
@@ -2474,20 +2814,22 @@ function BoardView(props) {
     return true;
   };
   const buckets = { todo: [], doing: [], blocked: [], done: [] };
-    for (const item of props.items) {
+  for (const item of props.items) {
     if (item.derived.archived) continue;
     if (!matchesFilter(item)) continue;
-    if (item.derived.done) buckets.done.push(item);
-    else if (displayBlockers(item, byId, props.items).length > 0) buckets.blocked.push(item);
-    else if (item.status === 'doing') buckets.doing.push(item);
-    else buckets.todo.push(item);
+    const column = item.derived.boardColumn || (item.derived.done ? 'done' :
+      item.status === 'blocked' || displayBlockers(item, byId, props.items).length > 0 ? 'blocked' :
+        item.status === 'doing' ? 'doing' : 'todo');
+    buckets[column].push(item);
   }
   for (const list of Object.values(buckets)) {
     list.sort(
       (a, b) =>
+        (a.boardOrder ?? Infinity) - (b.boardOrder ?? Infinity) ||
         Number(isOverdue(b)) - Number(isOverdue(a)) ||
         priorityOf(b) - priorityOf(a) ||
-        String(a.dueAt || '~').localeCompare(String(b.dueAt || '~')),
+        String(a.dueAt || '~').localeCompare(String(b.dueAt || '~')) ||
+        a.id.localeCompare(b.id),
     );
   }
   const columns = [
@@ -2496,6 +2838,20 @@ function BoardView(props) {
     { key: 'blocked', label: t('colBlocked') },
     { key: 'done', label: t('colDone') },
   ];
+  const onCardKey = (item, column, index, event) => {
+    const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    if (!event.altKey || !keys.includes(event.key)) return keyActivate(() => props.onEdit(item))(event);
+    event.preventDefault();
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      const after = event.key === 'ArrowDown';
+      const anchor = buckets[column][index + (after ? 1 : -1)];
+      if (anchor) props.onMove({ id: item.id, column, anchorId: anchor.id, after });
+      return;
+    }
+    const position = columns.findIndex((entry) => entry.key === column);
+    const target = columns[position + (event.key === 'ArrowRight' ? 1 : -1)];
+    if (target && canMove(item, column, target.key)) props.onMove({ id: item.id, column: target.key });
+  };
   return h(
     'div',
     { className: 'lp-board' },
@@ -2546,13 +2902,24 @@ function BoardView(props) {
             t('filterClear'),
           )
         : null,
+      h('span', { className: 'lp-meta' }, t('boardDragHint')),
     ),
     columns.map((column) =>
       h(
         'div',
-        { key: column.key, className: 'lp-col' },
+        {
+          key: column.key,
+          className: 'lp-col',
+          'data-column': column.key,
+          'data-drop': dropTarget === column.key ? 'inside' : undefined,
+          onDragOver: (event) => dragOver(event, column.key, column.key),
+          onDragLeave: (event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setDropTarget('');
+          },
+          onDrop: (event) => drop(event, column.key),
+        },
         h('div', { className: 'lp-col-head' }, `${column.label} · ${buckets[column.key].length}`),
-        buckets[column.key].map((item) =>
+        buckets[column.key].map((item, index) =>
           h(
             'div',
             {
@@ -2560,10 +2927,22 @@ function BoardView(props) {
               className: 'lp-card',
               tabIndex: 0,
               role: 'button',
+              draggable: true,
+              'data-item-id': item.id,
+              'aria-keyshortcuts': 'Alt+ArrowUp Alt+ArrowDown Alt+ArrowLeft Alt+ArrowRight',
+              'data-drop': dropTarget === item.id + ':after' ? 'after' : dropTarget === item.id + ':before' ? 'before' : undefined,
               'data-done': String(item.derived.done),
               style: { borderLeft: `3px solid ${toneOf(item.priority).color}` },
               onClick: () => props.onEdit(item),
-              onKeyDown: keyActivate(() => props.onEdit(item)),
+              onKeyDown: (event) => onCardKey(item, column.key, index, event),
+              onDragStart: (event) => {
+                dragging.current = { item, column: column.key };
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('application/x-life-planner-board-task', item.id);
+              },
+              onDragEnd: endDrag,
+              onDragOver: (event) => dragOver(event, column.key, item.id + (afterMiddle(event) ? ':after' : ':before')),
+              onDrop: (event) => drop(event, column.key, item.id, afterMiddle(event)),
             },
             h(TypeChip, {
               type: item.taskType,
@@ -2592,8 +2971,92 @@ function BoardView(props) {
             ),
           ),
         ),
+        h('div', { className: 'lp-col-space', 'aria-hidden': true }),
       ),
     ),
+  );
+}
+
+// ---- views/calendar-today.js ----
+function lunarDateLabel(date) {
+  const parts = new Intl.DateTimeFormat('zh-CN-u-ca-chinese', {
+    year: 'numeric', month: 'long', day: 'numeric',
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === 'yearName')?.value;
+  const month = parts.find((part) => part.type === 'month')?.value;
+  const day = Number(parts.find((part) => part.type === 'day')?.value);
+  if (!month || day < 1 || day > 30 || !Number.isInteger(day)) return '';
+  const numbers = '一二三四五六七八九十';
+  const label = day <= 10 ? '初' + numbers[day - 1]
+    : day === 20 ? '二十' : day === 30 ? '三十'
+      : (day < 20 ? '十' : '廿') + numbers[day % 10 - 1];
+  return (year ? year + '年 ' : '') + month + label;
+}
+
+function weatherAppearance(code) {
+  if (code === 0) return ['☀️', 'weatherClear'];
+  if (code === 1 || code === 2) return ['🌤️', 'weatherPartly'];
+  if (code === 3) return ['☁️', 'weatherCloud'];
+  if (code === 45 || code === 48) return ['🌫️', 'weatherFog'];
+  if (code >= 95) return ['⛈️', 'weatherStorm'];
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return ['🌨️', 'weatherSnow'];
+  if (code >= 51) return ['🌧️', 'weatherRain'];
+  return ['◌', 'weatherUnavailable'];
+}
+
+function CalendarToday({ t, data, date, lunar, onSettings }) {
+  const popup = useAnchoredMenu({ count: 10, minWidth: 330, maxHeight: 480 });
+  const weather = data?.weather;
+  const [icon, condition] = weatherAppearance(weather?.wmoCode);
+  const temperature = Number.isFinite(weather?.minC) && Number.isFinite(weather?.maxC)
+    ? `${Math.round(weather.minC)}–${Math.round(weather.maxC)} °C` : '';
+  const format = (key, value) => t(key).replace('{n}', String(value));
+  const details = [
+    [t('calendarTemperature'), temperature],
+    [t('calendarRain'), Number.isFinite(weather?.precipitationProbability) ? weather.precipitationProbability + '%' : ''],
+    [t('calendarWind'), Number.isFinite(weather?.windKph) ? Math.round(weather.windKph) + ' km/h' : ''],
+    [t('calendarSun'), weather?.sunrise && weather?.sunset ? weather.sunrise + ' / ' + weather.sunset : ''],
+  ].filter(([, value]) => value);
+  const advice = data?.advice;
+  const updated = data?.updatedAt ? new Date(data.updatedAt) : null;
+  const fullDate = t('calendarFullDate').replace('{y}', date.getFullYear())
+    .replace('{m}', date.getMonth() + 1).replace('{d}', date.getDate()) +
+    ' · ' + weekdayLabels(t)[(date.getDay() + 6) % 7];
+  return h(
+    'div', { className: 'lp-weather' },
+    h('button', {
+      className: 'lp-weather-trigger', ref: popup.anchorRef, type: 'button',
+      onClick: popup.toggle, 'aria-expanded': popup.open, 'aria-controls': popup.open ? popup.menuId : undefined,
+      'aria-label': t('calendarTodayInfo'), title: t('calendarTodayInfo'),
+    },
+    h('span', { className: 'lp-weather-icon', 'aria-hidden': true }, icon),
+    h('span', { className: 'lp-weather-compact' }, temperature || t('calendarTodayShort'))),
+    popup.open && popup.pos ? h('section', {
+      ref: popup.menuRef, id: popup.menuId, className: 'lp-weather-popup', 'aria-label': t('calendarTodayInfo'),
+      style: popup.pos,
+    },
+    h('div', { className: 'lp-weather-date' }, fullDate),
+    lunar ? h('div', { className: 'lp-meta' }, t('calendarLunar') + ' · ' + lunar) : null,
+    data?.holiday?.name ? h('div', { className: 'lp-meta' }, data.holiday.name) : null,
+    h('div', { className: 'lp-weather-heading' },
+      h('span', { className: 'lp-weather-icon', 'aria-hidden': true }, icon),
+      h('div', null, h('strong', null, t(condition)), h('div', { className: 'lp-meta' }, data?.region || t('calendarRegionUnknown'))),
+      h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => { popup.hide(); onSettings(); } }, t('tipRegion'))),
+    details.length ? h('dl', { className: 'lp-weather-details' }, details.map(([label, value]) =>
+      h('div', { key: label }, h('dt', null, label), h('dd', null, value)))) : null,
+    h('div', { className: 'lp-weather-advice' },
+      h('strong', null, t('calendarLifeAdvice')),
+      updated ? h('div', { className: 'lp-meta' }, t('calendarAdviceUpdated') + ' ' +
+        (data.adviceDay !== data.day ? data.adviceDay + ' · ' : '') +
+        updated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) : null,
+      data?.updating ? h('div', { className: 'lp-meta', role: 'status' }, t('calendarRefreshing')) : null,
+      advice ? h('ul', null,
+        advice.weatherAdvice ? h('li', null, t('calendarAdvice_' + advice.weatherAdvice)) : null,
+        h('li', null, advice.top ? format('calendarAdviceTask', advice.top)
+          : t(advice.due || advice.starting ? 'calendarAdviceBlocked' : 'calendarAdviceNoTasks')),
+        advice.overdue > 0 ? h('li', null, format('calendarAdviceOverdue', advice.overdue)) : null)
+        : !data?.updating ? h('p', { className: 'lp-meta' }, t('calendarAdvicePending')) : null,
+    )) : null,
   );
 }
 
@@ -2617,7 +3080,6 @@ function CalendarView(props) {
     setCollapsed(next);
   };
   const byDay = groupByDay(items);
-  const calById = new Map(items.map((item) => [item.id, item]));
   const [selectedId, setSelectedId] = React.useState('');
   const [renaming, setRenaming] = React.useState(null);
   // A row selected on one day should not stay highlighted on another.
@@ -2649,6 +3111,8 @@ function CalendarView(props) {
       h('input', {
         type: 'checkbox',
         checked: Boolean(item.derived.done),
+        disabled: Boolean(item.derived.studyManaged),
+        title: item.derived.studyManaged ? t('studyStatusManaged') : undefined,
         onClick: (event) => event.stopPropagation(),
         onChange: (event) => props.onToggle(item, event.target.checked, event),
         'aria-label': item.title,
@@ -2684,17 +3148,48 @@ function CalendarView(props) {
             item.title,
           ),
       h(TagChips, { item, colorOverrides: props.colorOverrides }),
-      displayBlockers(item, calById, items).length > 0
+      item.derived.blocked
         ? h('span', { className: 'lp-badge' }, t('blocked'))
         : null,
-      item.dueAt
+      item.dueAt || item.startAt
         ? h('span', { className: 'lp-meta', 'data-overdue': String(isOverdue(item)) }, timeLabel(item))
         : null,
     );
   const cells = monthMatrix(anchor);
   const week = weekMatrix(selectedKey);
   const labels = weekdayLabels(t);
-  const todayKey = dayKey(new Date());
+  const [today, setToday] = React.useState(() => new Date());
+  const [todayInfo, setTodayInfo] = React.useState(null);
+  React.useEffect(() => {
+    let stopped = false;
+    let timer;
+    let generation = 0;
+    const refresh = async () => {
+      clearTimeout(timer);
+      const requested = ++generation;
+      let next;
+      try {
+        next = await api('calendar.context', undefined, { fresh: true });
+      } catch {}
+      if (!stopped && requested === generation) {
+        if (next) setTodayInfo(next);
+        setToday((previous) => dayKey(previous) === dayKey(new Date()) ? previous : new Date());
+        timer = setTimeout(refresh, next?.updating ? 2500 : 30000);
+      }
+    };
+    refresh();
+    window.addEventListener('lp-calendar-context-change', refresh);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+      window.removeEventListener('lp-calendar-context-change', refresh);
+    };
+  }, []);
+  const todayKey = dayKey(today);
+  const lunar = React.useMemo(() => lunarDateLabel(today), [today]);
+  const renderTodayInfo = () => h(CalendarToday, {
+    t, data: todayInfo?.day === todayKey ? todayInfo : null, date: today, lunar, onSettings: props.onRegionSettings,
+  });
 
   // The month fills whatever height the panel gives us, leaving a strip of
   // the day list visible so it is obvious there is more below.
@@ -2782,7 +3277,9 @@ function CalendarView(props) {
               item.kind === 'task' &&
               !item.derived.archived &&
               !item.derived.done &&
-              (!item.dueAt || isOverdue(item)),
+              !(item.derived.studyTask && item.derived.boardColumn === 'todo') &&
+              (item.dueAt ? isOverdue(item) && dayKey(new Date(item.dueAt)) < todayKey :
+                !item.startAt || dayKey(new Date(item.startAt)) < todayKey),
           )
           .sort((a, b) => {
             const ao = isOverdue(a) ? 0 : 1;
@@ -2831,6 +3328,7 @@ function CalendarView(props) {
               },
               t('today'),
             ),
+            collapsed ? null : renderTodayInfo(),
           ),
           h('div', { className: 'lp-cal-title' }, monthTitle(t, anchor)),
           h(
@@ -2971,6 +3469,8 @@ function CalendarView(props) {
           `${t('dayLabel').replace('{m}', String(selectedDate.getMonth() + 1)).replace('{d}', String(selectedDate.getDate()))} · ${labels[(selectedDate.getDay() + 6) % 7]}`,
         ),
         h('span', { className: 'lp-day-sub' }, t('itemsCount').replace('{n}', String(openCount))),
+        selectedKey === todayKey && lunar ? h('span', { className: 'lp-day-sub lp-cal-lunar' }, lunar) : null,
+        collapsed ? renderTodayInfo() : null,
       ),
       h(
         'form',
@@ -3025,6 +3525,32 @@ function TreeView(props) {
   const cancelled = React.useRef(false);
   const map = childrenMap(items);
   const byId = new Map(items.map((item) => [item.id, item]));
+  const menuItem = byId.get(menuFor);
+  const actions = menuItem ? [
+    { label: t('edit'), run: () => props.onEdit(menuItem) },
+    !menuItem.derived.studyManaged && { label: t(menuItem.derived.done ? 'markUndone' : 'markDone'),
+      run: () => props.onToggle(menuItem, !menuItem.derived.done) },
+    { label: t('rename'), run: () => setRenaming({ id: menuItem.id, value: menuItem.title }) },
+    { label: t('moveUp'), run: () => props.onReorder(menuItem, 'up') },
+    { label: t('moveDown'), run: () => props.onReorder(menuItem, 'down') },
+    menuItem.parentId && { label: t('outdent'), run: () => props.onOutdent(menuItem) },
+    !menuItem.derived.studyTask && { label: t('delete'), run: () => remove(menuItem) },
+  ].filter(Boolean) : [];
+  const rowMenu = useAnchoredMenu({
+    count: actions.length, minWidth: 150, maxHeight: 300, align: 'end',
+    onChoose: (index) => actions[index]?.run(),
+    onClose: () => setMenuFor(''),
+  });
+  const openRowMenu = (item, event) => {
+    event.stopPropagation();
+    setSelectedId(item.id);
+    if (rowMenu.open && menuFor === item.id) {
+      rowMenu.hide();
+      return;
+    }
+    setMenuFor(item.id);
+    rowMenu.show(event.currentTarget);
+  };
   const focusId = props.focusId || '';
   const text = query.trim().toLowerCase();
   const filtering = text !== '' || filter !== 'all';
@@ -3071,7 +3597,7 @@ function TreeView(props) {
   const matches = (item) => {
     if (text && !item.title.toLowerCase().includes(text)) return false;
     if (filter === 'open') return !item.derived.done;
-    if (filter === 'blocked') return displayBlockers(item, byId, items).length > 0;
+    if (filter === 'blocked') return item.derived.blocked;
     if (filter === 'done') return item.derived.done;
     return true;
   };
@@ -3357,7 +3883,7 @@ function TreeView(props) {
     const kids = (map.get(item.id) || []).filter((child) => visible.has(child.id));
     const expanded = filtering || !collapsed.has(item.id);
     const progress = item.kind === 'task' ? null : progressOf(item);
-    const blockers = blockersOf(item);
+    const blockers = item.derived.studyTask ? [] : blockersOf(item);
     const selected = selectedId === item.id;
     const hint = dropHint && dropHint.id === item.id ? dropHint.zone : '';
     return h(
@@ -3439,6 +3965,8 @@ function TreeView(props) {
           ? h('input', {
               type: 'checkbox',
               checked: Boolean(item.derived.done),
+              disabled: Boolean(item.derived.studyManaged),
+              title: item.derived.studyManaged ? t('studyStatusManaged') : undefined,
               onClick: (event) => event.stopPropagation(),
               onChange: (event) => props.onToggle(item, event.target.checked, event),
               'aria-label': item.title,
@@ -3501,7 +4029,7 @@ function TreeView(props) {
               { className: 'lp-badge', title: blockers.map((dep) => dep.title).join('、') },
               t('blockedBy').replace('{n}', String(blockers.length)),
             )
-          : null,
+          : item.derived.blocked ? h('span', { className: 'lp-badge' }, t('blocked')) : null,
         item.dueAt ? h('span', { className: 'lp-meta', 'data-overdue': String(isOverdue(item)) }, toLocalInput(item.dueAt).replace('T', ' ')) : null,
         h(
           'span',
@@ -3529,40 +4057,31 @@ function TreeView(props) {
             {
               className: 'lp-mini',
               title: t('edit'),
-              onClick: (event) => {
-                event.stopPropagation();
-                setSelectedId(item.id);
-                setMenuFor(menuFor === item.id ? '' : item.id);
+              'aria-haspopup': 'menu',
+              'aria-expanded': rowMenu.open && menuFor === item.id,
+              'aria-controls': rowMenu.open && menuFor === item.id ? rowMenu.menuId : undefined,
+              onClick: (event) => openRowMenu(item, event),
+              onKeyDown: (event) => {
+                if (rowMenu.open && menuFor === item.id) rowMenu.onKeyDown(event);
+                else if (event.key === 'ArrowDown') {
+                  event.preventDefault();
+                  openRowMenu(item, event);
+                } else if (event.key === 'Enter' || event.key === ' ') event.stopPropagation();
               },
             },
             '⋯',
           ),
         ),
       ),
-      menuFor === item.id
+      rowMenu.open && rowMenu.pos && menuFor === item.id
         ? h(
             'div',
-            { className: 'lp-menu' },
-            h('button', { onClick: () => { setMenuFor(''); props.onEdit(item); } }, t('edit')),
-            item.kind === 'task'
-              ? h(
-                  'button',
-                  {
-                    onClick: (event) => {
-                      setMenuFor('');
-                      props.onToggle(item, !item.derived.done, event);
-                    },
-                  },
-                  item.derived.done ? t('markUndone') : t('markDone'),
-                )
-              : null,
-            h('button', { onClick: () => { setMenuFor(''); setRenaming({ id: item.id, value: item.title }); } }, t('rename')),
-            h('button', { onClick: () => { setMenuFor(''); props.onReorder(item, 'up'); } }, t('moveUp')),
-            h('button', { onClick: () => { setMenuFor(''); props.onReorder(item, 'down'); } }, t('moveDown')),
-            item.parentId
-              ? h('button', { onClick: () => { setMenuFor(''); props.onOutdent(item); } }, t('outdent'))
-              : null,
-            h('button', { onClick: (event) => { setMenuFor(''); remove(item, event); } }, t('delete')),
+            { className: 'lp-menu', id: rowMenu.menuId, role: 'menu', ref: rowMenu.menuRef,
+              style: rowMenu.pos, onKeyDown: rowMenu.onKeyDown },
+            actions.map((action, index) => h('button', {
+              ...rowMenu.getItemProps(index, false), className: 'lp-menu-item',
+              role: 'menuitem', 'aria-selected': undefined,
+            }, action.label)),
           )
         : null,
       kids.length > 0 && expanded ? renderLevel(item.id) : null,
@@ -3653,6 +4172,8 @@ function ItemEditor(props) {
   const item = props.item;
   const items = props.items;
   const isNew = !item.id;
+  const studyManaged = Boolean(item.derived?.studyManaged);
+  const studyTask = Boolean(item.derived?.studyTask);
 
   const [title, setTitle] = React.useState(item.title || '');
   const [kind, setKind] = React.useState(item.kind || 'task');
@@ -3715,28 +4236,23 @@ function ItemEditor(props) {
       return;
     }
     setBusy(true);
+    const existingDeps = item.dependsOn || [];
+    const depsChanged = existingDeps.length !== deps.size || existingDeps.some((id) => !deps.has(id));
     const payload = {
       title: title.trim(),
       kind,
       parentId: parentId || null,
-      dueAt: fromLocalInput(due),
-      startAt: fromLocalInput(start),
+      ...(!studyTask ? { dueAt: fromLocalInput(due), startAt: fromLocalInput(start), recurrence: freq ? { freq } : null } : {}),
       location: location.trim() || null,
       priority: kind === 'task' ? priority : null,
       note,
       tags,
       taskType: taskType || null,
-      recurrence: freq ? { freq } : null,
+      ...(isNew || depsChanged ? { dependsOn: kind === 'task' ? Array.from(deps) : [] } : {}),
     };
     const request = isNew
-      ? api('item.add', payload).then((created) =>
-          kind === 'task' && deps.size > 0
-            ? api('item.depends', { id: created.id, dependsOn: Array.from(deps) })
-            : created,
-        )
-      : api('item.update', { id: item.id, patch: payload }).then(() =>
-          api('item.depends', { id: item.id, dependsOn: kind === 'task' ? Array.from(deps) : [] }),
-        );
+      ? api('item.add', payload)
+      : api('item.update', { id: item.id, patch: payload });
     request
       .then(() => props.onSaved())
       .catch((err) => setError(err.message))
@@ -3781,6 +4297,7 @@ function ItemEditor(props) {
             className: 'lp-input',
             type: 'datetime-local',
             value: start,
+            disabled: studyTask,
             onChange: (event) => setStart(event.target.value),
           }),
         ),
@@ -3792,6 +4309,7 @@ function ItemEditor(props) {
             className: 'lp-input',
             type: 'datetime-local',
             value: due,
+            disabled: studyTask,
             onChange: (event) => setDue(event.target.value),
           }),
         ),
@@ -3819,7 +4337,7 @@ function ItemEditor(props) {
             )
           : null,
       ),
-      kind === 'task'
+      kind === 'task' && !studyTask
         ? h(
             'div',
             { className: 'lp-field' },
@@ -3905,7 +4423,7 @@ function ItemEditor(props) {
           ),
         ),
       ),
-      !isNew && kind === 'task'
+      !isNew && kind === 'task' && !studyManaged
         ? h(
             'label',
             { className: 'lp-field', style: { flexDirection: 'row', alignItems: 'center', gap: 8 } },
@@ -3920,7 +4438,7 @@ function ItemEditor(props) {
             }),
             t('doneLabel'),
           )
-        : null,
+        : studyManaged ? h('p', { className: 'lp-meta' }, t('studyStatusManaged')) : null,
       kind === 'task'
         ? h(
             'div',
@@ -3979,9 +4497,23 @@ function SettingsModal(props) {
     if (props.settings) setForm(props.settings);
   }, [props.settings]);
   const [appearance, setAppearance] = React.useState(() => loadAppearance());
-  const [page, setPage] = React.useState('tags');
+  const [page, setPage] = React.useState(props.initialPage || 'tags');
   const [error, setError] = React.useState('');
   const [busy, setBusy] = React.useState(false);
+  const [calendarInfo, setCalendarInfo] = React.useState(null);
+  const [refreshingRegion, setRefreshingRegion] = React.useState(false);
+  React.useEffect(() => {
+    if (page !== 'general') return undefined;
+    let active = true;
+    let timer;
+    const read = () => api('calendar.context').then((data) => {
+      if (!active) return;
+      setCalendarInfo(data);
+      if (data.updating) timer = setTimeout(read, 2000);
+    }).catch(() => {});
+    read();
+    return () => { active = false; clearTimeout(timer); };
+  }, [page, refreshingRegion]);
   const [permission, setPermission] = React.useState(
     typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
   );
@@ -4039,9 +4571,9 @@ function SettingsModal(props) {
 
   const textField = (key, label) =>
     h(
-      'div',
+      'label',
       { className: 'lp-field' },
-      h('label', null, label),
+      h('span', null, label),
       h('input', {
         className: 'lp-input',
         value: form[key] ?? '',
@@ -4051,9 +4583,9 @@ function SettingsModal(props) {
 
   const numberField = (key, label) =>
     h(
-      'div',
+      'label',
       { className: 'lp-field' },
-      h('label', null, label),
+      h('span', null, label),
       h('input', {
         className: 'lp-input',
         type: 'number',
@@ -4139,6 +4671,7 @@ function SettingsModal(props) {
     const weekend = parseWindowsText(form.weekendWindows);
     if (weekday === null || weekend === null) {
       setError(t('invalidWindows'));
+      setPage('notify');
       return;
     }
     setBusy(true);
@@ -4158,6 +4691,10 @@ function SettingsModal(props) {
       taskTypes: parseList(typesText),
       tags: parseList(tagsText),
       colorOverrides,
+      adviceRegion: (form.adviceRegion || '').trim(),
+      calendarAutoRefresh: form.calendarAutoRefresh !== false,
+      adviceRegionLocked: form.adviceRegionLocked === true,
+      dailyAdvice: form.dailyAdvice !== false,
     };
     api('settings.save', { patch })
       .then((data) => {
@@ -4519,90 +5056,80 @@ function SettingsModal(props) {
   };
 
 
-  const tagsPage = () => {
-    const tags = parseList(typesText);
-    return h(
-      'div',
-      { className: 'lp-settings-body' },
-      h('div', { className: 'lp-form-section' }, t('sectionTags')),
-      h(
-        'div',
-        { className: 'lp-toolbar' },
+  const group = (title, ...children) => h('section', { className: 'lp-settings-group' },
+    h('h3', { className: 'lp-form-section' }, t(title)), ...children);
+  const switchRow = (label, hint, value, onChange) => h('div', { className: 'lp-settings-switch' },
+    h('div', null, h('strong', null, t(label)), hint ? h('div', { className: 'lp-meta' }, t(hint)) : null),
+    h(Switch, { label: t(label), value, onChange }));
+
+  const classification = ({ title, hint, list, draft, onDraft, onAdd, placeholder, addLabel, selected, onSelect, empty, onRemove }) => {
+    const active = list.includes(selected) ? selected : list[0];
+    return group(title,
+      h('form', { className: 'lp-toolbar', onSubmit: (event) => { event.preventDefault(); onAdd(); } },
         h('input', {
-          className: 'lp-input',
-          value: tagDraft,
-          placeholder: t('tagNamePlaceholder'),
-          onChange: (event) => setTagDraft(event.target.value),
+          className: 'lp-input', 'aria-label': t(placeholder), placeholder: t(placeholder),
+          value: draft, onChange: (event) => onDraft(event.target.value),
         }),
-        h('button', { className: 'lp-btn', type: 'button', onClick: addTag }, t('addTag')),
-      ),
-      tags.length === 0
-        ? h('div', { className: 'lp-meta' }, t('noTags'))
-        : h(
-            'div',
-            { className: 'lp-field' },
-            h('label', null, t('existingTags')),
-            h(Dropdown, {
-              value: selectedTag || tags[0],
-              onChange: setSelectedTag,
-              options: tags.map((name) => ({ value: name, label: name })),
-            }),
-            colorSwatches(selectedTag || tags[0]),
-            h(
-              'button',
-              { className: 'lp-btn-ghost', type: 'button', onClick: () => removeType(selectedTag || tags[0]) },
-              t('delete'),
-            ),
-          ),
-      h('div', { className: 'lp-meta' }, t('taskTypeAutoHint')),
-      h('div', { className: 'lp-form-section' }, t('sectionTagLibrary')),
-      h(
-        'div',
-        { className: 'lp-toolbar' },
-        h('input', {
-          className: 'lp-input',
-          value: tagLibDraft,
-          placeholder: t('tagLibName'),
-          onChange: (event) => setTagLibDraft(event.target.value),
-        }),
-        h('button', { className: 'lp-btn', type: 'button', onClick: addTagLib }, t('tagLibAdd')),
-      ),
-      (() => {
-        const tagList = parseList(tagsText);
-        if (tagList.length === 0) return h('div', { className: 'lp-meta' }, t('tagLibEmpty'));
-        const active = tagList.includes(selectedTagLib) ? selectedTagLib : tagList[0];
-        return h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('tagLibExisting')),
-          h(Dropdown, {
-            value: active,
-            onChange: setSelectedTagLib,
-            options: tagList.map((name) => ({ value: name, label: name })),
-          }),
-          colorSwatches(active),
-          h(
-            'button',
-            { className: 'lp-btn-ghost', type: 'button', onClick: () => removeTagLib(active) },
-            t('delete'),
-          ),
-        );
-      })(),
+        h('button', { className: 'lp-btn', type: 'submit', disabled: !draft.trim() }, t(addLabel))),
+      active ? h('div', { className: 'lp-settings-classification' },
+        h(Dropdown, { value: active, onChange: onSelect, options: list.map((name) => ({ value: name, label: name })) }),
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => onRemove(active) }, t('delete')),
+        colorSwatches(active))
+      : h('div', { className: 'lp-meta' }, t(empty)),
+      hint ? h('div', { className: 'lp-meta' }, t(hint)) : null,
     );
+  };
+
+  const tagsPage = () => h('div', { className: 'lp-settings-sections' },
+    classification({
+      title: 'sectionTags', hint: 'taskTypeAutoHint', list: parseList(typesText), draft: tagDraft, onDraft: setTagDraft,
+      onAdd: addTag, placeholder: 'tagNamePlaceholder', addLabel: 'addTag', selected: selectedTag, onSelect: setSelectedTag,
+      empty: 'noTags', onRemove: removeType,
+    }),
+    classification({
+      title: 'sectionTagLibrary', list: parseList(tagsText), draft: tagLibDraft, onDraft: setTagLibDraft,
+      onAdd: addTagLib, placeholder: 'tagLibName', addLabel: 'tagLibAdd', selected: selectedTagLib, onSelect: setSelectedTagLib,
+      empty: 'tagLibEmpty', onRemove: removeTagLib,
+    }));
+
+  const regionDraftChanged = (form.adviceRegion || '').trim() !== (props.settings?.adviceRegion || '') ||
+    (form.calendarAutoRefresh !== false) !== (props.settings?.calendarAutoRefresh !== false) ||
+    Boolean(form.adviceRegionLocked) !== Boolean(props.settings?.adviceRegionLocked);
+  const refreshNow = () => {
+    setRefreshingRegion(true);
+    setError('');
+    api('calendar.refresh', {}).then((data) => {
+      setCalendarInfo(data);
+      window.dispatchEvent(new Event('lp-calendar-context-change'));
+    }).catch((err) => setError(err.message)).finally(() => setRefreshingRegion(false));
   };
 
   const generalPage = () =>
     h(
       'div',
-      { className: 'lp-settings-body' },
-      h('div', { className: 'lp-form-section' }, t('sectionData')),
-      h(
-        'div',
-        { className: 'lp-field' },
-        h('label', null, t('importData')),
+      { className: 'lp-settings-sections' },
+      group('settingsLocation',
+        h('div', { className: 'lp-setting-grid' },
+          h('label', { className: 'lp-field' }, h('span', null, t('tipRegion')),
+            h('input', { className: 'lp-input', value: form.adviceRegion || '', maxLength: 80,
+              placeholder: t('tipRegionHint'), onChange: (event) => set('adviceRegion', event.target.value) })),
+          h('label', { className: 'lp-field' }, h('span', null, t('calendarRefreshMode')),
+            h('select', { className: 'lp-select', value: form.calendarAutoRefresh !== false ? 'auto' : 'manual',
+              onChange: (event) => set('calendarAutoRefresh', event.target.value === 'auto') },
+              h('option', { value: 'auto' }, t('calendarRefreshAuto')),
+              h('option', { value: 'manual' }, t('calendarRefreshManual'))))),
+        calendarInfo?.region ? h('div', { className: 'lp-meta' }, t('settingsCurrentRegion') + ' · ' + calendarInfo.region) : null,
+        switchRow('calendarLockRegion', 'calendarLockHint', form.adviceRegionLocked === true, (next) => set('adviceRegionLocked', next)),
+        h('div', { className: 'lp-settings-switch' },
+          h('div', { className: 'lp-meta', role: 'status' },
+            t(regionDraftChanged ? 'calendarRefreshOnSave' : calendarInfo?.updating ? 'calendarRefreshing' : 'calendarRefreshHint')),
+          h('button', { type: 'button', className: 'lp-btn-ghost', onClick: refreshNow, disabled: refreshingRegion || regionDraftChanged }, t('calendarRefreshNow')))),
+      group('studyTipTitle',
+        switchRow('tipDeepSeek', 'settingsStudyAdviceHint', form.dailyAdvice !== false, (next) => set('dailyAdvice', next))),
+      group('sectionData',
         h(
           'div',
-          { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },
+          { className: 'lp-toolbar' },
           h('button', { className: 'lp-btn-ghost', type: 'button', onClick: doExport }, t('exportData')),
           h(
             'button',
@@ -4610,37 +5137,19 @@ function SettingsModal(props) {
             t('importData'),
           ),
           h('input', { ref: fileRef, type: 'file', accept: 'application/json', style: { display: 'none' }, onChange: doImport }),
-        ),
+        ), h('div', { className: 'lp-meta' }, t('generalHint')),
       ),
-      h('div', { className: 'lp-meta' }, t('generalHint')),
     );
 
   const notifyPage = () =>
     h(
       'div',
-      { className: 'lp-settings-body' },
-      h('div', { className: 'lp-form-section' }, t('sectionNotify')),
-      h(
-        'div',
-        { className: 'lp-field' },
-        // The slider sits right after its label instead of being pushed to the
-        // end of the row.
-        h(
-          'div',
-          { className: 'lp-switch-inline' },
-          h('label', null, t('fSystemNotify')),
-          h(Switch, {
-            value: form.systemNotify !== false,
-            onChange: (next) => {
-              set('systemNotify', next);
-              try {
-                localStorage.setItem('lpSystemNotify', next ? 'on' : 'off');
-              } catch {}
-            },
-          }),
-        ),
-        h('div', { className: 'lp-meta' }, t('fSystemNotifyHint')),
-        // Test and permission live with the switch; no second enable button.
+      { className: 'lp-settings-sections' },
+      group('sectionNotify',
+        switchRow('fSystemNotify', 'fSystemNotifyHint', form.systemNotify !== false, (next) => {
+          set('systemNotify', next);
+          try { localStorage.setItem('lpSystemNotify', next ? 'on' : 'off'); } catch {}
+        }),
         h(
           'div',
           { className: 'lp-toolbar', style: { marginTop: 6 } },
@@ -4648,45 +5157,32 @@ function SettingsModal(props) {
           permission === 'granted'
             ? null
             : h('button', { className: 'lp-btn-ghost', type: 'button', onClick: askPermission }, t('enableNotify')),
-          h('span', { className: 'lp-meta' }, t('notifyState').replace('{s}', permission)),
+          h('span', { className: 'lp-settings-status' }, t('notifyState').replace('{s}', t('notifyPermission_' + permission))),
         ),
-        feedback ? h('div', { className: 'lp-meta' }, feedback) : null,
       ),
-      textField('weekdayWindows', t('fWeekdayWindows')),
-      textField('weekendWindows', t('fWeekendWindows')),
-      h(
-        'div',
-        { className: 'lp-row2' },
-        numberField('notifyGapMinutes', t('fGapMinutes')),
-        numberField('nonUrgentQuotaPerWindow', t('fQuota')),
-      ),
-      h(
-        'div',
-        { className: 'lp-row2' },
-        numberField('maxRemindersPerWindow', t('fMaxPerWindow')),
-        numberField('maxDeferHours', t('fMaxDefer')),
-      ),
-      h(
-        'div',
-        { className: 'lp-row2' },
-        numberField('leadTaskDays', t('fLeadTaskDays')),
-        numberField('leadProjectDays', t('fLeadProjectDays')),
-      ),
-      numberField('longTermReminderHours', t('fLongTermHours')),
-      h('div', { className: 'lp-form-section' }, t('sectionTask')),
-      h(
-        'div',
-        { className: 'lp-row2' },
+      group('settingsNotifyWindows',
+        h('div', { className: 'lp-setting-grid' },
+          textField('weekdayWindows', t('fWeekdayWindows')),
+          textField('weekendWindows', t('fWeekendWindows')),
+          numberField('notifyGapMinutes', t('fGapMinutes')),
+          numberField('nonUrgentQuotaPerWindow', t('fQuota')),
+          numberField('maxRemindersPerWindow', t('fMaxPerWindow')),
+          numberField('maxDeferHours', t('fMaxDefer')))),
+      group('settingsNotifyLead',
+        h('div', { className: 'lp-setting-grid' },
+          numberField('leadTaskDays', t('fLeadTaskDays')),
+          numberField('leadProjectDays', t('fLeadProjectDays')),
+          numberField('longTermReminderHours', t('fLongTermHours')))),
+      group('sectionTask', h('div', { className: 'lp-setting-grid' },
         numberField('archiveAfterDays', t('fArchiveDays')),
-        numberField('deleteAfterDays', t('fDeleteDays')),
-      ),
+        numberField('deleteAfterDays', t('fDeleteDays')))),
     );
 
   const appearancePage = () =>
     h(
       'div',
-      { className: 'lp-settings-body' },
-      h('div', { className: 'lp-form-section' }, t('sectionSkin')),
+      { className: 'lp-settings-sections' },
+      group('sectionSkin',
       h(
         'div',
         { className: 'lp-field' },
@@ -4754,9 +5250,9 @@ function SettingsModal(props) {
             },
           }),
         ),
-      ),
+      )),
 
-      h('div', { className: 'lp-form-section' }, t('sectionFont')),
+      group('sectionFont',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -4769,15 +5265,15 @@ function SettingsModal(props) {
         numberInput('meta', t('fFontMeta'), appearance.font.meta, setFont),
         numberInput('base', t('fFontBase'), appearance.font.base, setFont),
       ),
-      h('div', { className: 'lp-meta' }, t('fFontHint')),
-      h('div', { className: 'lp-form-section' }, t('sectionSize')),
+      h('div', { className: 'lp-meta' }, t('fFontHint'))),
+      group('sectionSize',
       h(
         'div',
         { className: 'lp-setting-grid' },
         numberInput('calendarHeight', t('fCalHeight'), appearance.size.calendarHeight, setSize),
       ),
-      h('div', { className: 'lp-meta' }, t('fCalHeightHint')),
-      h('div', { className: 'lp-form-section' }, t('sectionMistake')),
+      h('div', { className: 'lp-meta' }, t('fCalHeightHint'))),
+      group('sectionMistake',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -4791,8 +5287,8 @@ function SettingsModal(props) {
         numberInput('mistakeAnswer', t('fMistakeAnswerFs'), appearance.font.mistakeAnswer, setFont),
         numberInput('mistakeReason', t('fMistakeReasonFs'), appearance.font.mistakeReason, setFont),
       ),
-      h('div', { className: 'lp-meta' }, t('fMistakeHint')),
-      h('div', { className: 'lp-form-section' }, t('sectionAccent')),
+      h('div', { className: 'lp-meta' }, t('fMistakeHint'))),
+      group('sectionAccent',
       h(
         'div',
         { className: 'lp-row2' },
@@ -4818,8 +5314,8 @@ function SettingsModal(props) {
             onChange: (event) => setAccent('study', event.target.value),
           }),
         ),
-      ),
-      h('div', { className: 'lp-form-section' }, t('sectionBackground')),
+      )),
+      group('sectionBackground',
       h(
         'div',
         { className: 'lp-field' },
@@ -4845,7 +5341,7 @@ function SettingsModal(props) {
         h('div', { className: 'lp-meta' }, t('fSurfaceHint')),
       ),
       backgroundFields('planning'),
-      studyMode ? backgroundFields('study') : null,
+      studyMode ? backgroundFields('study') : null),
     );
 
   const tabs = [
@@ -4858,36 +5354,31 @@ function SettingsModal(props) {
   return h(
     Modal,
     {
-      title: `${t('settings')} · v0.9.37`,
+      title: `${t('settings')} · v0.9.40`,
       className: 'lp-settings',
       onClose: props.onClose,
     },
-    error ? h('div', { className: 'lp-err' }, error) : null,
-      feedback ? h('div', { className: 'lp-meta lp-feedback' }, feedback) : null,
-      h(
-        'div',
-        { className: 'lp-tabs' },
+    h('div', { className: 'lp-settings-layout' },
+      h('nav', { className: 'lp-settings-nav', 'aria-label': t('settings') },
         tabs.map((tab) =>
           h(
             'button',
             {
               key: tab.key,
-              className: 'lp-tab',
+              className: 'lp-settings-nav-button',
               type: 'button',
-              'data-active': String(page === tab.key),
-              onClick: () => setPage(tab.key),
+              'aria-current': page === tab.key ? 'page' : undefined,
+              onClick: () => { setPage(tab.key); setFeedback(''); },
             },
             tab.label,
           ),
         ),
       ),
-      page === 'tags'
-        ? tagsPage()
-        : page === 'general'
-          ? generalPage()
-          : page === 'notify'
-            ? notifyPage()
-            : appearancePage(),
+      h('div', { className: 'lp-settings-body', key: page },
+        error ? h('div', { className: 'lp-err', role: 'alert' }, error) : null,
+        feedback ? h('div', { className: 'lp-meta lp-feedback', role: 'status' }, feedback) : null,
+        page === 'tags' ? tagsPage() : page === 'general' ? generalPage() : page === 'notify' ? notifyPage() : appearancePage()),
+    ),
       h(
         'div',
         { className: 'lp-modal-actions' },
@@ -4966,20 +5457,17 @@ function ShelfPicker(props) {
         ? h(
             'div',
             null,
-            h('div', { className: 'lp-pop-backdrop', onClick: menu.hide }),
             h(
               'div',
               {
                 className: 'lp-dd-menu',
                 role: 'listbox',
+                ref: menu.menuRef,
                 'aria-multiselectable': 'true',
                 id: menu.menuId,
                 tabIndex: -1,
                 style: {
-                  left: menu.pos.left,
-                  top: menu.pos.top,
-                  width: menu.pos.width,
-                  maxHeight: 260,
+                  ...menu.pos,
                   overflow: 'auto',
                   display: 'block',
                 },
@@ -5080,9 +5568,6 @@ function Panel(props) {
       clearTimeout(second);
     };
   }, []);
-  // One reminder becomes a titled notification plus a detail line: the task,
-  // its deadline (or the fact that it has none), and its priority.
-  const describeNotice = (note) => describeReminder(note, t);
   const [tab, setTab] = React.useState('calendar');
   const pageRef = React.useRef(null);
   // Native controls (checkbox, datetime picker, select popup) follow the
@@ -5112,33 +5597,11 @@ function Panel(props) {
   const [busy, setBusy] = React.useState(false);
   const [editor, setEditor] = React.useState(null);
   const [settings, setSettings] = React.useState(cached ? cached.settings : null);
-  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(null);
   const [notices, setNotices] = React.useState([]);
-  // System notifications are paced: at most one every few seconds so a batch
-  // never lands all at once.
-  const notifQueue = React.useRef([]);
-  const notifTimer = React.useRef(null);
-  const systemNotifyEnabled = () => {
-    try {
-      return localStorage.getItem('lpSystemNotify') !== 'off';
-    } catch {
-      return true;
-    }
-  };
-  const pumpNotifications = () => {
-    notifTimer.current = null;
-    const next = notifQueue.current.shift();
-    if (!next) return;
-    if (!systemNotifyEnabled()) return;
-    try {
-      new Notification(next.title, { body: next.body });
-    } catch {
-      // A blocked notification must not break the queue.
-    }
-    notifTimer.current = setTimeout(pumpNotifications, 7000);
-  };
   const [focusItem, setFocusItem] = React.useState('');
   const [confirmCard, setConfirmCard] = React.useState(null);
+  const snapshotGeneration = React.useRef(0);
 
   // An in-app floating confirmation anchored to the control that asked, so
   // the desktop shell never needs to render a native dialog.
@@ -5159,20 +5622,38 @@ function Panel(props) {
   });
 
   const reloadData = React.useCallback(
-    () =>
-      api('snapshot').then((data) => {
+    (background = false) => {
+      const generation = ++snapshotGeneration.current;
+      return api('snapshot', undefined, { fresh: !background }).then((data) => {
+        if (generation !== snapshotGeneration.current) return data;
         setSnapshot(data);
-        setPlanText((current) => (current === '' ? data.plan.bodyMarkdown || '' : current));
-        setError('');
+        if (!background) {
+          setPlanText((current) => (current === '' ? data.plan.bodyMarkdown || '' : current));
+          setError('');
+        }
         writePlannerCache({ snapshot: data });
         return data;
-      }),
+      });
+    },
     [],
   );
 
   const reload = React.useCallback(() => {
     reloadData().catch((err) => setError(err.message));
   }, [reloadData]);
+
+  React.useEffect(() => {
+    if (typeof document === 'undefined' || !['board', 'tree', 'calendar'].includes(tab)) return undefined;
+    const refresh = () => {
+      if (document.visibilityState !== 'hidden') reloadData(true).catch(() => {});
+    };
+    const timer = setInterval(refresh, 15000);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [tab, reloadData]);
 
   React.useEffect(() => {
     // The panel can mount before the Web carrier accepts requests, so the first
@@ -5214,42 +5695,19 @@ function Panel(props) {
     };
   }, []);
 
-  React.useEffect(
-    () => () => {
-      if (notifTimer.current) clearTimeout(notifTimer.current);
-    },
-    [],
-  );
 
-  // Reminders arrive from the module-level poller as whole batches; the mounted
-  // panel is the only place that shows them, paces the system notifications and
-  // acknowledges the batch so the same reminder is never delivered twice.
   React.useEffect(() => {
-    let alive = true;
     const onBatch = (list) => {
-      if (!alive || !Array.isArray(list) || list.length === 0) return;
       setNotices((current) => {
         const seen = new Set(current.map((note) => note.id));
         const fresh = list.filter((note) => !seen.has(note.id));
-        return fresh.length === 0 ? current : [...fresh, ...current].slice(0, 8);
+        return fresh.length ? [...fresh, ...current].slice(0, 8) : current;
       });
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && systemNotifyEnabled()) {
-        for (const note of list) {
-          if (note.hostNotified) continue;
-          if (notifQueue.current.some((entry) => entry.id === note.id)) continue;
-          notifQueue.current.push({ id: note.id, ...describeNotice(note) });
-        }
-        if (notifQueue.current.length > 0 && !notifTimer.current) pumpNotifications();
-      }
       api('notifications.ack', { ids: list.map((note) => note.id) }).catch(() => {});
     };
     background.listeners.add(onBatch);
-    // The module-level poller may have run before the panel mounted.
-    pullReminders();
-    return () => {
-      alive = false;
-      background.listeners.delete(onBatch);
-    };
+    pullReminders(t);
+    return () => background.listeners.delete(onBatch);
   }, []);
 
   const run = React.useCallback(
@@ -5271,6 +5729,7 @@ function Panel(props) {
   const colorOverrides = (settings && settings.colorOverrides) || {};
 
   const toggleComplete = (item, done, event) => {
+    if (item.derived?.studyManaged) return;
     if (!done) {
       run(api('item.complete', { id: item.id, done: false }));
       return;
@@ -5305,6 +5764,21 @@ function Panel(props) {
       })
       .catch((err) => setError(err.message))
       .finally(() => setBusy(false));
+  };
+
+  const moveBoardItem = (move) => {
+    api('item.board', move)
+      .then((result) => {
+        if (!result.blocked) return reloadData();
+        const tasks = [...result.blockers.children, ...result.blockers.depends];
+        askConfirm(null, {
+          title: t('forceCompleteTitle'),
+          lines: [...tasks.map((item) => '· ' + item.title), t('forceComplete')],
+          confirmLabel: t('markDone'),
+          onConfirm: () => run(api('item.board', { ...move, force: true })),
+        });
+      })
+      .catch((error) => setError(error.message));
   };
 
   const restoreItem = (item) => {
@@ -5380,7 +5854,7 @@ function Panel(props) {
         h('button', { className: 'lp-tab', 'data-active': String(tab === 'plan'), onClick: () => setTab('plan') }, t('tabPlan')),
         h('button', { className: 'lp-tab', 'data-active': String(tab === 'archive'), onClick: () => setTab('archive') }, t('tabArchive')),
       ),
-      h('button', { className: 'lp-btn-ghost', onClick: () => setSettingsOpen(true) }, t('settings')),
+      h('button', { className: 'lp-btn-ghost', onClick: () => setSettingsOpen('tags') }, t('settings')),
       h('button', { className: 'lp-btn-ghost', onClick: () => setEditor({ kind: 'task', title: '' }) }, t('newItem')),
     ),
     error ? h('div', { className: 'lp-err', style: { padding: '0 16px' } }, error) : null,
@@ -5399,6 +5873,7 @@ function Panel(props) {
           onQuickAdd: quickAdd,
           onToggle: toggleComplete,
           onEdit: (item) => setEditor(item),
+          onRegionSettings: () => setSettingsOpen('general'),
         })
       : null,
     tab === 'tree'
@@ -5453,7 +5928,7 @@ function Panel(props) {
       ? h(
           'div',
           { className: 'lp-body', style: { padding: 0 } },
-          h(BoardView, { t, items, colorOverrides, onEdit: (item) => setEditor(item) }),
+          h(BoardView, { t, items, colorOverrides, onEdit: (item) => setEditor(item), onMove: moveBoardItem }),
         )
       : null,
     tab === 'plan'
@@ -5508,11 +5983,11 @@ function Panel(props) {
               },
               note.undoId
                 ? h('div', { className: 'lp-notice-title' }, `${t('deletedHint')} ${note.body}`)
-                : h('div', { className: 'lp-notice-title' }, describeNotice(note).title),
+                : h('div', { className: 'lp-notice-title' }, describeReminder(note, t).title),
               h(
                 'div',
                 { className: 'lp-notice-body' },
-                note.undoId ? t('undoHint') : describeNotice(note).body,
+                note.undoId ? t('undoHint') : describeReminder(note, t).body,
               ),
             ),
           ),
@@ -5521,6 +5996,7 @@ function Panel(props) {
     settingsOpen
       ? h(SettingsModal, {
           t,
+          initialPage: settingsOpen,
           settings:
             settings || {
               weekdayWindows: '10:00-13:00,19:00-02:00',
@@ -5536,6 +6012,8 @@ function Panel(props) {
           onClose: () => setSettingsOpen(false),
           onSaved: (data) => {
             setSettings(data);
+            writePlannerCache({ settings: data });
+            window.dispatchEvent(new Event('lp-calendar-context-change'));
             setSettingsOpen(false);
           },
           onImported: () => {
@@ -5546,34 +6024,28 @@ function Panel(props) {
       : null,
     confirmCard
       ? h(
-          'div',
-          null,
-          h('div', { className: 'lp-pop-backdrop', onClick: () => setConfirmCard(null) }),
+          Modal,
+          { title: confirmCard.title, className: 'lp-confirm-modal', confirm: true, onClose: () => setConfirmCard(null) },
           h(
             'div',
-            { className: 'lp-pop', role: 'dialog', 'aria-modal': 'true', 'data-lp-confirm': 'centered' },
-            h('div', { className: 'lp-pop-title' }, confirmCard.title),
+            { className: 'lp-pop-list' },
+            confirmCard.lines.map((line, index) => h('div', { key: index }, line)),
+          ),
+          h(
+            'div',
+            { className: 'lp-pop-actions' },
+            h('button', { className: 'lp-btn-ghost', onClick: () => setConfirmCard(null) }, t('cancel')),
             h(
-              'div',
-              { className: 'lp-pop-list' },
-              confirmCard.lines.map((line, index) => h('div', { key: index }, line)),
-            ),
-            h(
-              'div',
-              { className: 'lp-pop-actions' },
-              h('button', { className: 'lp-btn-ghost', onClick: () => setConfirmCard(null) }, t('cancel')),
-              h(
-                'button',
-                {
-                  className: 'lp-btn',
-                  onClick: () => {
-                    const action = confirmCard.onConfirm;
-                    setConfirmCard(null);
-                    if (action) action();
-                  },
+              'button',
+              {
+                className: 'lp-btn',
+                onClick: () => {
+                  const action = confirmCard.onConfirm;
+                  setConfirmCard(null);
+                  if (action) action();
                 },
-                confirmCard.confirmLabel || t('save'),
-              ),
+              },
+              confirmCard.confirmLabel || t('save'),
             ),
           ),
         )
@@ -5586,19 +6058,59 @@ function SessionSwitch(props) {
   const t = props.t;
   const sessionId = props.sessionId;
   const [enabled, setEnabled] = React.useState(false);
+  const [trackedSession, setTrackedSession] = React.useState('');
 
   React.useEffect(() => {
     if (!sessionId) return undefined;
     let alive = true;
     api('session?sessionId=' + encodeURIComponent(sessionId))
       .then((data) => {
-        if (alive) setEnabled(Boolean(data.enabled));
+        if (alive) {
+          setEnabled(Boolean(data.enabled));
+          setTrackedSession(data.studyTracking ? sessionId : '');
+        }
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
   }, [sessionId]);
+
+  React.useEffect(() => {
+    if (!sessionId || trackedSession !== sessionId) return undefined;
+    const tracker = globalThis.crypto.randomUUID();
+    let lastActivity = Date.now();
+    let running = false;
+    const post = (active) => {
+      if (!active && !running) return;
+      running = active;
+      fetch(new URL('life-planner/api/habit.beat', document.baseURI), {
+        method: 'POST', keepalive: true,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ sessionId, tracker, active }),
+      }).catch(() => {});
+    };
+    const tick = () => post(document.visibilityState === 'visible' && document.hasFocus() && Date.now() - lastActivity < 300000);
+    const activity = () => { lastActivity = Date.now(); if (!running) tick(); };
+    const stop = () => post(false);
+    const events = ['pointerdown', 'keydown', 'wheel'];
+    for (const event of events) document.addEventListener(event, activity, { passive: true });
+    document.addEventListener('visibilitychange', tick);
+    window.addEventListener('focus', activity);
+    window.addEventListener('blur', stop);
+    window.addEventListener('pagehide', stop);
+    const timer = setInterval(tick, 20000);
+    tick();
+    return () => {
+      clearInterval(timer);
+      for (const event of events) document.removeEventListener(event, activity);
+      document.removeEventListener('visibilitychange', tick);
+      window.removeEventListener('focus', activity);
+      window.removeEventListener('blur', stop);
+      window.removeEventListener('pagehide', stop);
+      stop();
+    };
+  }, [sessionId, trackedSession]);
 
   const flip = () => {
     const next = !enabled;
@@ -5643,6 +6155,9 @@ function StudyHabitTab(props) {
   const plannedTotal = week
     ? (week.days || []).reduce((sum, day) => sum + (Number(day.planned) || 0), 0)
     : 0;
+  const popularHours = (data.hours || []).filter((hour) => hour.seconds > 0)
+    .sort((a, b) => b.seconds - a.seconds).slice(0, 3);
+  const duration = (seconds) => seconds >= 60 ? Math.round(seconds / 60) + t('studyMinuteUnit') : '< 1' + t('studyMinuteUnit');
 
   return h(
     'div',
@@ -5655,6 +6170,19 @@ function StudyHabitTab(props) {
       h('span', { className: 'lp-meta' }, `${t('habitRate')} ${data.completionRate}%`),
     ),
     error ? h('div', { className: 'lp-err' }, error) : null,
+    h('div', { className: 'lp-card lp-study-section' },
+      h('div', { className: 'lp-card-title' }, t('habitCompletion')),
+      h('div', { className: 'lp-meta' }, t('habitStudyDone') + ' ' + (data.studyDoneDays || 0) + '/' + (data.studyGoalDays || 0)),
+      h('div', { className: 'lp-meta' }, t('habitTaskDone') + ' ' + (data.planningCompleted || 0) +
+        ' · ' + t('habitOnTime') + ' ' + (data.planningOnTime || 0) + '/' + (data.planningWithDeadline || 0)),
+      popularHours.length ? h('div', { className: 'lp-meta' }, t('habitHourly') + ' · ' + popularHours.map((slot) =>
+        String(slot.hour).padStart(2, '0') + ':00 (' + duration(slot.seconds) + ')').join(' · ')) : null),
+    h('div', { className: 'lp-section' }, t('habitSessions')),
+    (data.sessions || []).length ? data.sessions.map((session, index) =>
+      h('div', { key: session.id, className: 'lp-tree-row' },
+        h('span', { className: 'lp-title' }, session.title || t('studyNav') + ' ' + (index + 1)),
+        h('span', { className: 'lp-meta' }, duration(session.seconds)))) :
+      h('div', { className: 'lp-empty' }, t('habitNoTime')),
     h(
       'div',
       { className: 'lp-section' },
@@ -5682,7 +6210,7 @@ function StudyHabitTab(props) {
     h('div', { className: 'lp-meta' }, t('timePlanAgentHint')),
     h('div', { className: 'lp-section' }, `${t('habitRecent')} · ${data.days.length}`),
     data.days.length === 0
-      ? h('div', { className: 'lp-empty' }, t('habitEmpty'))
+      ? null
       : data.days.map((day) =>
           h(
             'div',
@@ -5793,6 +6321,21 @@ function MistakeTab(props) {
       })
       .catch((err) => props.onError(err.message));
   };
+  const sourcesFor = (item) => {
+    const citations = Array.isArray(item.sources) ? item.sources.map((source) =>
+      [...new Set([source.title, source.url || source.path, source.file,
+        source.pdfPage ? t('mistakePdfPage').replace('{n}', source.pdfPage) : '',
+        source.bookPage ? t('mistakeBookPage').replace('{n}', source.bookPage) : '',
+        source.section].filter(Boolean))].join(' · ')).filter(Boolean) : [];
+    if (citations.length === 0 && item.source) citations.push(item.source);
+    return citations;
+  };
+  const sourceList = (item, className, label) => {
+    const citations = sourcesFor(item);
+    if (citations.length === 0) return null;
+    const list = h('ul', { className }, citations.map((citation, index) => h('li', { key: index }, citation)));
+    return label ? h('div', { className: 'lp-pre-block' }, h('div', { className: 'lp-meta' }, label), list) : list;
+  };
   return h(
     'div',
     { className: 'lp-body' },
@@ -5877,6 +6420,8 @@ function MistakeTab(props) {
                   item.reason
                     ? h('div', { className: 'lp-card-meta lp-mistake-reason' }, `${t('mistakeReason')}: ${item.reason}`)
                     : null,
+                  item.memoryTip ? h('div', { className: 'lp-card-meta lp-mistake-reason' }, item.memoryTip) : null,
+                  sourceList(item, 'lp-card-meta'),
                   h('div', { className: 'lp-card-meta' }, item.createdAt ? dayKey(new Date(item.createdAt)) : ''),
                   h(TagChips, { tags: item.tags }),
                   h(
@@ -5929,8 +6474,9 @@ function MistakeTab(props) {
               'div',
               { className: 'lp-field' },
               h('label', null, t('mistakeQuestion')),
-              h('input', {
+              h('textarea', {
                 className: 'lp-input',
+                rows: 4,
                 value: form.question,
                 onChange: (event) => setForm({ ...form, question: event.target.value }),
               }),
@@ -5939,8 +6485,9 @@ function MistakeTab(props) {
               'div',
               { className: 'lp-field' },
               h('label', null, t('mistakeAnswer')),
-              h('input', {
+              h('textarea', {
                 className: 'lp-input',
+                rows: 3,
                 value: form.answer,
                 onChange: (event) => setForm({ ...form, answer: event.target.value }),
               }),
@@ -5949,8 +6496,9 @@ function MistakeTab(props) {
               'div',
               { className: 'lp-field' },
               h('label', null, t('mistakeReason')),
-              h('input', {
+              h('textarea', {
                 className: 'lp-input',
+                rows: 3,
                 value: form.reason,
                 onChange: (event) => setForm({ ...form, reason: event.target.value }),
               }),
@@ -5993,6 +6541,10 @@ function MistakeTab(props) {
                   h('div', { className: 'lp-pre-body' }, preview.reason),
                 )
               : null,
+            preview.memoryTip ? h('div', { className: 'lp-pre-block' },
+              h('div', { className: 'lp-meta' }, t('mistakeMemoryTip')),
+              h('div', { className: 'lp-pre-body' }, preview.memoryTip)) : null,
+            sourceList(preview, 'lp-pre-body lp-mistake-sources', t('mistakeMaterialSource')),
             h('div', { className: 'lp-meta' }, preview.createdAt ? dayKey(new Date(preview.createdAt)) : ''),
             h(
               'div',
@@ -6035,17 +6587,15 @@ function StudyOverview(props) {
   const data = props.data || null;
   const [tip, setTip] = React.useState(null);
   const [error, setError] = React.useState('');
+  const loadTip = () => api('tip').then(setTip).catch((err) => setError(err.message));
   const reload = () => {
     if (typeof props.onReload === 'function') props.onReload();
-    return api('tip')
-      .then((next) => {
-        setTip(next);
-        setError('');
-      })
-      .catch((err) => setError(err.message));
+    return loadTip();
   };
   React.useEffect(() => {
-    reload();
+    loadTip();
+    const timer = setInterval(loadTip, 30000);
+    return () => clearInterval(timer);
   }, []);
   const finishPlan = (entry) =>
     api('plan.done', { id: entry.id })
@@ -6068,18 +6618,17 @@ function StudyOverview(props) {
     'div',
     { className: 'lp-body' },
     error ? h('div', { className: 'lp-err' }, error) : null,
-    tip && tip.text
-      ? h(
+    h(
           'div',
           { className: 'lp-card', style: { marginBottom: 8 } },
           h('div', { className: 'lp-card-title' }, t('studyTipTitle')),
+          tip ? h('div', { className: 'lp-meta' }, t(tip.source === 'deepseek' ? 'tipDeepSeek' : 'tipLocal')) : null,
           h(
             'div',
             { className: 'lp-card-meta', style: { whiteSpace: 'pre-wrap', lineHeight: 1.6 } },
-            tip.text,
+            tip?.text || t('tipPending'),
           ),
-        )
-      : null,
+    ),
     h(
       'div',
       { className: 'lp-toolbar' },
@@ -6173,10 +6722,15 @@ const normalizeTemplate = (value) => TEMPLATE_ALIASES[value] || value;
 function StudyPlanTab(props) {
   const t = props.t;
   const data = props.data || { subjects: [], topics: [], plan: [] };
-  const [busy, setBusy] = React.useState('');
-  const [result, setResult] = React.useState(null);
   const [draft, setDraft] = React.useState('');
-  const dragPlan = React.useRef('');
+  const [collapsedSubjects, setCollapsedSubjects] = React.useState(new Set());
+  const [showSubjectAdd, setShowSubjectAdd] = React.useState(false);
+  const drag = React.useRef(null);
+  const [dropTarget, setDropTarget] = React.useState('');
+  const [scheduling, setScheduling] = React.useState(null);
+  const [startAt, setStartAt] = React.useState('');
+  const [savingSchedule, setSavingSchedule] = React.useState(false);
+  const [scheduleError, setScheduleError] = React.useState('');
   const [tasks, setTasks] = React.useState([]);
   const [weekMinutes, setWeekMinutes] = React.useState(null);
   const [newTitle, setNewTitle] = React.useState(() => `学习任务 ${dayKey(new Date()).slice(5)}`);
@@ -6195,10 +6749,10 @@ function StudyPlanTab(props) {
   const [subjectForm, setSubjectForm] = React.useState({ title: '', examDate: '', note: '' });
   const [taskForm, setTaskForm] = React.useState({ title: '', workspacePath: '', template: 'list' });
   const [taskShelf, setTaskShelf] = React.useState([]);
-  const reloadTasks = () =>
-    api('study-tasks')
+  const reloadTasks = (fresh = false) =>
+    api('study-tasks', undefined, { fresh })
       .then((list) => setTasks(Array.isArray(list) ? list : []))
-      .catch(() => {});
+      .catch((error) => props.onError(error.message));
   React.useEffect(() => {
     reloadTasks();
     const timer = setInterval(reloadTasks, 5000);
@@ -6241,13 +6795,13 @@ function StudyPlanTab(props) {
         setNewPath(path);
         setShowNew(false);
         setNewShelf([]);
-        return reloadTasks();
+        return reloadTasks(true);
       })
       .catch((err) => props.onError(err.message));
   };
   const openTask = (task) => {
     setEditingTask(task);
-    setTaskForm({ title: task.title, workspacePath: task.workspacePath, template: normalizeTemplate(task.template) });
+    setTaskForm({ title: task.title, workspacePath: task.workspacePath, template: normalizeTemplate(task.template), grading: task.grading || 'neutral', subjectId: task.subjectId || '' });
     setTaskShelf((task.materials || []).map((one) => one.id));
   };
   const saveTask = () => {
@@ -6258,12 +6812,14 @@ function StudyPlanTab(props) {
         title: taskForm.title.trim(),
         workspacePath: taskForm.workspacePath.trim(),
         template: taskForm.template,
+        grading: taskForm.grading,
+        ...(taskForm.subjectId !== (editingTask.subjectId || '') ? { subjectId: taskForm.subjectId || null } : {}),
       },
     })
       .then(() => api('studytask.materials', { id: editingTask.id, shelfIds: taskShelf }))
       .then(() => {
         setEditingTask(null);
-        return reloadTasks();
+        return reloadTasks(true);
       })
       .catch((err) => props.onError(err.message));
   };
@@ -6273,91 +6829,247 @@ function StudyPlanTab(props) {
     if (!title) return;
     setDraft('');
     api('subject.add', { title })
-      .then(() => props.onReload())
+      .then(() => { setShowSubjectAdd(false); return props.onReload(); })
       .catch((err) => props.onError(err.message));
   };
-  const today = dayKey(new Date());
-  const generate = (subjectId) => {
-    if (typeof window !== 'undefined' && !window.confirm(t('studyGenerateAsk'))) return;
-    setBusy(subjectId);
-    api('plan.generate', { subjectId })
-      .then((info) => {
-        setResult(info);
-        return props.onReload();
-      })
-      .catch((err) => props.onError(err.message))
-      .finally(() => setBusy(''));
+
+
+  const taskState = (task) => task.state || (task.doneToday ? 'done' : task.scheduled ? 'todo' : 'doing');
+  const active = tasks.filter((task) => taskState(task) === 'doing');
+  const done = tasks.filter((task) => taskState(task) === 'done');
+  const future = tasks.filter((task) => taskState(task) === 'todo').sort((a, b) =>
+    String(a.scheduledAt || '~').localeCompare(String(b.scheduledAt || '~')));
+  const taskById = new Map(tasks.map((task) => [task.id, task]));
+  const upcoming = data.plan.filter((entry) => !entry.doneAt && entry.date >= dayKey(new Date(Date.now() - 4 * 3600000)));
+  const fail = (error) => props.onError(error.message);
+  const change = (method, body, reload) => {
+    props.onError('');
+    return api(method, body).then(reload).catch(fail);
   };
-  const upcoming = data.plan.filter((entry) => entry.date >= today).slice(0, 14);
+  const startDrag = (event, kind, id) => {
+    drag.current = { kind, id };
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', id);
+  };
+  const endDrag = () => {
+    drag.current = null;
+    setDropTarget('');
+  };
+  const showDrop = (event, key, kind) => {
+    if (drag.current?.kind !== kind) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = 'move';
+    setDropTarget(key);
+  };
+  const readDrop = (event, kind) => {
+    if (drag.current?.kind !== kind) return '';
+    event.preventDefault();
+    event.stopPropagation();
+    const id = drag.current.id;
+    endDrag();
+    return id;
+  };
+  const dropZone = (key) => ({
+    'data-drop': dropTarget === key ? 'inside' : undefined,
+    onDragOver: (event) => showDrop(event, key, 'task'),
+    onDragLeave: (event) => {
+      if (!event.currentTarget.contains(event.relatedTarget)) setDropTarget('');
+    },
+    onDrop: (event) => {
+      const task = taskById.get(readDrop(event, 'task'));
+      if (!task || taskState(task) === 'done' || (taskState(task) === 'todo') === (key === 'future')) return;
+      if (key === 'future') showSchedule(task);
+      else change('studytask.schedule', { id: task.id, future: false }, () => reloadTasks(true));
+    },
+  });
+  const showSchedule = (task) => {
+    setScheduling(task);
+    setStartAt(task.scheduledAt ? toLocalInput(task.scheduledAt) : '');
+    setScheduleError('');
+  };
+  const saveSchedule = (event) => {
+    event.preventDefault();
+    if (!scheduling) return;
+    const task = scheduling;
+    const timestamp = startAt ? new Date(startAt).toISOString() : '';
+    props.onError('');
+    setSavingSchedule(true);
+    setScheduleError('');
+    api('studytask.schedule', { id: task.id, future: true, startAt: timestamp })
+      .then(() => {
+        setScheduling(null);
+        return reloadTasks(true);
+      })
+      .catch((error) => setScheduleError(error.message))
+      .finally(() => setSavingSchedule(false));
+  };
+
+  const sectionTitle = (label, count, action) => h('div', { className: 'lp-study-section-head' },
+    h('h3', null, label), h('span', { className: 'lp-badge' }, count), action);
+  const editTitle = (value, action) => h('button', {
+    type: 'button',
+    className: 'lp-title lp-study-task-title',
+    title: value + ' · ' + t('studyDoubleClick'),
+    onDoubleClick: action,
+    onClick: (event) => { if (event.detail === 0) action(); },
+  }, value);
+
+  const renderTask = (task) => {
+    const state = taskState(task);
+    const schedule = state === 'todo' ? (task.scheduledAt ?
+      toLocalInput(task.scheduledAt).replace('T', ' ') : t('studyUnscheduledStart')) : null;
+    return h('div', {
+      key: task.id, className: 'lp-row lp-study-task', 'data-status': state,
+      draggable: state !== 'done',
+      onDragStart: (event) => startDrag(event, 'task', task.id),
+      onDragEnd: endDrag,
+    },
+      h('span', { className: 'lp-drag-handle', 'aria-hidden': true }, state === 'done' ? '✓' : '⠿'),
+      h('div', { className: 'lp-study-task-main' },
+        editTitle(task.title, () => openTask(task)),
+        h('div', { className: 'lp-study-task-detail lp-meta' },
+          schedule || (t('studyNewLabel') + ' ' + (task.answeredNew || 0) + '/' + (task.targetNew || 0) +
+            ' · ' + t('studyReviewLabel') + ' ' + (task.answeredReview || 0) + '/' + (task.targetReview || 0)),
+          task.missing ? h('span', { className: 'lp-badge' }, t('studyTaskMissing')) : null)),
+      h('span', { className: 'lp-actions lp-study-actions' },
+        state === 'done' ? null : h('button', {
+          className: 'lp-mini', type: 'button', title: t(state === 'todo' ? 'studySetStart' : 'studySchedule'),
+          'aria-label': t(state === 'todo' ? 'studySetStart' : 'studySchedule'), onClick: () => showSchedule(task),
+        }, '◷'),
+        state === 'todo' ? h('button', {
+          className: 'lp-mini', type: 'button', title: t('studyStartNow'), 'aria-label': t('studyStartNow'),
+          onClick: () => change('studytask.schedule', { id: task.id, future: false }, () => reloadTasks(true)),
+        }, '▶') : null,
+        h('button', {
+          className: 'lp-mini', type: 'button', title: t('studyTaskEdit'), 'aria-label': t('studyTaskEdit'), onClick: () => openTask(task),
+        }, '⋯')));
+  };
+  const moveSubject = (id, anchorId, after) => change('subject.move', { id, anchorId, after }, props.onReload);
+  const linkTask = (subjectId, taskId) => change('subject.task', { subjectId, taskId }, () => reloadTasks(true));
+  const afterMiddle = (event) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    return event.clientY >= bounds.top + bounds.height / 2;
+  };
+  const toggleSubject = (id) => setCollapsedSubjects((current) => {
+    const next = new Set(current);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
+  const editSubject = (subject) => {
+    setSubjectEditing(subject);
+    setSubjectForm({ title: subject.title, examDate: subject.examDate || '', note: subject.note || '' });
+  };
+  const renderSubject = (subject, index) => {
+    const linked = tasks.filter((task) => task.subjectId === subject.id);
+    const open = !collapsedSubjects.has(subject.id);
+    return h('div', { key: subject.id, className: 'lp-study-subject' },
+      h('div', {
+        className: 'lp-row lp-study-subject-head',
+        draggable: true,
+        'data-drop': dropTarget === subject.id + ':before' ? 'before' :
+          dropTarget === subject.id + ':after' ? 'after' : dropTarget === subject.id ? 'inside' : undefined,
+        onDragStart: (event) => startDrag(event, 'subject', subject.id),
+        onDragEnd: endDrag,
+        onDragOver: (event) => {
+          if (drag.current?.kind === 'task') showDrop(event, subject.id, 'task');
+          else if (drag.current?.id !== subject.id) {
+            showDrop(event, subject.id + (afterMiddle(event) ? ':after' : ':before'), 'subject');
+          }
+        },
+        onDragLeave: (event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setDropTarget('');
+        },
+        onDrop: (event) => {
+          if (drag.current?.kind === 'task') {
+            const id = readDrop(event, 'task');
+            if (!id) return;
+            setCollapsedSubjects((current) => {
+              const next = new Set(current);
+              next.delete(subject.id);
+              return next;
+            });
+            linkTask(subject.id, id);
+          } else {
+            const id = readDrop(event, 'subject');
+            if (id && id !== subject.id) moveSubject(id, subject.id, afterMiddle(event));
+          }
+        },
+      },
+        h('button', {
+          className: 'lp-caret', type: 'button', disabled: !linked.length,
+          'data-open': String(open), 'data-empty': String(!linked.length),
+          'aria-expanded': open, 'aria-label': t(open ? 'collapseAll' : 'expandAll'),
+          onClick: () => toggleSubject(subject.id),
+        }, '▾'),
+        editTitle(subject.title, () => editSubject(subject)),
+        h('span', { className: 'lp-meta' }, linked.length),
+        subject.examDate ? h('span', { className: 'lp-meta' }, t('studyExam') + ' ' + subject.examDate) : null,
+        h('span', { className: 'lp-actions lp-study-actions' },
+          h('button', {
+            className: 'lp-mini', type: 'button', title: t('studyMoveUp'), 'aria-label': t('studyMoveUp'),
+            disabled: index === 0, onClick: () => moveSubject(subject.id, data.subjects[index - 1].id, false),
+          }, '↑'),
+          h('button', {
+            className: 'lp-mini', type: 'button', title: t('studyMoveDown'), 'aria-label': t('studyMoveDown'),
+            disabled: index === data.subjects.length - 1, onClick: () => moveSubject(subject.id, data.subjects[index + 1].id, true),
+          }, '↓'),
+          h('button', {
+            className: 'lp-mini', type: 'button', title: t('studySubjectEdit'), 'aria-label': t('studySubjectEdit'), onClick: () => editSubject(subject),
+          }, '⋯'))),
+      open && linked.length ? h('div', { className: 'lp-children lp-study-links' },
+        linked.map((task) => h('div', { key: task.id, className: 'lp-row lp-study-link', 'data-status': taskState(task) },
+          editTitle(task.title, () => openTask(task)),
+          h('span', { className: 'lp-meta' }, t('col' + ({ todo: 'Todo', doing: 'Doing', done: 'Done' }[taskState(task)])))))) : null);
+  };
   return h(
     'div',
-    { className: 'lp-body' },
-    h(
-      'form',
-      { className: 'lp-toolbar', onSubmit: addSubject },
-      h('input', {
-        className: 'lp-input',
-        style: { background: controlSurface(0.45), backdropFilter: 'blur(6px)' },
-        value: draft,
-        placeholder: t('studyAddSubject'),
-        onChange: (event) => setDraft(event.target.value),
-      }),
-      h('button', { className: 'lp-btn', type: 'submit' }, t('addButton')),
-    ),
-    h(
-      'div',
-      { className: 'lp-toolbar' },
-      h(
-        'div',
-        { className: 'lp-section', style: { flex: 1, margin: 0 } },
-          weekMinutes !== null
-            ? `${t('studyTaskList')} · ${tasks.length} · ${t('studyWeekPlan').replace('{n}', String(weekMinutes))}`
-            : `${t('studyTaskList')} · ${tasks.length}`,
-      ),
-      h(
-        'button',
-        { className: 'lp-btn-ghost', onClick: () => setShowNew(!showNew) },
-        showNew ? t('cancel') : `+ ${t('studyTaskAdd')}`,
-      ),
-    ),
-    tasks.length === 0
-      ? h('div', { className: 'lp-empty' }, t('studyNoTask'))
-      : tasks.map((task) =>
-          h(
-            'div',
-            {
-              key: task.id,
-              className: 'lp-tree-row',
-              style: { cursor: 'pointer' },
-              title: t('studyTaskEditHint'),
-              onClick: () => openTask(task),
-            },
-            h('span', { className: 'lp-title', title: task.workspacePath }, task.title),
-            h('span', { className: 'lp-badge' }, normalizeTemplate(task.template)),
-            task.materials && task.materials.length > 0
-              ? h('span', { className: 'lp-meta' }, `📎${task.materials.length}`)
-              : null,
-            task.summary && task.summary.total
-              ? h('span', { className: 'lp-meta' }, `${task.summary.total} ${t('studyEntries')}`)
-              : null,
-            task.missing ? h('span', { className: 'lp-badge' }, t('studyTaskMissing')) : null,
-            task.doneToday
-              ? h('span', { className: 'lp-badge' }, t('studyTaskDoneToday'))
-              : task.overdueDays > 0
-                ? h(
-                    'span',
-                    { className: 'lp-badge' },
-                    t('studyTaskOverdue').replace('{n}', String(task.overdueDays)),
-                  )
-                : null,
-            h(
-              'span',
-              { className: 'lp-meta' },
-              `${t('studyNewLabel')} ${task.answeredNew || 0}/${task.targetNew || 0} · ${t('studyReviewLabel')} ${task.answeredReview || 0}/${task.targetReview || 0}`,
-            ),
-            h('span', { className: 'lp-meta' }, task.updatedAt ? task.updatedAt.slice(0, 10) : ''),
-          ),
-        ),
+    { className: 'lp-body lp-study-planner' },
+    h('div', { className: 'lp-study-planner-grid' },
+      h('section', { className: 'lp-card lp-study-section', ...dropZone('active') },
+        sectionTitle(t('studyTaskList'), active.length,
+          h('button', { className: 'lp-btn', type: 'button', onClick: () => setShowNew(true) }, '+ ' + t('studyTaskAdd'))),
+        weekMinutes !== null ? h('div', { className: 'lp-meta' }, t('studyWeekPlan').replace('{n}', weekMinutes)) : null,
+        active.length ? active.map(renderTask) : h('div', { className: 'lp-empty' }, t('studyNoActive'))),
+      h('section', { className: 'lp-card lp-study-section', ...dropZone('future') },
+        sectionTitle(t('studyUpcoming'), future.length),
+        future.length ? future.map(renderTask) : h('div', { className: 'lp-empty' }, t('studyDropFuture')))),
+    h('section', { className: 'lp-card lp-study-section' },
+      sectionTitle(t('studySubjects'), data.subjects.length, h('button', {
+        className: 'lp-btn-ghost', type: 'button', 'aria-expanded': showSubjectAdd,
+        onClick: () => setShowSubjectAdd(!showSubjectAdd),
+      }, showSubjectAdd ? t('cancel') : '+ ' + t('studyAddSubject'))),
+      showSubjectAdd ? h('form', { className: 'lp-toolbar', onSubmit: addSubject },
+        h('input', {
+          className: 'lp-input', autoFocus: true, value: draft, placeholder: t('studyAddSubject'), 'aria-label': t('studyAddSubject'),
+          onChange: (event) => setDraft(event.target.value),
+        }),
+        h('button', { className: 'lp-btn', type: 'submit' }, t('addButton'))) : null,
+      data.subjects.length ? data.subjects.map(renderSubject) : h('div', { className: 'lp-empty' }, t('studyNoSubject'))),
+    done.length ? h('details', { className: 'lp-study-section lp-card' },
+      h('summary', null, t('studyTaskDoneToday') + ' · ' + done.length), done.map(renderTask)) : null,
+    upcoming.length ? h('details', { className: 'lp-study-section lp-card' },
+      h('summary', null, t('studyExistingPlans')),
+      upcoming.map((entry) => h('label', { key: entry.id, className: 'lp-study-link' },
+        h('span', null, entry.title || data.topics.find((topic) => topic.id === entry.topicId)?.title || entry.kind),
+        h('input', {
+          type: 'date', className: 'lp-input', value: entry.date,
+          onChange: (event) => {
+            if (event.target.value) change('plan.move', { id: entry.id, date: event.target.value }, props.onReload);
+          },
+        })))) : null,
+    scheduling ? h(Modal, { title: t('studySetStart') + ' · ' + scheduling.title, onClose: () => setScheduling(null) },
+      h('form', { onSubmit: saveSchedule },
+        h('label', { className: 'lp-field' }, t('studyStartOptional'), h('input', {
+          className: 'lp-input', type: 'datetime-local', value: startAt,
+          onChange: (event) => setStartAt(event.target.value),
+        })),
+        h('p', { className: 'lp-meta' }, t('studyStartHint')),
+        scheduleError ? h('p', { className: 'lp-err', role: 'alert' }, scheduleError) : null,
+        h('div', { className: 'lp-modal-actions' },
+          h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setScheduling(null) }, t('cancel')),
+          h('button', { className: 'lp-btn', type: 'submit', disabled: savingSchedule }, t('save'))))) : null,
     editingTask
       ? h(
           Modal,
@@ -6392,6 +7104,25 @@ function StudyPlanTab(props) {
                 options: TEMPLATE_OPTIONS,
               }),
             ),
+
+            h('div', { className: 'lp-field' },
+              h('label', null, t('studyGrading')),
+              h(Dropdown, {
+                value: taskForm.grading,
+                onChange: (grading) => setTaskForm({ ...taskForm, grading }),
+                options: ['strict', 'neutral', 'lenient'].map((value) => ({ value, label: t('studyGrading_' + value) })),
+              }),
+            ),
+
+            h('div', { className: 'lp-field' },
+              h('label', null, t('studySubjects')),
+              h(Dropdown, {
+                value: taskForm.subjectId,
+                onChange: (subjectId) => setTaskForm({ ...taskForm, subjectId }),
+                options: [{ value: '', label: t('studyNoSubjectLink') },
+                  ...data.subjects.map((subject) => ({ value: subject.id, label: subject.title }))],
+              }),
+            ),
             h(ShelfPicker, {
               t,
               items: props.shelf,
@@ -6411,7 +7142,7 @@ function StudyPlanTab(props) {
                     api('studytask.delete', { id })
                       .then(() => {
                         setEditingTask(null);
-                        return reloadTasks();
+                        return reloadTasks(true);
                       })
                       .catch((err) => props.onError(err.message));
                   },
@@ -6536,97 +7267,6 @@ function StudyPlanTab(props) {
             ),
         )
       : null,
-    h('div', { className: 'lp-section' }, `1. ${t('studySubjects')}`),
-    data.subjects.length === 0 ? h('div', { className: 'lp-empty' }, t('studyNoSubject')) : null,
-    data.subjects.map((subject) => {
-      const entries = data.plan.filter((entry) => entry.subjectId === subject.id);
-      const done = entries.filter((entry) => entry.doneAt).length;
-      return h(
-        'div',
-        { key: subject.id, className: 'lp-group' },
-        h(
-          'div',
-          {
-            className: 'lp-group-head',
-            style: { cursor: 'pointer' },
-            onClick: () => {
-              setSubjectEditing(subject);
-              setSubjectForm({
-                title: subject.title,
-                examDate: subject.examDate || '',
-                note: subject.note || '',
-              });
-            },
-          },
-          h('span', null, subject.title),
-          subject.examDate
-            ? h('span', { className: 'lp-meta' }, `${t('studyExam')} ${subject.examDate}`)
-            : h('span', { className: 'lp-meta' }, t('studyNoExam')),
-          h('span', { className: 'lp-meta' }, `${done}/${entries.length}`),
-          h(
-            'button',
-            {
-              className: 'lp-btn-ghost',
-              onClick: (event) => {
-                event.stopPropagation();
-                generate(subject.id);
-              },
-              disabled: busy === subject.id,
-            },
-            busy === subject.id ? '…' : t('studyGenerate'),
-          ),
-        ),
-      );
-    }),
-    result
-      ? h(
-          'div',
-          { className: 'lp-meta' },
-          `${t('studyGenerated')} ${result.created}${
-            result.unscheduled ? ` · ${t('studyUnscheduled')} ${result.unscheduled}` : ''
-          }`,
-        )
-      : null,
-    h('div', { className: 'lp-section' }, `2. ${t('studyUpcoming')}`),
-    upcoming.length === 0
-      ? h('div', { className: 'lp-empty' }, t('studyNoPlan'))
-      : upcoming.map((entry) =>
-          h(
-            'div',
-            {
-              key: entry.id,
-              className: 'lp-tree-row',
-              draggable: true,
-              onDragStart: (event) => {
-                dragPlan.current = entry.id;
-                event.dataTransfer.setData('text/plain', entry.id);
-                event.dataTransfer.effectAllowed = 'move';
-              },
-              onDragOver: (event) => {
-                if (!dragPlan.current) return;
-                event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
-              },
-              onDrop: (event) => {
-                event.preventDefault();
-                const moving = dragPlan.current || event.dataTransfer.getData('text/plain');
-                dragPlan.current = '';
-                if (!moving || moving === entry.id) return;
-                api('plan.move', { id: moving, date: entry.date })
-                  .then(() => props.onReload())
-                  .catch((err) => props.onError(err.message));
-              },
-            },
-            h('span', { className: 'lp-meta' }, entry.date.slice(5)),
-            h(
-              'span',
-              { className: 'lp-title' },
-              (data.topics.find((topic) => topic.id === entry.topicId) || {}).title || entry.kind,
-            ),
-            h('span', { className: 'lp-badge' }, `${entry.minutes}${t('studyMinuteUnit')}`),
-            h('span', { className: 'lp-meta' }, entry.doneAt ? t('studyDone') : ''),
-          ),
-        ),
   );
 }
 
@@ -6878,15 +7518,9 @@ function StudyPanel(props) {
         markLoaded('habits');
       })
       .catch(() => markLoaded('habits'));
-  // One beat per minute while the page is visible; the host caps each beat so
-  // an idle tab cannot inflate the numbers.
   React.useEffect(() => {
     loadHabits();
-    const beat = () => {
-      if (document.visibilityState !== 'visible') return;
-      api('habit.beat', {}).then(loadHabits).catch(() => {});
-    };
-    const timer = setInterval(beat, 60000);
+    const timer = setInterval(loadHabits, 60000);
     return () => clearInterval(timer);
   }, []);
   const loadLearning = () =>
@@ -7009,7 +7643,7 @@ function StudyPanel(props) {
 // ---- app.js ----
 return {
   inject: ['slots', 'locale'],
-  __internals: { dayKey, groupByDay, monthMatrix, weekMatrix, topTask, openEntries },
+  __internals: { dayKey, groupByDay, monthMatrix, weekMatrix, topTask, openEntries, lunarDateLabel },
   apply(ctx) {
     let t = (key) => DICTS.zh[key] || key;
     try {
@@ -7074,10 +7708,7 @@ return {
       else setTimeout(warm, 200);
     });
 
-    // Keeps reminding while the page is open, even on another panel. The poller
-    // no longer depends on the Notification API: the mounted panel decides how
-    // to show a batch.
-    const reminderTicker = typeof document !== 'undefined' ? startBackgroundReminders() : null;
+    const reminderTicker = typeof document !== 'undefined' ? startBackgroundReminders(t) : null;
     if (reminderTicker && typeof ctx.effect === 'function') {
       ctx.effect(() => () => clearInterval(reminderTicker));
     }

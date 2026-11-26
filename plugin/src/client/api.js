@@ -4,8 +4,8 @@
 const API_TIMEOUT_MS = 15000;
 const API_INFLIGHT = new Map();
 
-function api(method, body) {
-  const key = body === undefined ? `GET ${method}` : '';
+function api(method, body, { fresh = false } = {}) {
+  const key = body === undefined && !fresh ? `GET ${method}` : '';
   if (key && API_INFLIGHT.has(key)) return API_INFLIGHT.get(key);
   const request = apiRequest(method, body, 2);
   if (key) {

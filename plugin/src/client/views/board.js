@@ -4,6 +4,40 @@ function BoardView(props) {
   const [filterDim, setFilterDim] = React.useState('');
   const [filterValue, setFilterValue] = React.useState('');
   const [beforeDate, setBeforeDate] = React.useState('');
+  const dragging = React.useRef(null);
+  const [dropTarget, setDropTarget] = React.useState('');
+  const canMove = (item, from, to) => {
+    if (from === to) return true;
+    if (item.derived.studyTask) return from !== 'done' && (to === 'todo' || to === 'doing');
+    return !item.derived.studyManaged || (from !== 'done' && to !== 'done');
+  };
+  const endDrag = () => {
+    dragging.current = null;
+    setDropTarget('');
+  };
+  const drop = (event, column, anchorId, after) => {
+    const source = dragging.current;
+    if (!source) return;
+    event.preventDefault();
+    event.stopPropagation();
+    endDrag();
+    if (source.item.id !== anchorId && canMove(source.item, source.column, column)) {
+      props.onMove({ id: source.item.id, column, anchorId, after });
+    }
+  };
+  const dragOver = (event, column, key) => {
+    const source = dragging.current;
+    if (!source) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const allowed = canMove(source.item, source.column, column);
+    event.dataTransfer.dropEffect = allowed ? 'move' : 'none';
+    setDropTarget(allowed ? key : '');
+  };
+  const afterMiddle = (event) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    return event.clientY >= bounds.top + bounds.height / 2;
+  };
   const tagSet = new Set();
   const typeSet = new Set();
   for (const item of props.items) {
@@ -52,20 +86,22 @@ function BoardView(props) {
     return true;
   };
   const buckets = { todo: [], doing: [], blocked: [], done: [] };
-    for (const item of props.items) {
+  for (const item of props.items) {
     if (item.derived.archived) continue;
     if (!matchesFilter(item)) continue;
-    if (item.derived.done) buckets.done.push(item);
-    else if (displayBlockers(item, byId, props.items).length > 0) buckets.blocked.push(item);
-    else if (item.status === 'doing') buckets.doing.push(item);
-    else buckets.todo.push(item);
+    const column = item.derived.boardColumn || (item.derived.done ? 'done' :
+      item.status === 'blocked' || displayBlockers(item, byId, props.items).length > 0 ? 'blocked' :
+        item.status === 'doing' ? 'doing' : 'todo');
+    buckets[column].push(item);
   }
   for (const list of Object.values(buckets)) {
     list.sort(
       (a, b) =>
+        (a.boardOrder ?? Infinity) - (b.boardOrder ?? Infinity) ||
         Number(isOverdue(b)) - Number(isOverdue(a)) ||
         priorityOf(b) - priorityOf(a) ||
-        String(a.dueAt || '~').localeCompare(String(b.dueAt || '~')),
+        String(a.dueAt || '~').localeCompare(String(b.dueAt || '~')) ||
+        a.id.localeCompare(b.id),
     );
   }
   const columns = [
@@ -74,6 +110,20 @@ function BoardView(props) {
     { key: 'blocked', label: t('colBlocked') },
     { key: 'done', label: t('colDone') },
   ];
+  const onCardKey = (item, column, index, event) => {
+    const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    if (!event.altKey || !keys.includes(event.key)) return keyActivate(() => props.onEdit(item))(event);
+    event.preventDefault();
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      const after = event.key === 'ArrowDown';
+      const anchor = buckets[column][index + (after ? 1 : -1)];
+      if (anchor) props.onMove({ id: item.id, column, anchorId: anchor.id, after });
+      return;
+    }
+    const position = columns.findIndex((entry) => entry.key === column);
+    const target = columns[position + (event.key === 'ArrowRight' ? 1 : -1)];
+    if (target && canMove(item, column, target.key)) props.onMove({ id: item.id, column: target.key });
+  };
   return h(
     'div',
     { className: 'lp-board' },
@@ -124,13 +174,24 @@ function BoardView(props) {
             t('filterClear'),
           )
         : null,
+      h('span', { className: 'lp-meta' }, t('boardDragHint')),
     ),
     columns.map((column) =>
       h(
         'div',
-        { key: column.key, className: 'lp-col' },
+        {
+          key: column.key,
+          className: 'lp-col',
+          'data-column': column.key,
+          'data-drop': dropTarget === column.key ? 'inside' : undefined,
+          onDragOver: (event) => dragOver(event, column.key, column.key),
+          onDragLeave: (event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setDropTarget('');
+          },
+          onDrop: (event) => drop(event, column.key),
+        },
         h('div', { className: 'lp-col-head' }, `${column.label} · ${buckets[column.key].length}`),
-        buckets[column.key].map((item) =>
+        buckets[column.key].map((item, index) =>
           h(
             'div',
             {
@@ -138,10 +199,22 @@ function BoardView(props) {
               className: 'lp-card',
               tabIndex: 0,
               role: 'button',
+              draggable: true,
+              'data-item-id': item.id,
+              'aria-keyshortcuts': 'Alt+ArrowUp Alt+ArrowDown Alt+ArrowLeft Alt+ArrowRight',
+              'data-drop': dropTarget === item.id + ':after' ? 'after' : dropTarget === item.id + ':before' ? 'before' : undefined,
               'data-done': String(item.derived.done),
               style: { borderLeft: `3px solid ${toneOf(item.priority).color}` },
               onClick: () => props.onEdit(item),
-              onKeyDown: keyActivate(() => props.onEdit(item)),
+              onKeyDown: (event) => onCardKey(item, column.key, index, event),
+              onDragStart: (event) => {
+                dragging.current = { item, column: column.key };
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('application/x-life-planner-board-task', item.id);
+              },
+              onDragEnd: endDrag,
+              onDragOver: (event) => dragOver(event, column.key, item.id + (afterMiddle(event) ? ':after' : ':before')),
+              onDrop: (event) => drop(event, column.key, item.id, afterMiddle(event)),
             },
             h(TypeChip, {
               type: item.taskType,
@@ -170,6 +243,7 @@ function BoardView(props) {
             ),
           ),
         ),
+        h('div', { className: 'lp-col-space', 'aria-hidden': true }),
       ),
     ),
   );

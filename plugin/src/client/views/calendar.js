@@ -17,7 +17,6 @@ function CalendarView(props) {
     setCollapsed(next);
   };
   const byDay = groupByDay(items);
-  const calById = new Map(items.map((item) => [item.id, item]));
   const [selectedId, setSelectedId] = React.useState('');
   const [renaming, setRenaming] = React.useState(null);
   // A row selected on one day should not stay highlighted on another.
@@ -49,6 +48,8 @@ function CalendarView(props) {
       h('input', {
         type: 'checkbox',
         checked: Boolean(item.derived.done),
+        disabled: Boolean(item.derived.studyManaged),
+        title: item.derived.studyManaged ? t('studyStatusManaged') : undefined,
         onClick: (event) => event.stopPropagation(),
         onChange: (event) => props.onToggle(item, event.target.checked, event),
         'aria-label': item.title,
@@ -84,17 +85,48 @@ function CalendarView(props) {
             item.title,
           ),
       h(TagChips, { item, colorOverrides: props.colorOverrides }),
-      displayBlockers(item, calById, items).length > 0
+      item.derived.blocked
         ? h('span', { className: 'lp-badge' }, t('blocked'))
         : null,
-      item.dueAt
+      item.dueAt || item.startAt
         ? h('span', { className: 'lp-meta', 'data-overdue': String(isOverdue(item)) }, timeLabel(item))
         : null,
     );
   const cells = monthMatrix(anchor);
   const week = weekMatrix(selectedKey);
   const labels = weekdayLabels(t);
-  const todayKey = dayKey(new Date());
+  const [today, setToday] = React.useState(() => new Date());
+  const [todayInfo, setTodayInfo] = React.useState(null);
+  React.useEffect(() => {
+    let stopped = false;
+    let timer;
+    let generation = 0;
+    const refresh = async () => {
+      clearTimeout(timer);
+      const requested = ++generation;
+      let next;
+      try {
+        next = await api('calendar.context', undefined, { fresh: true });
+      } catch {}
+      if (!stopped && requested === generation) {
+        if (next) setTodayInfo(next);
+        setToday((previous) => dayKey(previous) === dayKey(new Date()) ? previous : new Date());
+        timer = setTimeout(refresh, next?.updating ? 2500 : 30000);
+      }
+    };
+    refresh();
+    window.addEventListener('lp-calendar-context-change', refresh);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+      window.removeEventListener('lp-calendar-context-change', refresh);
+    };
+  }, []);
+  const todayKey = dayKey(today);
+  const lunar = React.useMemo(() => lunarDateLabel(today), [today]);
+  const renderTodayInfo = () => h(CalendarToday, {
+    t, data: todayInfo?.day === todayKey ? todayInfo : null, date: today, lunar, onSettings: props.onRegionSettings,
+  });
 
   // The month fills whatever height the panel gives us, leaving a strip of
   // the day list visible so it is obvious there is more below.
@@ -182,7 +214,9 @@ function CalendarView(props) {
               item.kind === 'task' &&
               !item.derived.archived &&
               !item.derived.done &&
-              (!item.dueAt || isOverdue(item)),
+              !(item.derived.studyTask && item.derived.boardColumn === 'todo') &&
+              (item.dueAt ? isOverdue(item) && dayKey(new Date(item.dueAt)) < todayKey :
+                !item.startAt || dayKey(new Date(item.startAt)) < todayKey),
           )
           .sort((a, b) => {
             const ao = isOverdue(a) ? 0 : 1;
@@ -231,6 +265,7 @@ function CalendarView(props) {
               },
               t('today'),
             ),
+            collapsed ? null : renderTodayInfo(),
           ),
           h('div', { className: 'lp-cal-title' }, monthTitle(t, anchor)),
           h(
@@ -371,6 +406,8 @@ function CalendarView(props) {
           `${t('dayLabel').replace('{m}', String(selectedDate.getMonth() + 1)).replace('{d}', String(selectedDate.getDate()))} · ${labels[(selectedDate.getDay() + 6) % 7]}`,
         ),
         h('span', { className: 'lp-day-sub' }, t('itemsCount').replace('{n}', String(openCount))),
+        selectedKey === todayKey && lunar ? h('span', { className: 'lp-day-sub lp-cal-lunar' }, lunar) : null,
+        collapsed ? renderTodayInfo() : null,
       ),
       h(
         'form',

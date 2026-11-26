@@ -83,6 +83,21 @@ function MistakeTab(props) {
       })
       .catch((err) => props.onError(err.message));
   };
+  const sourcesFor = (item) => {
+    const citations = Array.isArray(item.sources) ? item.sources.map((source) =>
+      [...new Set([source.title, source.url || source.path, source.file,
+        source.pdfPage ? t('mistakePdfPage').replace('{n}', source.pdfPage) : '',
+        source.bookPage ? t('mistakeBookPage').replace('{n}', source.bookPage) : '',
+        source.section].filter(Boolean))].join(' · ')).filter(Boolean) : [];
+    if (citations.length === 0 && item.source) citations.push(item.source);
+    return citations;
+  };
+  const sourceList = (item, className, label) => {
+    const citations = sourcesFor(item);
+    if (citations.length === 0) return null;
+    const list = h('ul', { className }, citations.map((citation, index) => h('li', { key: index }, citation)));
+    return label ? h('div', { className: 'lp-pre-block' }, h('div', { className: 'lp-meta' }, label), list) : list;
+  };
   return h(
     'div',
     { className: 'lp-body' },
@@ -167,6 +182,8 @@ function MistakeTab(props) {
                   item.reason
                     ? h('div', { className: 'lp-card-meta lp-mistake-reason' }, `${t('mistakeReason')}: ${item.reason}`)
                     : null,
+                  item.memoryTip ? h('div', { className: 'lp-card-meta lp-mistake-reason' }, item.memoryTip) : null,
+                  sourceList(item, 'lp-card-meta'),
                   h('div', { className: 'lp-card-meta' }, item.createdAt ? dayKey(new Date(item.createdAt)) : ''),
                   h(TagChips, { tags: item.tags }),
                   h(
@@ -219,8 +236,9 @@ function MistakeTab(props) {
               'div',
               { className: 'lp-field' },
               h('label', null, t('mistakeQuestion')),
-              h('input', {
+              h('textarea', {
                 className: 'lp-input',
+                rows: 4,
                 value: form.question,
                 onChange: (event) => setForm({ ...form, question: event.target.value }),
               }),
@@ -229,8 +247,9 @@ function MistakeTab(props) {
               'div',
               { className: 'lp-field' },
               h('label', null, t('mistakeAnswer')),
-              h('input', {
+              h('textarea', {
                 className: 'lp-input',
+                rows: 3,
                 value: form.answer,
                 onChange: (event) => setForm({ ...form, answer: event.target.value }),
               }),
@@ -239,8 +258,9 @@ function MistakeTab(props) {
               'div',
               { className: 'lp-field' },
               h('label', null, t('mistakeReason')),
-              h('input', {
+              h('textarea', {
                 className: 'lp-input',
+                rows: 3,
                 value: form.reason,
                 onChange: (event) => setForm({ ...form, reason: event.target.value }),
               }),
@@ -283,6 +303,10 @@ function MistakeTab(props) {
                   h('div', { className: 'lp-pre-body' }, preview.reason),
                 )
               : null,
+            preview.memoryTip ? h('div', { className: 'lp-pre-block' },
+              h('div', { className: 'lp-meta' }, t('mistakeMemoryTip')),
+              h('div', { className: 'lp-pre-body' }, preview.memoryTip)) : null,
+            sourceList(preview, 'lp-pre-body lp-mistake-sources', t('mistakeMaterialSource')),
             h('div', { className: 'lp-meta' }, preview.createdAt ? dayKey(new Date(preview.createdAt)) : ''),
             h(
               'div',

@@ -1,6 +1,6 @@
 return {
   inject: ['slots', 'locale'],
-  __internals: { dayKey, groupByDay, monthMatrix, weekMatrix, topTask, openEntries },
+  __internals: { dayKey, groupByDay, monthMatrix, weekMatrix, topTask, openEntries, lunarDateLabel },
   apply(ctx) {
     let t = (key) => DICTS.zh[key] || key;
     try {
@@ -65,10 +65,7 @@ return {
       else setTimeout(warm, 200);
     });
 
-    // Keeps reminding while the page is open, even on another panel. The poller
-    // no longer depends on the Notification API: the mounted panel decides how
-    // to show a batch.
-    const reminderTicker = typeof document !== 'undefined' ? startBackgroundReminders() : null;
+    const reminderTicker = typeof document !== 'undefined' ? startBackgroundReminders(t) : null;
     if (reminderTicker && typeof ctx.effect === 'function') {
       ctx.effect(() => () => clearInterval(reminderTicker));
     }

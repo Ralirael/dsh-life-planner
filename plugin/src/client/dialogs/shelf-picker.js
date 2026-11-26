@@ -66,20 +66,17 @@ function ShelfPicker(props) {
         ? h(
             'div',
             null,
-            h('div', { className: 'lp-pop-backdrop', onClick: menu.hide }),
             h(
               'div',
               {
                 className: 'lp-dd-menu',
                 role: 'listbox',
+                ref: menu.menuRef,
                 'aria-multiselectable': 'true',
                 id: menu.menuId,
                 tabIndex: -1,
                 style: {
-                  left: menu.pos.left,
-                  top: menu.pos.top,
-                  width: menu.pos.width,
-                  maxHeight: 260,
+                  ...menu.pos,
                   overflow: 'auto',
                   display: 'block',
                 },

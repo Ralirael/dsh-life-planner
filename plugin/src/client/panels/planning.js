@@ -14,9 +14,6 @@ function Panel(props) {
       clearTimeout(second);
     };
   }, []);
-  // One reminder becomes a titled notification plus a detail line: the task,
-  // its deadline (or the fact that it has none), and its priority.
-  const describeNotice = (note) => describeReminder(note, t);
   const [tab, setTab] = React.useState('calendar');
   const pageRef = React.useRef(null);
   // Native controls (checkbox, datetime picker, select popup) follow the
@@ -46,33 +43,11 @@ function Panel(props) {
   const [busy, setBusy] = React.useState(false);
   const [editor, setEditor] = React.useState(null);
   const [settings, setSettings] = React.useState(cached ? cached.settings : null);
-  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(null);
   const [notices, setNotices] = React.useState([]);
-  // System notifications are paced: at most one every few seconds so a batch
-  // never lands all at once.
-  const notifQueue = React.useRef([]);
-  const notifTimer = React.useRef(null);
-  const systemNotifyEnabled = () => {
-    try {
-      return localStorage.getItem('lpSystemNotify') !== 'off';
-    } catch {
-      return true;
-    }
-  };
-  const pumpNotifications = () => {
-    notifTimer.current = null;
-    const next = notifQueue.current.shift();
-    if (!next) return;
-    if (!systemNotifyEnabled()) return;
-    try {
-      new Notification(next.title, { body: next.body });
-    } catch {
-      // A blocked notification must not break the queue.
-    }
-    notifTimer.current = setTimeout(pumpNotifications, 7000);
-  };
   const [focusItem, setFocusItem] = React.useState('');
   const [confirmCard, setConfirmCard] = React.useState(null);
+  const snapshotGeneration = React.useRef(0);
 
   // An in-app floating confirmation anchored to the control that asked, so
   // the desktop shell never needs to render a native dialog.
@@ -93,20 +68,38 @@ function Panel(props) {
   });
 
   const reloadData = React.useCallback(
-    () =>
-      api('snapshot').then((data) => {
+    (background = false) => {
+      const generation = ++snapshotGeneration.current;
+      return api('snapshot', undefined, { fresh: !background }).then((data) => {
+        if (generation !== snapshotGeneration.current) return data;
         setSnapshot(data);
-        setPlanText((current) => (current === '' ? data.plan.bodyMarkdown || '' : current));
-        setError('');
+        if (!background) {
+          setPlanText((current) => (current === '' ? data.plan.bodyMarkdown || '' : current));
+          setError('');
+        }
         writePlannerCache({ snapshot: data });
         return data;
-      }),
+      });
+    },
     [],
   );
 
   const reload = React.useCallback(() => {
     reloadData().catch((err) => setError(err.message));
   }, [reloadData]);
+
+  React.useEffect(() => {
+    if (typeof document === 'undefined' || !['board', 'tree', 'calendar'].includes(tab)) return undefined;
+    const refresh = () => {
+      if (document.visibilityState !== 'hidden') reloadData(true).catch(() => {});
+    };
+    const timer = setInterval(refresh, 15000);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [tab, reloadData]);
 
   React.useEffect(() => {
     // The panel can mount before the Web carrier accepts requests, so the first
@@ -148,42 +141,19 @@ function Panel(props) {
     };
   }, []);
 
-  React.useEffect(
-    () => () => {
-      if (notifTimer.current) clearTimeout(notifTimer.current);
-    },
-    [],
-  );
 
-  // Reminders arrive from the module-level poller as whole batches; the mounted
-  // panel is the only place that shows them, paces the system notifications and
-  // acknowledges the batch so the same reminder is never delivered twice.
   React.useEffect(() => {
-    let alive = true;
     const onBatch = (list) => {
-      if (!alive || !Array.isArray(list) || list.length === 0) return;
       setNotices((current) => {
         const seen = new Set(current.map((note) => note.id));
         const fresh = list.filter((note) => !seen.has(note.id));
-        return fresh.length === 0 ? current : [...fresh, ...current].slice(0, 8);
+        return fresh.length ? [...fresh, ...current].slice(0, 8) : current;
       });
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && systemNotifyEnabled()) {
-        for (const note of list) {
-          if (note.hostNotified) continue;
-          if (notifQueue.current.some((entry) => entry.id === note.id)) continue;
-          notifQueue.current.push({ id: note.id, ...describeNotice(note) });
-        }
-        if (notifQueue.current.length > 0 && !notifTimer.current) pumpNotifications();
-      }
       api('notifications.ack', { ids: list.map((note) => note.id) }).catch(() => {});
     };
     background.listeners.add(onBatch);
-    // The module-level poller may have run before the panel mounted.
-    pullReminders();
-    return () => {
-      alive = false;
-      background.listeners.delete(onBatch);
-    };
+    pullReminders(t);
+    return () => background.listeners.delete(onBatch);
   }, []);
 
   const run = React.useCallback(
@@ -205,6 +175,7 @@ function Panel(props) {
   const colorOverrides = (settings && settings.colorOverrides) || {};
 
   const toggleComplete = (item, done, event) => {
+    if (item.derived?.studyManaged) return;
     if (!done) {
       run(api('item.complete', { id: item.id, done: false }));
       return;
@@ -239,6 +210,21 @@ function Panel(props) {
       })
       .catch((err) => setError(err.message))
       .finally(() => setBusy(false));
+  };
+
+  const moveBoardItem = (move) => {
+    api('item.board', move)
+      .then((result) => {
+        if (!result.blocked) return reloadData();
+        const tasks = [...result.blockers.children, ...result.blockers.depends];
+        askConfirm(null, {
+          title: t('forceCompleteTitle'),
+          lines: [...tasks.map((item) => '· ' + item.title), t('forceComplete')],
+          confirmLabel: t('markDone'),
+          onConfirm: () => run(api('item.board', { ...move, force: true })),
+        });
+      })
+      .catch((error) => setError(error.message));
   };
 
   const restoreItem = (item) => {
@@ -314,7 +300,7 @@ function Panel(props) {
         h('button', { className: 'lp-tab', 'data-active': String(tab === 'plan'), onClick: () => setTab('plan') }, t('tabPlan')),
         h('button', { className: 'lp-tab', 'data-active': String(tab === 'archive'), onClick: () => setTab('archive') }, t('tabArchive')),
       ),
-      h('button', { className: 'lp-btn-ghost', onClick: () => setSettingsOpen(true) }, t('settings')),
+      h('button', { className: 'lp-btn-ghost', onClick: () => setSettingsOpen('tags') }, t('settings')),
       h('button', { className: 'lp-btn-ghost', onClick: () => setEditor({ kind: 'task', title: '' }) }, t('newItem')),
     ),
     error ? h('div', { className: 'lp-err', style: { padding: '0 16px' } }, error) : null,
@@ -333,6 +319,7 @@ function Panel(props) {
           onQuickAdd: quickAdd,
           onToggle: toggleComplete,
           onEdit: (item) => setEditor(item),
+          onRegionSettings: () => setSettingsOpen('general'),
         })
       : null,
     tab === 'tree'
@@ -387,7 +374,7 @@ function Panel(props) {
       ? h(
           'div',
           { className: 'lp-body', style: { padding: 0 } },
-          h(BoardView, { t, items, colorOverrides, onEdit: (item) => setEditor(item) }),
+          h(BoardView, { t, items, colorOverrides, onEdit: (item) => setEditor(item), onMove: moveBoardItem }),
         )
       : null,
     tab === 'plan'
@@ -442,11 +429,11 @@ function Panel(props) {
               },
               note.undoId
                 ? h('div', { className: 'lp-notice-title' }, `${t('deletedHint')} ${note.body}`)
-                : h('div', { className: 'lp-notice-title' }, describeNotice(note).title),
+                : h('div', { className: 'lp-notice-title' }, describeReminder(note, t).title),
               h(
                 'div',
                 { className: 'lp-notice-body' },
-                note.undoId ? t('undoHint') : describeNotice(note).body,
+                note.undoId ? t('undoHint') : describeReminder(note, t).body,
               ),
             ),
           ),
@@ -455,6 +442,7 @@ function Panel(props) {
     settingsOpen
       ? h(SettingsModal, {
           t,
+          initialPage: settingsOpen,
           settings:
             settings || {
               weekdayWindows: '10:00-13:00,19:00-02:00',
@@ -470,6 +458,8 @@ function Panel(props) {
           onClose: () => setSettingsOpen(false),
           onSaved: (data) => {
             setSettings(data);
+            writePlannerCache({ settings: data });
+            window.dispatchEvent(new Event('lp-calendar-context-change'));
             setSettingsOpen(false);
           },
           onImported: () => {
@@ -480,34 +470,28 @@ function Panel(props) {
       : null,
     confirmCard
       ? h(
-          'div',
-          null,
-          h('div', { className: 'lp-pop-backdrop', onClick: () => setConfirmCard(null) }),
+          Modal,
+          { title: confirmCard.title, className: 'lp-confirm-modal', confirm: true, onClose: () => setConfirmCard(null) },
           h(
             'div',
-            { className: 'lp-pop', role: 'dialog', 'aria-modal': 'true', 'data-lp-confirm': 'centered' },
-            h('div', { className: 'lp-pop-title' }, confirmCard.title),
+            { className: 'lp-pop-list' },
+            confirmCard.lines.map((line, index) => h('div', { key: index }, line)),
+          ),
+          h(
+            'div',
+            { className: 'lp-pop-actions' },
+            h('button', { className: 'lp-btn-ghost', onClick: () => setConfirmCard(null) }, t('cancel')),
             h(
-              'div',
-              { className: 'lp-pop-list' },
-              confirmCard.lines.map((line, index) => h('div', { key: index }, line)),
-            ),
-            h(
-              'div',
-              { className: 'lp-pop-actions' },
-              h('button', { className: 'lp-btn-ghost', onClick: () => setConfirmCard(null) }, t('cancel')),
-              h(
-                'button',
-                {
-                  className: 'lp-btn',
-                  onClick: () => {
-                    const action = confirmCard.onConfirm;
-                    setConfirmCard(null);
-                    if (action) action();
-                  },
+              'button',
+              {
+                className: 'lp-btn',
+                onClick: () => {
+                  const action = confirmCard.onConfirm;
+                  setConfirmCard(null);
+                  if (action) action();
                 },
-                confirmCard.confirmLabel || t('save'),
-              ),
+              },
+              confirmCard.confirmLabel || t('save'),
             ),
           ),
         )

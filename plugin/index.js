@@ -15,6 +15,8 @@ import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, relative as relativePath, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
+import { fetchCalendarContext, deepSeekAdvice } from './src/host/daily-advice.js'
+import { calendarAdvice, shouldRefreshCalendar } from './src/host/calendar-advice.js'
 
 export const inject = ['tools']
 
@@ -103,6 +105,12 @@ function bankKind(table) {
   return 'tree'
 }
 
+const STUDY_QUESTION_TABLES = ['questions', 'cards', 'points']
+
+function studyQuestionTable(tables, eligible = () => true) {
+  return STUDY_QUESTION_TABLES.find((table) => tables.includes(table) && eligible(table))
+}
+
 function clampMastery(value) {
   const number = Number(value)
   if (!Number.isFinite(number)) return 4
@@ -129,10 +137,16 @@ function scheduleReview(mastery, from = new Date()) {  const days = reviewInterv
 }
 
 /** Study days roll over at 04:00, matching most people's waking schedule. */
-const STUDY_DAY_SHIFT_MS = 4 * 3600000
-
 function studyDayKey(now = new Date()) {
-  return dayKeyOf(new Date(now.getTime() - STUDY_DAY_SHIFT_MS))
+  const date = new Date(now)
+  if (date.getHours() < 4) date.setDate(date.getDate() - 1)
+  return dayKeyOf(date)
+}
+
+function studyTaskState(row, now) {
+  if (row.last_done_day === studyDayKey(now)) return 'done'
+  if (row.scheduled && (!row.scheduled_at || Date.parse(row.scheduled_at) > now.getTime())) return 'todo'
+  return 'doing'
 }
 
 /** Local calendar day key for plan rows. */
@@ -322,6 +336,22 @@ const SCHEMA = `
     segments    INTEGER NOT NULL DEFAULT 1,
     updated_at  TEXT
   );
+  CREATE TABLE IF NOT EXISTS study_activity (
+    session_id TEXT NOT NULL,
+    day        TEXT NOT NULL,
+    hour       INTEGER NOT NULL,
+    seconds    INTEGER NOT NULL DEFAULT 0,
+    segments   INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (session_id, day, hour)
+  );
+  CREATE TABLE IF NOT EXISTS completion_events (
+    kind       TEXT NOT NULL,
+    item_id    TEXT NOT NULL,
+    day        TEXT NOT NULL,
+    at         TEXT NOT NULL,
+    on_time    INTEGER,
+    PRIMARY KEY (kind, item_id, day)
+  );
   CREATE TABLE IF NOT EXISTS study_task_materials (
     task_id   TEXT NOT NULL,
     shelf_id  TEXT NOT NULL,
@@ -372,6 +402,7 @@ function rowToItem(row) {
     title: row.title,
     parentId: row.parent_id || null,
     order: row.ord,
+    boardOrder: row.board_order ?? undefined,
     note: row.note || '',
     status: row.status || undefined,
     priority: row.priority === null || row.priority === undefined ? undefined : Number(row.priority),
@@ -422,6 +453,10 @@ const DEFAULT_SETTINGS = {
   studyDailyMinutes: 60,
   maxRemindersPerWindow: 6,
   systemNotify: true,
+  dailyAdvice: true,
+  adviceRegion: '',
+  calendarAutoRefresh: true,
+  adviceRegionLocked: false,
   kindLabels: {},
   kinds: [
     { id: 'area', label: '领域' },
@@ -596,19 +631,16 @@ function openBackgroundFolder() {
 
 function spawnDetached(command, args, options = {}) {
   try {
-    spawn(command, args, { detached: true, stdio: 'ignore', ...options }).unref()
+    const child = spawn(command, args, { detached: true, stdio: 'ignore', ...options })
+    child.on('error', () => {})
+    child.unref()
     return true
   } catch {
     return false
   }
 }
 
-function hostNotify(title, body) {
-  try {
-    if (readSettings().systemNotify === false) return false
-  } catch {
-    // Unreadable settings keep the notification path alive.
-  }
+async function hostNotify(title, body) {
   if (systemNotifier) {
     try {
       const toast = new systemNotifier({ title, body, silent: false })
@@ -629,7 +661,33 @@ function hostNotify(title, body) {
  */
 const OSASCRIPT = '/usr/bin/osascript'
 
+function notificationCommand(command, args, env = process.env) {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, { stdio: 'ignore', windowsHide: true, timeout: 10000, env })
+    child.once('error', () => resolve(false))
+    child.once('exit', (code) => resolve(code === 0))
+  })
+}
+
 function platformNotify(title, body) {
+  if (process.platform === 'win32') {
+    const script = [
+      "$ErrorActionPreference='Stop'",
+      'Add-Type -AssemblyName System.Windows.Forms,System.Drawing',
+      '$message=ConvertFrom-Json -InputObject $env:LP_NOTIFICATION',
+      '$icon=[System.Windows.Forms.NotifyIcon]::new()',
+      'try {',
+      '  $icon.Icon=[System.Drawing.SystemIcons]::Information',
+      '  $icon.Visible=$true',
+      '  $icon.ShowBalloonTip(7000,$message.title,$message.body,[System.Windows.Forms.ToolTipIcon]::Info)',
+      '  Start-Sleep -Seconds 8',
+      '} finally { $icon.Dispose() }',
+    ].join('\n')
+    return notificationCommand('powershell.exe', ['-NoProfile', '-NonInteractive', '-STA', '-EncodedCommand', Buffer.from(script, 'utf16le').toString('base64')], {
+      ...process.env, LP_NOTIFICATION: JSON.stringify({ title, body }),
+    })
+  }
+  if (process.platform === 'linux') return notificationCommand('notify-send', ['--', title, body])
   if (process.platform !== 'darwin' || !existsSync(OSASCRIPT)) return false
   // AppleScript string literals only need backslash and double-quote escapes;
   // newlines collapse so the banner stays one line.
@@ -640,7 +698,7 @@ function platformNotify(title, body) {
       .replace(/[\r\n]+/g, ' ')
       .slice(0, 400)
   const script = `display notification "${quote(body)}" with title "${quote(title)}"`
-  return spawnDetached(OSASCRIPT, ['-e', script])
+  return notificationCommand(OSASCRIPT, ['-e', script])
 }
 
 /**
@@ -653,7 +711,11 @@ ObjC.import("Foundation");
 function run(argv) {
   var doc = $.PDFDocument.alloc.initWithURL($.NSURL.fileURLWithPath(argv[0]));
   if (!doc) return "";
-  return ObjC.unwrap(doc.string) || "";
+  var pages = [];
+  for (var i = 0; i < Number(doc.pageCount); i++) {
+    pages.push(ObjC.unwrap(doc.pageAtIndex(i).string) || "");
+  }
+  return JSON.stringify(pages);
 }`
 
 function pdfKitText(target) {
@@ -670,8 +732,8 @@ function pdfKitText(target) {
     return null
   }
   if (result.error || result.status !== 0) return null
-  // osascript ends the returned string with a single newline of its own.
-  return String(result.stdout || '').replace(/\r?\n$/, '')
+  const pages = safeJson(result.stdout, null)
+  return Array.isArray(pages) ? pages.join('\f') : null
 }
 
 /** PDF text plus the engine that produced it; throws when no engine works. */
@@ -794,6 +856,17 @@ function migrateLegacy(db) {
 function createStore() {
   mkdirSync(DATA_DIR, { recursive: true })
   const db = new DatabaseSync(DB_FILE)
+  // Keep a rollback snapshot before the first launch with the new schema.
+  const previous = db.prepare('PRAGMA table_info(items)').all()
+  if (previous.length && !previous.some((column) => column.name === 'board_order')) {
+    try {
+      mkdirSync(BACKUP_DIR, { recursive: true })
+      const stamp = nowIso().replace(/[:.]/g, '-')
+      db.prepare('VACUUM INTO ?').run(join(BACKUP_DIR, `data-${stamp}-before-0.9.38.db`))
+    } catch (error) {
+      console.error('[life-planner] could not save the pre-upgrade database snapshot', error)
+    }
+  }
   db.exec('PRAGMA journal_mode = WAL')
   db.exec('PRAGMA synchronous = NORMAL')
   db.exec('PRAGMA foreign_keys = ON')
@@ -807,8 +880,10 @@ function createStore() {
   if (!columns.includes('task_type')) db.exec('ALTER TABLE items ADD COLUMN task_type TEXT')
   if (!columns.includes('start_at')) db.exec('ALTER TABLE items ADD COLUMN start_at TEXT')
   if (!columns.includes('location')) db.exec('ALTER TABLE items ADD COLUMN location TEXT')
+  if (!columns.includes('board_order')) db.exec('ALTER TABLE items ADD COLUMN board_order INTEGER')
   const subjectColumns = db.prepare('PRAGMA table_info(subjects)').all().map((column) => column.name)
   if (!subjectColumns.includes('exam_date')) db.exec('ALTER TABLE subjects ADD COLUMN exam_date TEXT')
+  if (!subjectColumns.includes('position')) db.exec('ALTER TABLE subjects ADD COLUMN position INTEGER')
   const topicColumns = db.prepare('PRAGMA table_info(topics)').all().map((column) => column.name)
   if (!topicColumns.includes('lock_until')) db.exec('ALTER TABLE topics ADD COLUMN lock_until TEXT')
   if (!topicColumns.includes('mastered_at')) db.exec('ALTER TABLE topics ADD COLUMN mastered_at TEXT')
@@ -826,6 +901,27 @@ function createStore() {
     db.exec('ALTER TABLE shelf_items ADD COLUMN listing_truncated INTEGER NOT NULL DEFAULT 0')
   }
   const studyTaskColumns = db.prepare('PRAGMA table_info(study_tasks)').all().map((column) => column.name)
+  if (!studyTaskColumns.includes('scheduled')) db.exec('ALTER TABLE study_tasks ADD COLUMN scheduled INTEGER NOT NULL DEFAULT 0')
+  if (!studyTaskColumns.includes('scheduled_at')) db.exec('ALTER TABLE study_tasks ADD COLUMN scheduled_at TEXT')
+  if (!studyTaskColumns.includes('grading')) db.exec("ALTER TABLE study_tasks ADD COLUMN grading TEXT NOT NULL DEFAULT 'neutral'")
+  if (!studyTaskColumns.includes('subject_id')) {
+    db.exec('BEGIN')
+    try {
+      db.exec('ALTER TABLE study_tasks ADD COLUMN subject_id TEXT REFERENCES subjects(id) ON DELETE SET NULL')
+      if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='study_subject_tasks'").get()) {
+        // A task may have had several links. Carry forward its most recent link
+        // and retain the old relation table for recovery.
+        db.exec(`UPDATE study_tasks SET subject_id=(
+          SELECT link.subject_id FROM study_subject_tasks AS link JOIN subjects ON subjects.id=link.subject_id
+          WHERE link.task_id=study_tasks.id ORDER BY link.rowid DESC LIMIT 1
+        )`)
+      }
+      db.exec('COMMIT')
+    } catch (error) {
+      db.exec('ROLLBACK')
+      throw error
+    }
+  }
   if (studyTaskColumns.length > 0 && !studyTaskColumns.includes('session_id')) {
     db.exec('ALTER TABLE study_tasks ADD COLUMN session_id TEXT')
   }
@@ -899,6 +995,8 @@ function createStore() {
   if (mistakeColumns.length > 0 && !mistakeColumns.includes('item_id')) {
     db.exec('ALTER TABLE mistakes ADD COLUMN item_id TEXT')
   }
+  if (!mistakeColumns.includes('provenance')) db.exec("ALTER TABLE mistakes ADD COLUMN provenance TEXT NOT NULL DEFAULT '[]'")
+  if (!mistakeColumns.includes('memory_tip')) db.exec("ALTER TABLE mistakes ADD COLUMN memory_tip TEXT NOT NULL DEFAULT ''")
   // Mastery moved from four words to a 0-10 number.
   db.exec(
     "UPDATE topics SET mastery = CASE mastery WHEN 'new' THEN '4' WHEN 'learning' THEN '5' WHEN 'review' THEN '3' WHEN 'mastered' THEN '10' ELSE mastery END WHERE mastery IN ('new','learning','review','mastered')",
@@ -907,6 +1005,11 @@ function createStore() {
   if (!notificationColumns.includes('kind')) db.exec('ALTER TABLE notifications ADD COLUMN kind TEXT')
   if (!notificationColumns.includes('priority')) db.exec('ALTER TABLE notifications ADD COLUMN priority TEXT')
   if (!notificationColumns.includes('host_notified')) db.exec('ALTER TABLE notifications ADD COLUMN host_notified INTEGER NOT NULL DEFAULT 0')
+  if (!notificationColumns.includes('host_attempts')) db.exec('ALTER TABLE notifications ADD COLUMN host_attempts INTEGER NOT NULL DEFAULT 0')
+  const adviceColumns = db.prepare('PRAGMA table_info(daily_tips)').all().map((column) => column.name)
+  if (!adviceColumns.includes('source')) db.exec("ALTER TABLE daily_tips ADD COLUMN source TEXT NOT NULL DEFAULT 'legacy'")
+  if (!adviceColumns.includes('model_attempted')) db.exec('ALTER TABLE daily_tips ADD COLUMN model_attempted INTEGER NOT NULL DEFAULT 0')
+  if (!adviceColumns.includes('region')) db.exec("ALTER TABLE daily_tips ADD COLUMN region TEXT NOT NULL DEFAULT ''")
   // Priorities are 0-9 now; older rows hold the three words.
   db.exec(
     "UPDATE items SET priority = CASE priority WHEN 'high' THEN '8' WHEN 'medium' THEN '5' WHEN 'low' THEN '1' ELSE priority END WHERE priority IN ('high','medium','low')",
@@ -914,11 +1017,31 @@ function createStore() {
   migrateLegacy(db)
   writeBackup(db)
 
-  const allItems = () => db.prepare(`SELECT ${ITEM_COLUMNS} FROM items`).all().map(rowToItem)
-  const getItem = (id) => rowToItem(db.prepare(`SELECT ${ITEM_COLUMNS} FROM items WHERE id = ?`).get(id))
+  const allItems = () => db.prepare(`SELECT ${ITEM_COLUMNS}, board_order FROM items`).all().map(rowToItem)
+  const getItem = (id) => rowToItem(db.prepare(`SELECT ${ITEM_COLUMNS}, board_order FROM items WHERE id = ?`).get(id))
 
   function isDone(item) {
     return Boolean(item && item.completedAt)
+  }
+
+  function studyMirror(row, item, now) {
+    const state = studyTaskState(row, now)
+    const startAt = state === 'todo' ? row.scheduled_at || undefined : undefined
+    const dueAt = state === 'todo' ? undefined : new Date(studyDayKey(now) + 'T20:00:00').toISOString()
+    const recordedToday = item.completedAt && studyDayKey(new Date(item.completedAt)) === studyDayKey(now)
+    const completedAt = state === 'done' ? (recordedToday ? item.completedAt : row.updated_at || now.toISOString()) : undefined
+    return { ...item, startAt, dueAt, completedAt, status: state === 'todo' ? 'todo' : 'doing', studyState: state }
+  }
+
+  function plannerIndex(now = new Date()) {
+    const mirrors = new Map(db.prepare('SELECT * FROM study_tasks WHERE item_id IS NOT NULL').all().map((row) => [row.item_id, row]))
+    const legacy = new Set(db.prepare('SELECT task_id FROM study_plan WHERE task_id IS NOT NULL').all().map((row) => row.task_id))
+    const items = allItems().filter((item) => !item.deletedAt).map((item) => {
+      const mirror = mirrors.get(item.id)
+      if (mirror) return studyMirror(mirror, item, now)
+      return legacy.has(item.id) ? { ...item, legacyStudy: true } : item
+    })
+    return { items, mirrors, now, ...buildIndex(items) }
   }
 
   function derive(item, index) {
@@ -931,9 +1054,14 @@ function createStore() {
       return node && !isDone(node)
     })
     const below = index.unfinishedIds.get(item.id) || []
-    const blockedBy = Array.from(new Set([...explicit, ...below]))
-    const blocked = isTaskLike(item.kind) && !done ? blockedBy.length > 0 : false
-    return { done, archived, blocked, blockedBy, deleted: Boolean(item.deletedAt) }
+    const blockedBy = item.studyState ? [] : Array.from(new Set([...explicit, ...below]))
+    const blocked = !item.studyState && !done && (item.status === 'blocked' || blockedBy.length > 0)
+    return {
+      done, archived, blocked, blockedBy, deleted: Boolean(item.deletedAt),
+      boardColumn: boardColumn(item, blocked, index.now),
+      studyManaged: Boolean(item.studyState || item.legacyStudy),
+      studyTask: Boolean(item.studyState),
+    }
   }
 
   /** One pass over the tree: children lookup plus every unfinished descendant id. */
@@ -962,10 +1090,26 @@ function createStore() {
     for (const root of children.get(null) || []) walk(root)
     // Orphans (a parent that no longer exists) still need an entry.
     for (const item of items) if (!unfinishedIds.has(item.id)) walk(item)
-    return { byId, unfinishedIds }
+    return { byId, unfinishedIds, children }
   }
 
-  function validateParent(itemId, parentId) {
+  function boardColumn(item, blocked, now) {
+    if (item.studyState) return item.studyState
+    if (isDone(item)) return 'done'
+    if (blocked) return 'blocked'
+    if (item.status === 'doing' || item.status === 'active') return 'doing'
+    if (item.status === 'paused') return 'todo'
+    return item.startAt && Date.parse(item.startAt) <= now.getTime() ? 'doing' : 'todo'
+  }
+
+  function boardCompare(a, b, now) {
+    const overdue = (item) => Number(Boolean(item.dueAt && !isDone(item) && Date.parse(item.dueAt) < now))
+    return (a.boardOrder ?? Infinity) - (b.boardOrder ?? Infinity) ||
+      overdue(b) - overdue(a) || (b.priority ?? 5) - (a.priority ?? 5) ||
+      (a.dueAt || '~').localeCompare(b.dueAt || '~') || a.id.localeCompare(b.id)
+  }
+
+  function validateParent(itemId, parentId, nextDependencies) {
     if (!parentId) return
     const parent = getItem(parentId)
     if (!parent) throw new Error(`parent not found: ${parentId}`)
@@ -977,11 +1121,13 @@ function createStore() {
       const row = getItem(cursor)
       cursor = row ? row.parentId : null
     }
+    if (wouldCycle(parentId, itemId, nextDependencies)) throw new Error('不能移动：父子任务和前置依赖会形成循环')
   }
 
   function view(item) {
-    const index = buildIndex(allItems())
-    const merged = { ...item, derived: derive(item, index) }
+    const index = plannerIndex()
+    const current = index.byId.get(item.id) || item
+    const merged = { ...item, ...current, derived: derive(current, index) }
     // Tool results must be lossless JSON: drop absent fields instead of
     // handing `undefined` to the harness.
     const out = {}
@@ -1011,14 +1157,30 @@ function createStore() {
     return row
   }
 
-  function visibleItems() {
-    const items = allItems()
-    const index = buildIndex(items)
-    return items.filter((item) => !item.deletedAt).map((item) => ({ ...item, derived: derive(item, index) }))
+  function syncStudyMirror(row, now) {
+    if (!row.item_id) return
+    const item = getItem(row.item_id)
+    if (!item) return
+    const next = studyMirror(row, item, now)
+    if (item.status === next.status && item.startAt === next.startAt &&
+      item.dueAt === next.dueAt && item.completedAt === next.completedAt) return
+    db.prepare('UPDATE items SET status=?, start_at=?, due_at=?, completed_at=?, updated_at=? WHERE id=?')
+      .run(next.status, next.startAt ?? null, next.dueAt ?? null, next.completedAt ?? null, now.toISOString(), item.id)
   }
 
-  function snapshot() {
-    return { plan: readPlan(), items: visibleItems() }
+  function writeStudySchedule(row, future, scheduledAt, now) {
+    db.prepare('UPDATE study_tasks SET scheduled=?, scheduled_at=?, updated_at=? WHERE id=?')
+      .run(Number(future), scheduledAt, now.toISOString(), row.id)
+    syncStudyMirror({ ...row, scheduled: future, scheduled_at: scheduledAt }, now)
+  }
+
+  function visibleItems(now = new Date()) {
+    const index = plannerIndex(now)
+    return index.items.map((item) => ({ ...item, derived: derive(item, index) }))
+  }
+
+  function snapshot(now) {
+    return { plan: readPlan(), items: visibleItems(now) }
   }
 
   function readPlan() {
@@ -1029,8 +1191,8 @@ function createStore() {
     return { title: row.title, updatedAt: row.updated_at || '', bodyMarkdown: row.body_markdown || '' }
   }
 
-  function wouldCycle(itemId, dependencyId) {
-    const index = new Map(allItems().map((entry) => [entry.id, entry]))
+  function wouldCycle(itemId, dependencyId, nextDependencies) {
+    const index = buildIndex(allItems().filter((item) => !item.deletedAt))
     const seen = new Set()
     const stack = [dependencyId]
     while (stack.length > 0) {
@@ -1038,12 +1200,15 @@ function createStore() {
       if (current === itemId) return true
       if (seen.has(current)) continue
       seen.add(current)
-      const node = index.get(current)
-      for (const next of (node && node.dependsOn) || []) stack.push(next)
+      const node = index.byId.get(current)
+      const prerequisites = current === dependencyId && Array.isArray(nextDependencies) ? nextDependencies : node?.dependsOn || []
+      for (const next of prerequisites) stack.push(next)
+      for (const child of index.children.get(current) || []) stack.push(child.id)
     }
     return false
   }
 
+  const studyTrackers = new Map()
   let writeDepth = 0
   const write = (operation) => {
     // Reentrant transactions: an inner call joins the outer one with a savepoint
@@ -1102,6 +1267,11 @@ function createStore() {
     const entries = []
     for (const [key, value] of Object.entries(patch || {})) {
       if (!(key in DEFAULT_SETTINGS)) continue
+      if (key === 'adviceRegion') {
+        if (typeof value === 'string') entries.push([key, value.trim().slice(0, 80)])
+        continue
+      }
+      if (['calendarAutoRefresh', 'adviceRegionLocked', 'dailyAdvice'].includes(key) && typeof value !== 'boolean') continue
       const limits = SETTING_LIMITS[key]
       if (limits) {
         const number = Number(value)
@@ -1138,23 +1308,40 @@ function createStore() {
     return -1
   }
 
+  let hostDelivery = null
+  let storeClosed = false
+  function deliverHostNotification(now) {
+    if (DEV || hostDelivery || readSettings().systemNotify === false) return
+    const row = db.prepare(`SELECT * FROM notifications
+      WHERE host_notified=0 AND host_attempts<3 AND created_at>=?
+      ORDER BY CASE WHEN kind='study' THEN 0 ELSE 1 END, host_attempts, created_at LIMIT 1`)
+      .get(new Date(now.getTime() - 86400000).toISOString())
+    if (!row) return
+    hostDelivery = row.id
+    db.prepare('UPDATE notifications SET host_attempts=host_attempts+1 WHERE id=?').run(row.id)
+    const title = row.kind === 'study' ? '学习任务开始' : row.kind === 'long' ? '长期计划提醒' : '近期任务提醒'
+    const detail = [row.title, row.due_at && new Date(row.due_at).toLocaleString(), row.priority != null && `P${row.priority}`]
+      .filter(Boolean).join(' · ')
+    Promise.resolve(hostNotify(title, detail))
+      .then((sent) => {
+        if (sent && !storeClosed) db.prepare('UPDATE notifications SET host_notified=1 WHERE id=?').run(row.id)
+      })
+      .catch((error) => console.error('[life-planner] system notification failed', error))
+      .finally(() => { hostDelivery = null })
+  }
+
   function pushNotification(item, now, kind) {
     write(() => {
       // One undelivered reminder per item is enough; a second identical one
       // while the first is still waiting would only be noise.
       const waiting = db
-        .prepare('SELECT 1 AS hit FROM notifications WHERE delivered_at IS NULL AND item_id = ? LIMIT 1')
+        .prepare('SELECT 1 AS hit FROM notifications WHERE delivered_at IS NULL AND host_notified=0 AND item_id = ? LIMIT 1')
         .get(item.id)
       if (!waiting) {
         const noteId = newId('note')
         db.prepare(
           'INSERT INTO notifications (id,item_id,title,due_at,kind,priority,created_at,delivered_at) VALUES (?,?,?,?,?,?,?,NULL)',
         ).run(noteId, item.id, item.title, item.dueAt || null, kind, item.priority ?? null, now.toISOString())
-        // Surface it from the host so a closed page still gets a toast; the page
-        // only keeps the in-app row when this succeeded.
-        if (hostNotify(kind === 'long' ? '长期计划提醒' : '近期任务提醒', item.title)) {
-          db.prepare('UPDATE notifications SET host_notified=1 WHERE id=?').run(noteId)
-        }
       }
       db.prepare('UPDATE items SET last_notified_at=?, defer_started_at=NULL WHERE id=?').run(now.toISOString(), item.id)
     })
@@ -1166,6 +1353,9 @@ function createStore() {
    */
   function scan(now = new Date()) {
     const settings = readSettings()
+    for (const [id, tracker] of studyTrackers) {
+      if (now.getTime() - tracker.at > 60000) studyTrackers.delete(id)
+    }
     const stampOf = (item) => new Date(item.updatedAt || item.createdAt).getTime()
     const archiveCutoff = now.getTime() - Number(settings.archiveAfterDays) * 86400000
     const deleteCutoff = now.getTime() - Number(settings.deleteAfterDays) * 86400000
@@ -1173,6 +1363,15 @@ function createStore() {
     // Study entries never remind: an overdue one simply slides to the current
     // study day, and the tutor raises it in conversation instead.
     const todayKey = studyDayKey(now)
+    write(() => {
+      const due = db.prepare('SELECT * FROM study_tasks WHERE scheduled=1 AND scheduled_at<=?')
+        .all(now.toISOString())
+      for (const task of due) {
+        writeStudySchedule(task, false, null, now)
+        db.prepare('INSERT INTO notifications (id,item_id,title,kind,created_at) VALUES (?,?,?,?,?)')
+          .run(newId('note'), task.item_id || task.id, task.title, 'study', now.toISOString())
+      }
+    })
     for (const row of db
       .prepare('SELECT id, task_id FROM study_plan WHERE done_at IS NULL AND date < ?')
       .all(todayKey)) {
@@ -1194,31 +1393,17 @@ function createStore() {
     )
     // Study-conversation nodes are daily work: refresh their deadline, reopen them
     // for a new day, and never take part in overdue reminders.
-    const todayStamp = studyDayKey(now)
-    const dueStamp = new Date(`${todayStamp}T20:00:00`).toISOString()
-    for (const row of db.prepare('SELECT * FROM study_tasks WHERE item_id IS NOT NULL').all()) {
-      const item = db.prepare('SELECT id, due_at, completed_at FROM items WHERE id=?').get(row.item_id)
-      if (!item) {
-        write(() => db.prepare('UPDATE study_tasks SET item_id=NULL WHERE id=?').run(row.id))
-        continue
-      }
-      planTaskIds.add(item.id)
-      const doneToday = row.last_done_day === todayStamp
-      const nextCompleted = doneToday ? item.completed_at || now.toISOString() : null
-      // Only write when a value really changes: refreshing updated_at every
-      // minute turned each study task into a write per minute.
-      if (item.due_at !== dueStamp || (item.completed_at || null) !== nextCompleted) {
-        write(() =>
-          db
-            .prepare('UPDATE items SET due_at=?, completed_at=?, updated_at=? WHERE id=?')
-            .run(dueStamp, nextCompleted, now.toISOString(), item.id),
-        )
-      }
-    }
+    const studyRows = db.prepare('SELECT * FROM study_tasks WHERE item_id IS NOT NULL').all()
+    const studyMirrorIds = new Set(studyRows.map((row) => row.item_id))
+    for (const id of studyMirrorIds) planTaskIds.add(id)
+    write(() => {
+      for (const task of studyRows) syncStudyMirror(task, now)
+    })
 
     const all = allItems()
     write(() => {
       for (const item of all) {
+        if (studyMirrorIds.has(item.id)) continue
         if (item.archivedAt) {
           if (stampOf(item) < deleteCutoff) {
             db.prepare('DELETE FROM items WHERE id=?').run(item.id)
@@ -1264,6 +1449,7 @@ function createStore() {
       if (planTaskIds.has(item.id)) continue
       const last = item.lastNotifiedAt ? new Date(item.lastNotifiedAt).getTime() : 0
       if (!item.dueAt) {
+        if (item.startAt && Date.parse(item.startAt) > now.getTime()) continue
         // Long-term work has no deadline to count down; it recurs on its own
         // cadence and queues behind anything that is actually due.
         if (last && now.getTime() - last < longTermMs) continue
@@ -1321,6 +1507,7 @@ function createStore() {
 
   return {
     close() {
+      storeClosed = true
       db.close()
     },
     snapshot,
@@ -1371,7 +1558,7 @@ function createStore() {
         createdAt: nowIso(),
       }
       item.updatedAt = item.createdAt
-      write(() =>
+      write(() => {
         db
           .prepare(`INSERT INTO items (${ITEM_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
           .run(
@@ -1398,13 +1585,15 @@ function createStore() {
             item.taskType || null,
             item.startAt || null,
             item.location || null,
-          ),
-      )
+          )
+        if (input.dependsOn !== undefined) item.dependsOn = this.depends(item.id, input.dependsOn).dependsOn
+      })
       return item
     },
     updateItem(id, patch) {
       const item = getItem(id)
       if (!item) throw new Error(`item not found: ${id}`)
+      const mirror = db.prepare('SELECT id FROM study_tasks WHERE item_id=?').get(id)
       const next = { ...item }
       for (const key of ['title', 'note', 'dueAt', 'parentId', 'status', 'kind']) {
         if (patch[key] !== undefined) next[key] = patch[key]
@@ -1414,11 +1603,18 @@ function createStore() {
       }
       if (patch.tags !== undefined) next.tags = normalizeTags(patch.tags)
       if (patch.startAt !== undefined) next.startAt = patch.startAt || undefined
+      if (mirror) {
+        next.status = item.status
+        next.startAt = item.startAt
+        next.dueAt = item.dueAt
+      } else if (next.startAt !== item.startAt && patch.status === undefined && item.status !== 'blocked') {
+        next.status = 'todo'
+      }
       if (patch.location !== undefined) {
         next.location = patch.location ? String(patch.location).slice(0, 60) : undefined
       }
       if (patch.recurrence !== undefined) {
-        next.recurrence = patch.recurrence && patch.recurrence.freq ? patch.recurrence : undefined
+        next.recurrence = mirror ? item.recurrence : patch.recurrence && patch.recurrence.freq ? patch.recurrence : undefined
       }
       if (patch.taskType !== undefined) {
         next.taskType = patch.taskType ? String(patch.taskType).slice(0, 24) : undefined
@@ -1431,7 +1627,7 @@ function createStore() {
       }
       next.kind = 'task'
       if ((next.parentId || null) !== (item.parentId || null)) {
-        validateParent(id, next.parentId)
+        validateParent(id, next.parentId, patch.dependsOn)
         // Reparenting appends to the new sibling list instead of keeping an
         // order number that may already belong to another child there.
         next.order = db
@@ -1439,7 +1635,7 @@ function createStore() {
           .get(next.parentId || '').n
       }
       const stamp = nowIso()
-      write(() =>
+      write(() => {
         db
           .prepare(
             `UPDATE items SET kind=?, title=?, note=?, status=?, priority=?, due_at=?, recurrence=?, start_at=?, location=?, parent_id=?, ord=?, updated_at=?, tags=?, task_type=? WHERE id=?`,
@@ -1460,8 +1656,12 @@ function createStore() {
             JSON.stringify(normalizeTags(next.tags)),
             next.taskType || null,
             id,
-          ),
-      )
+          )
+        if (mirror && next.title !== item.title) {
+          db.prepare('UPDATE study_tasks SET title=?, updated_at=? WHERE id=?').run(next.title, stamp, mirror.id)
+        }
+        if (patch.dependsOn !== undefined) next.dependsOn = this.depends(id, patch.dependsOn).dependsOn
+      })
       return { ...next, updatedAt: stamp }
     },
     /** Tasks referenced by a study conversation are managed there, not in the tree. */
@@ -1472,14 +1672,15 @@ function createStore() {
     complete(id, done, note, force, allowPlanTask = false) {
       const item = getItem(id)
       if (!item) throw new Error(`item not found: ${id}`)
-      if (done && !allowPlanTask && this.isPlanTask(id)) {
-        throw new Error('学习任务由学习对话管理，不能手动完成')
+      const managed = this.isPlanTask(id)
+      if (!allowPlanTask && managed) {
+        throw new Error('学习任务由学习进度管理，不能手动更改完成状态')
       }
       if (done) {
         // Completion is gated on the same structure the tree shows: unfinished
         // descendants and unfinished explicit prerequisites. The caller may
         // force it after showing the user what is still open.
-        const index = buildIndex(allItems())
+        const index = plannerIndex()
         const below = index.unfinishedIds.get(id) || []
         const deps = (item.dependsOn || []).filter((dep) => {
           const node = index.byId.get(dep)
@@ -1496,13 +1697,18 @@ function createStore() {
         }
       }
       const completedAt = done ? nowIso() : null
-      write(() =>
+      write(() => {
         db
           .prepare('UPDATE items SET completed_at=?, completion_note=?, updated_at=? WHERE id=?')
-          .run(completedAt, done && note !== undefined ? note : null, nowIso(), id),
-      )
+          .run(completedAt, done && note !== undefined ? note : null, nowIso(), id)
+        if (done && !item.completedAt && !managed) {
+          const onTime = item.dueAt ? Number(Date.parse(completedAt) <= Date.parse(item.dueAt)) : null
+          db.prepare('INSERT OR IGNORE INTO completion_events VALUES (?,?,?,?,?)')
+            .run('task', id, studyDayKey(new Date(completedAt)), completedAt, onTime)
+        }
+      })
       // A repeating task keeps its history and spawns the next occurrence.
-      if (done && item.recurrence && item.recurrence.freq) {
+      if (done && !item.completedAt && item.recurrence && item.recurrence.freq) {
         const due = nextDue(item.dueAt, item.recurrence)
         if (due) {
           const copy = this.addItem({
@@ -1530,6 +1736,7 @@ function createStore() {
     archive(id) {
       const item = getItem(id)
       if (!item) throw new Error(`item not found: ${id}`)
+      if (db.prepare('SELECT 1 FROM study_tasks WHERE item_id=?').get(id)) throw new Error('不能从规划归档学习任务')
       const archivedAt = nowIso()
       write(() => db.prepare('UPDATE items SET archived_at=?, updated_at=? WHERE id=?').run(archivedAt, archivedAt, id))
       return { ...item, archivedAt }
@@ -1555,11 +1762,12 @@ function createStore() {
     depends(id, dependsOn) {
       const item = getItem(id)
       if (!item) throw new Error(`item not found: ${id}`)
+      if (!Array.isArray(dependsOn) && dependsOn != null) throw new Error('invalid dependencies')
       const next = []
-      for (const dep of dependsOn || []) {
+      for (const dep of new Set(dependsOn || [])) {
         if (dep === id) throw new Error('依赖不能指向自己')
         if (!getItem(dep)) throw new Error(`前置任务不存在：${dep}`)
-        if (wouldCycle(id, dep)) throw new Error(`会形成循环依赖：${id} -> ${dep}`)
+        if (wouldCycle(id, dep)) throw new Error(`不能添加循环依赖：${id} -> ${dep}`)
         next.push(dep)
       }
       write(() =>
@@ -1572,13 +1780,7 @@ function createStore() {
       if (!item) throw new Error(`item not found: ${id}`)
       const nextParent = parentId || null
       if (nextParent === id) throw new Error('不能把节点移动到它自己下面')
-      const index = new Map(allItems().map((entry) => [entry.id, entry]))
-      let cursor = nextParent
-      while (cursor) {
-        if (cursor === id) throw new Error('不能移动到自己的子树里')
-        const node = index.get(cursor)
-        cursor = node ? node.parentId : null
-      }
+      if (nextParent !== item.parentId) validateParent(id, nextParent)
       const siblings = db
         .prepare("SELECT id FROM items WHERE COALESCE(parent_id, '') = ? AND id <> ? ORDER BY ord, created_at")
         .all(nextParent || '', id)
@@ -1597,6 +1799,7 @@ function createStore() {
     deleteItem(id) {
       const item = getItem(id)
       if (!item) throw new Error(`item not found: ${id}`)
+      if (db.prepare('SELECT 1 FROM study_tasks WHERE item_id=?').get(id)) throw new Error('不能从规划删除学习任务')
       const all = allItems()
       const children = all
         .filter((entry) => entry.parentId === id)
@@ -1630,12 +1833,6 @@ function createStore() {
           )
         }
         db.prepare('DELETE FROM items WHERE id=?').run(id)
-        // A study conversation mirrors its node here; deleting the node ends it.
-        const linked = db.prepare('SELECT id FROM study_tasks WHERE item_id=?').get(id)
-        if (linked) {
-          db.prepare('DELETE FROM study_tasks WHERE id=?').run(linked.id)
-          db.prepare('DELETE FROM study_task_materials WHERE task_id=?').run(linked.id)
-        }
         // Nothing may keep pointing at the row that just disappeared.
         purgeItemReferences(id)
         // Keep the row for a short while so a mistaken delete can be undone.
@@ -1683,6 +1880,7 @@ function createStore() {
           item.startAt || null,
           item.location || null,
         )
+        if (Number.isInteger(item.boardOrder)) db.prepare('UPDATE items SET board_order=? WHERE id=?').run(item.boardOrder, id)
         db.prepare('DELETE FROM trash WHERE id=?').run(id)
       })
       return item
@@ -1705,109 +1903,51 @@ function createStore() {
       }))
       return { ...item, order: target, reordered: true }
     },
+    moveBoardItem({ id, column, anchorId, after, force }) {
+      if (!['todo', 'doing', 'blocked', 'done'].includes(column)) throw new Error('invalid board column')
+      return write(() => {
+        const now = new Date()
+        let index = plannerIndex(now)
+        const item = index.byId.get(id)
+        if (!item || item.archivedAt) throw new Error('task not found on the board')
+        const previous = derive(item, index).boardColumn
+        const target = index.byId.get(anchorId)
+        if (anchorId && (!target || target.archivedAt || derive(target, index).boardColumn !== column)) {
+          throw new Error('目标任务位置已无效，请重试')
+        }
+        if (anchorId === id) return { item: view(item), column: previous }
+        if (column !== previous) {
+          const mirror = index.mirrors.get(id)
+          if (mirror) {
+            if (previous === 'done' || !['todo', 'doing'].includes(column)) {
+              throw new Error('不能手动更改学习任务的完成状态，学习任务可在待办和进行中之间移动')
+            }
+            writeStudySchedule(mirror, column === 'todo', null, now)
+          } else if ((column === 'done' || previous === 'done') && item.legacyStudy) {
+            throw new Error('不能手动更改学习任务的完成状态')
+          } else if (column === 'done') {
+            const outcome = this.complete(id, true, undefined, force === true)
+            if (outcome.blocked) return outcome
+          } else {
+            if (previous === 'done') this.complete(id, false)
+            db.prepare('UPDATE items SET status=?, updated_at=? WHERE id=?').run(column === 'todo' ? 'paused' : column, now.toISOString(), id)
+          }
+          index = plannerIndex(now)
+          if (derive(index.byId.get(id), index).boardColumn !== column) {
+            throw new Error('不能移出被阻塞列，请先完成子任务或前置任务')
+          }
+        }
+        const others = index.items.filter((entry) => entry.id !== id && !entry.archivedAt && derive(entry, index).boardColumn === column)
+          .sort((a, b) => boardCompare(a, b, now.getTime()))
+        const anchor = anchorId ? others.findIndex((entry) => entry.id === anchorId) : -1
+        others.splice(anchor < 0 ? others.length : anchor + Number(after === true), 0, item)
+        const update = db.prepare('UPDATE items SET board_order=? WHERE id=?')
+        others.forEach((entry, position) => update.run(position, entry.id))
+        return { item: view(getItem(id)), column }
+      })
+    },
     readSettings,
     saveSettings,
-    /** Root "学习" node and the per-subject node that study tasks hang under. */
-    ensureStudyTree(subjectTitle) {
-      // Every node is a task now, so the root is found by parent + title.
-      const findRoot = () => db.prepare('SELECT * FROM items WHERE parent_id IS NULL AND title=?').get('学习')
-      let root = findRoot()
-      if (!root) {
-        const created = this.addItem({ title: '学习' })
-        root = db.prepare('SELECT * FROM items WHERE id=?').get(created.id)
-      }
-      let node = db
-        .prepare('SELECT * FROM items WHERE parent_id=? AND title=? ORDER BY ord')
-        .get(root.id, subjectTitle)
-      if (!node) {
-        const created = this.addItem({ title: subjectTitle, parentId: root.id })
-        node = db.prepare('SELECT * FROM items WHERE id=?').get(created.id)
-      }
-      return { rootId: root.id, subjectId: node.id }
-    },
-
-    /**
-     * Fill the days between today and the exam with study entries, then mirror
-     * them into the task tree so they show up in the calendar and the work tree.
-     */
-    generatePlan(subjectId) {
-      const settings = readSettings()
-      const fallbackDaily = Math.max(15, Number(settings.studyDailyMinutes) || 60)
-      // Weekly targets win over the single fallback value.
-      const targetFor = (value) => {
-        const key = dayKeyOf(value)
-        const row = db.prepare('SELECT minutes FROM study_time_targets WHERE day=?').get(key)
-        return Math.max(5, Number(row ? row.minutes : fallbackDaily) || fallbackDaily)
-      }
-      const subject = db.prepare('SELECT * FROM subjects WHERE id=?').get(subjectId)
-      if (!subject) throw new Error(`subject not found: ${subjectId}`)
-      const topics = db
-        .prepare('SELECT * FROM topics WHERE subject_id=? ORDER BY CAST(mastery AS INTEGER)')
-        .all(subjectId)
-      const start = new Date()
-      start.setHours(0, 0, 0, 0)
-      // A bare YYYY-MM-DD must be read as a local day, not UTC midnight.
-      const exam = subject.exam_date ? new Date(`${String(subject.exam_date).slice(0, 10)}T00:00:00`) : null
-      const limit = exam || new Date(start.getTime() + 30 * 86400000)
-
-      const rows = []
-      let day = new Date(start)
-      let budget = targetFor(day)
-      const advance = (minutes) => {
-        budget -= minutes
-        if (budget < 15) {
-          day = new Date(day.getTime() + 86400000)
-          budget = targetFor(day)
-        }
-      }
-      let unscheduled = 0
-      for (const topic of topics) {
-        const mastery = clampMastery(topic.mastery)
-        if (mastery >= 10) continue
-        const learnMinutes = mastery <= 4 ? 45 : 30
-        if (day > limit) {
-          unscheduled += 1
-          continue
-        }
-        rows.push({ date: dayKeyOf(day), topic, kind: 'learn', minutes: learnMinutes })
-        advance(learnMinutes)
-        const reviewDay = new Date(day.getTime() + 2 * 86400000)
-        if (reviewDay <= limit) {
-          rows.push({ date: dayKeyOf(reviewDay), topic, kind: 'review', minutes: 15 })
-        }
-      }
-
-      const { subjectId: subjectNodeId } = this.ensureStudyTree(subject.title)
-      // Regenerating must replace the previous mirror as well, otherwise the
-      // calendar and the tree accumulate duplicate study tasks.
-      const stale = db
-        .prepare('SELECT id, task_id FROM study_plan WHERE subject_id=? AND done_at IS NULL')
-        .all(subjectId)
-      write(() => {
-        for (const row of stale) {
-          if (!row.task_id) continue
-          db.prepare('DELETE FROM items WHERE id=?').run(row.task_id)
-          purgeItemReferences(row.task_id)
-        }
-        for (const row of stale) db.prepare('DELETE FROM study_plan WHERE id=?').run(row.id)
-      })
-      const insert = db.prepare(
-        'INSERT INTO study_plan (id,date,subject_id,topic_id,title,kind,minutes,done_at,task_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
-      )
-      const created = []
-      for (const row of rows) {
-        const title = `${row.topic.title} · ${row.kind === 'learn' ? '学习' : '复习'}`
-        const item = this.addItem({
-          title,
-          parentId: subjectNodeId,
-          note: '学习计划',
-          dueAt: new Date(`${row.date}T20:00:00`).toISOString(),
-        })
-        insert.run(newId('plan'), row.date, subjectId, row.topic.id, title, row.kind, row.minutes, null, item.id, nowIso())
-        created.push({ date: row.date, title, taskId: item.id })
-      }
-      return { subject: subject.title, created: created.length, unscheduled }
-    },
     shelfList() {
       return db
         .prepare('SELECT * FROM shelf_items ORDER BY created_at')
@@ -2039,6 +2179,8 @@ function createStore() {
           answer: row.answer,
           reason: row.reason,
           source: row.source,
+          sources: safeJson(row.provenance, []),
+          memoryTip: row.memory_tip || '',
           tags: safeJson(row.tags, []),
           reviewAt: row.review_at || null,
           taskId: row.task_id || null,
@@ -2059,6 +2201,8 @@ function createStore() {
         answer: String(input.answer || ''),
         reason: String(input.reason || ''),
         source: String(input.source || ''),
+        sources: input.taskId && input.itemId ? this.studyItemSources(input.taskId, input.itemId) : [],
+        memoryTip: String(input.memoryTip || '').slice(0, 4000),
         tags: normalizeTags(input.tags),
         reviewAt: input.reviewAt || null,
         taskId: input.taskId || null,
@@ -2068,7 +2212,7 @@ function createStore() {
       write(() =>
         db
           .prepare(
-            'INSERT INTO mistakes (id,subject_id,topic_id,question,answer,reason,source,tags,review_at,task_id,item_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+            'INSERT INTO mistakes (id,subject_id,topic_id,question,answer,reason,source,tags,review_at,task_id,item_id,created_at,provenance,memory_tip) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
           )
           .run(
             mistake.id,
@@ -2083,6 +2227,8 @@ function createStore() {
             mistake.taskId,
             mistake.itemId,
             mistake.createdAt,
+            JSON.stringify(mistake.sources),
+            mistake.memoryTip,
           ),
       )
       return mistake
@@ -2146,12 +2292,13 @@ function createStore() {
     },
 
     /** Index rows only: knowledge itself lives in each conversation workspace. */
-    listStudyTasks() {
-      const day = studyDayKey(new Date())
+    listStudyTasks(now = new Date()) {
+      const day = studyDayKey(now)
       return db
         .prepare('SELECT * FROM study_tasks ORDER BY created_at')
         .all()
         .map((row) => {
+          const state = studyTaskState(row, now)
           const goal = this.effectiveTarget(row, day)
           const progress = this.dayProgress(row.id, day)
           return {
@@ -2169,10 +2316,15 @@ function createStore() {
             answeredNew: progress.answeredNew,
             answeredReview: progress.answeredReview,
             summary: safeJson(row.summary, {}),
+            state,
+            scheduled: state === 'todo',
+            scheduledAt: state === 'todo' ? row.scheduled_at || null : null,
+            subjectId: row.subject_id || null,
+            grading: row.grading,
             itemId: row.item_id || null,
             sessionId: row.session_id || null,
             lastDoneDay: row.last_done_day || null,
-            doneToday: row.last_done_day === day,
+            doneToday: state === 'done',
             overdueDays: this.studyTaskOverdue(row, day),
             missing: !existsSync(row.workspace_path),
             materials: db
@@ -2191,6 +2343,10 @@ function createStore() {
       const workspacePath =
         patch.workspacePath !== undefined ? String(patch.workspacePath || '').trim() : row.workspace_path
       const template = patch.template || row.template
+      const grading = patch.grading ?? row.grading
+      const subjectId = patch.subjectId === undefined ? row.subject_id : patch.subjectId || null
+      if (subjectId && !db.prepare('SELECT 1 FROM subjects WHERE id=?').get(subjectId)) throw new Error('subject not found')
+      if (!['strict', 'neutral', 'lenient'].includes(grading)) throw new Error('invalid grading policy')
       if (!title) throw new Error('title is required')
       if (!workspacePath) throw new Error('workspacePath is required')
       if (!isAbsolute(workspacePath)) throw new Error('workspacePath must be absolute')
@@ -2200,8 +2356,8 @@ function createStore() {
       if (workspacePath.startsWith(DATA_DIR)) throw new Error('workspace cannot be the plugin data directory')
       write(() => {
         db
-          .prepare('UPDATE study_tasks SET title=?, workspace_path=?, template=?, updated_at=? WHERE id=?')
-          .run(title, workspacePath, template, nowIso(), id)
+          .prepare('UPDATE study_tasks SET title=?, workspace_path=?, template=?, grading=?, subject_id=?, updated_at=? WHERE id=?')
+          .run(title, workspacePath, template, grading, subjectId, nowIso(), id)
         // The tree node mirrors the task title, so renaming keeps both in sync.
         if (row.item_id) db.prepare('UPDATE items SET title=? WHERE id=?').run(title, row.item_id)
       })
@@ -2212,7 +2368,46 @@ function createStore() {
           // A missing knowledge.db is fine; sealing is best effort.
         }
       }
-      return { id, title, workspacePath, template }
+      return { id, title, workspacePath, template, grading, subjectId }
+    },
+
+    scheduleStudyTask(id, future, startAt) {
+      const row = requireStudyTaskRow(id)
+      const now = new Date()
+      if (studyTaskState(row, now) === 'done') throw new Error('不能调整今天已完成的学习任务')
+      const time = startAt ? Date.parse(startAt) : null
+      if (future && time !== null && (!Number.isFinite(time) || time <= now.getTime())) {
+        throw new Error('开始时间必须晚于当前时间')
+      }
+      const scheduledAt = future && time !== null ? new Date(time).toISOString() : null
+      write(() => writeStudySchedule(row, future, scheduledAt, now))
+      return { id, scheduled: future, scheduledAt }
+    },
+
+    moveStudySubject(id, anchorId, after) {
+      return write(() => {
+        const ids = db.prepare('SELECT id FROM subjects ORDER BY position IS NULL, position, created_at, id')
+          .all().map((row) => row.id)
+        if (!ids.includes(id) || !ids.includes(anchorId)) throw new Error('subject not found')
+        if (id === anchorId) return { id }
+        const order = ids.filter((entry) => entry !== id)
+        order.splice(order.indexOf(anchorId) + Number(after === true), 0, id)
+        const update = db.prepare('UPDATE subjects SET position=? WHERE id=?')
+        order.forEach((entry, position) => update.run(position, entry))
+        return { id }
+      })
+    },
+
+    linkStudySubject(subjectId, taskId, linked) {
+      const task = requireStudyTaskRow(taskId)
+      if (!db.prepare('SELECT 1 FROM subjects WHERE id=?').get(subjectId)) throw new Error('subject not found')
+      const next = linked ? subjectId : task.subject_id === subjectId ? null : task.subject_id
+      write(() => {
+        if (next !== task.subject_id) {
+          db.prepare('UPDATE study_tasks SET subject_id=?, updated_at=? WHERE id=?').run(next, nowIso(), taskId)
+        }
+      })
+      return { subjectId, taskId, linked }
     },
 
 
@@ -2226,10 +2421,7 @@ function createStore() {
         db.prepare('DELETE FROM study_day_targets WHERE task_id=?').run(id)
         db.prepare('UPDATE mistakes SET task_id=NULL WHERE task_id=?').run(id)
         // The tree node is a reference: removing the task removes its mirror.
-        if (row.item_id) {
-          purgeItemReferences(row.item_id)
-          db.prepare('DELETE FROM items WHERE id=?').run(row.item_id)
-        }
+        if (row.item_id && getItem(row.item_id)) this.deleteItem(row.item_id)
       })
       return { id, deleted: true }
     },
@@ -2256,17 +2448,27 @@ function createStore() {
      * installed; macOS otherwise uses PDFKit through `osascript`, so a stock
      * machine can read a PDF without any dependency.
      */
-    extractPdfText(taskId, relative, maxChars = 400000, outFile) {
+    extractPdfText(taskId, relative, maxChars = 400000, outFile, options = {}) {
       const task = requireStudyTaskRow(taskId)
       const target = this.taskPath(task, relative)
       if (!existsSync(target)) throw new Error(`file not found: ${target}`)
-      const { text, engine } = readPdfText(target)
+      const pdf = readPdfText(target)
+      const pages = pdf.text.split('\f')
+      if (pdf.engine === 'pdftotext' && pages.length > 1 && pages.at(-1) === '') pages.pop()
+      const start = Math.max(1, Math.trunc(Number(options.fromPage) || 1))
+      const end = Math.min(pages.length, Math.trunc(Number(options.toPage) || pages.length))
+      if (start > end) throw new Error('PDF page range is outside the document')
+      const cropped = pages.slice(start - 1, end)
+      const text = options.numbered
+        ? cropped.map((page, index) => '--- PDF page ' + (start + index) + ' ---\n' + page).join('\n\n')
+        : options.fromPage || options.toPage ? cropped.join('\f') : pdf.text
+      const info = { engine: pdf.engine, fromPage: start, toPage: end, pageCount: pages.length }
       // Writing to a file keeps a 500-page book out of the conversation context.
       if (outFile) {
         const dest = this.taskPath(task, outFile)
         mkdirSync(dirname(dest), { recursive: true })
         writeFileSync(dest, text, 'utf8')
-        return { source: target, outFile: dest, chars: text.length, engine }
+        return { source: target, outFile: dest, chars: text.length, ...info }
       }
       const cut = Math.max(2000, Number(maxChars) || 400000)
       return {
@@ -2274,7 +2476,7 @@ function createStore() {
         chars: text.length,
         truncated: text.length > cut,
         content: text.slice(0, cut),
-        engine,
+        ...info,
       }
     },
 
@@ -2328,6 +2530,74 @@ function createStore() {
       return readOnly ? new DatabaseSync(target, { readOnly: true }) : new DatabaseSync(target)
     },
 
+    studyItemSources(taskId, itemId) {
+      const task = db.prepare('SELECT * FROM study_tasks WHERE id=?').get(taskId)
+      if (!task) return []
+      let conn
+      try {
+        conn = this.openKnowledge(task, true)
+        const tables = conn.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((row) => row.name)
+        if (!tables.includes('item_provenance')) return []
+        const table = studyQuestionTable(tables, (kind) =>
+          conn.prepare('SELECT 1 FROM ' + kind + ' WHERE id=?').get(String(itemId)))
+        if (!table) return []
+        return conn.prepare('SELECT detail FROM item_provenance WHERE kind=? AND item_id=? ORDER BY shelf_id, locator')
+          .all(table, String(itemId)).map((entry) => safeJson(entry.detail, null)).filter(Boolean)
+      } catch {
+        return []
+      } finally {
+        conn?.close()
+      }
+    },
+
+    recordStudySources(taskId, entries) {
+      const task = requireStudyTaskRow(taskId)
+      if (!Array.isArray(entries) || !entries.length || entries.length > 200) throw new Error('1–200 source entries required')
+      const sources = entries.map((entry) => {
+        if (!['cards', 'points', 'questions'].includes(entry.table) || !entry.itemId) throw new Error('invalid knowledge item')
+        const shelf = db.prepare('SELECT id,kind,path,title FROM shelf_items WHERE id=?').get(entry.shelfId || '')
+        if (!shelf) throw new Error('shelf item not found')
+        const pdfPage = entry.pdfPage == null ? null : Number(entry.pdfPage)
+        if (pdfPage !== null && (!Number.isSafeInteger(pdfPage) || pdfPage < 1)) throw new Error('invalid PDF page')
+        const bookPage = String(entry.bookPage ?? '').trim().slice(0, 48)
+        const section = String(entry.section || '').trim().slice(0, 240)
+        const file = String(entry.file || '').trim().slice(0, 500)
+        const detail = { shelfId: shelf.id, title: shelf.title || '', path: shelf.path, pdfPage, bookPage, section, file }
+        if (shelf.kind === 'url') detail.url = shelf.path
+        const locator = JSON.stringify([file, pdfPage, bookPage, section])
+        return { table: entry.table, itemId: String(entry.itemId), shelfId: shelf.id, locator, detail }
+      })
+      this.unsealLearningFiles(task)
+      let connection
+      try {
+        connection = this.openKnowledge(task, false)
+        const tables = new Set(connection.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((row) => row.name))
+        for (const entry of sources) {
+          if (!tables.has(entry.table) || !connection.prepare('SELECT 1 FROM ' + entry.table + ' WHERE id=?').get(entry.itemId)) {
+            throw new Error('knowledge item not found: ' + entry.itemId)
+          }
+        }
+        connection.exec(`CREATE TABLE IF NOT EXISTS item_provenance (
+          kind TEXT NOT NULL, item_id TEXT NOT NULL, shelf_id TEXT NOT NULL,
+          locator TEXT NOT NULL, detail TEXT NOT NULL,
+          PRIMARY KEY (kind,item_id,shelf_id,locator)
+        ); CREATE INDEX IF NOT EXISTS item_provenance_item ON item_provenance(item_id)`)
+        const insert = connection.prepare('INSERT OR REPLACE INTO item_provenance VALUES (?,?,?,?,?)')
+        connection.exec('BEGIN')
+        try {
+          for (const entry of sources) insert.run(entry.table, entry.itemId, entry.shelfId, entry.locator, JSON.stringify(entry.detail))
+          connection.exec('COMMIT')
+        } catch (error) {
+          connection.exec('ROLLBACK')
+          throw error
+        }
+        return { count: sources.length }
+      } finally {
+        connection?.close()
+        this.sealLearningFiles(task)
+      }
+    },
+
     /**
      * Pick today's questions: new items come from entries never studied yet
      * (`learned = 0`), reviews come from the weakest studied entries. A score of
@@ -2337,64 +2607,61 @@ function createStore() {
      */
     nextStudyQuestions(taskId, count = 5, mix) {
       const task = requireStudyTaskRow(taskId)
-      const take = Math.max(1, Math.min(20, Number(count) || 5))
+      const take = Math.max(1, Math.min(20, Math.trunc(Number(count)) || 5))
       const day = studyDayKey(new Date())
       const goal = this.effectiveTarget(task, day)
       const progress = this.dayProgress(taskId, day)
       const askedNew = Math.max(0, goal.newTarget - progress.answeredNew)
       const askedReview = Math.max(0, goal.reviewTarget - progress.answeredReview)
-      const wantNew = Number.isFinite(Number(mix && mix.newCount))
-        ? Math.max(0, Math.min(20, Number(mix.newCount)))
+      const wantNew = Number.isFinite(Number(mix?.newCount))
+        ? Math.max(0, Math.min(take, Math.trunc(Number(mix.newCount))))
         : Math.min(take, askedNew)
-      const wantReview = Number.isFinite(Number(mix && mix.reviewCount))
-        ? Math.max(0, Math.min(20, Number(mix.reviewCount)))
+      const wantReview = Number.isFinite(Number(mix?.reviewCount))
+        ? Math.max(0, Math.min(take, Math.trunc(Number(mix.reviewCount))))
         : Math.max(0, Math.min(take - wantNew, askedReview))
       const conn = this.openKnowledge(task, true)
       try {
         const tables = conn.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((row) => row.name)
         // Question-bank bases ask questions; cards/points remain the item pools.
-        const table = tables.includes('questions')
-          ? 'questions'
-          : tables.includes('cards')
-            ? 'cards'
-            : tables.includes('points')
-              ? 'points'
-              : null
+        const table = studyQuestionTable(tables)
         if (!table) throw new Error('knowledge.db needs a questions, cards or points table before questions can be asked')
         const columns = conn.prepare(`PRAGMA table_info(${table})`).all().map((row) => row.name)
         const hasLearned = columns.includes('learned')
         const label = table === 'cards' ? 'front' : table === 'questions' ? 'prompt' : 'title'
         const detail = table === 'cards' ? 'back' : table === 'questions' ? 'answer' : 'detail'
-        const extra = table === 'cards' ? 'extra' : table === 'questions' ? 'explanation' : 'NULL'
-        const optionColumn = table === 'questions' ? 'options' : 'NULL'
-        const baseColumns = `id, ${label} AS prompt, ${detail} AS answer, ${extra} AS extra, ${optionColumn} AS optionsRaw, proficiency`
-        const fetch = (where, order, limit) => {
+        const extraName = table === 'cards' ? 'extra' : 'explanation'
+        const extra = columns.includes(extraName) ? extraName : 'NULL'
+        const optionColumn = table === 'questions' && columns.includes('options') ? 'options' : 'NULL'
+        const sourceColumn = columns.includes('source') ? 'source' : 'NULL'
+        const baseColumns = `id, ${label} AS prompt, ${detail} AS answer, ${extra} AS extra, ${optionColumn} AS optionsRaw, proficiency, ${sourceColumn} AS source`
+        const fetch = (where, order, limit, alreadyPicked = []) => {
           if (limit <= 0) return []
+          const exclude = alreadyPicked.map(() => '?').join(',')
+          const eligible = exclude ? where + ' AND id NOT IN (' + exclude + ')' : where
           return conn
-            .prepare(`SELECT ${baseColumns} FROM ${table} WHERE ${where} ORDER BY ${order} LIMIT ?`)
-            .all(limit)
+            .prepare(`SELECT ${baseColumns} FROM ${table} WHERE ${eligible} ORDER BY ${order} LIMIT ?`)
+            .all(...alreadyPicked.map((row) => row.id), limit)
         }
         const newRows = hasLearned
           ? fetch('proficiency < 10 AND learned = 0', 'RANDOM()', wantNew)
           : []
         // Questions are ordered by the weakest knowledge point they cover.
         const reviewOrder =
-          table === 'questions'
+          table === 'questions' && tables.includes('question_points') && tables.includes('points')
             ? "COALESCE((SELECT MIN(p.proficiency) FROM question_points qp JOIN points p ON p.id = qp.point_id WHERE qp.question_id = questions.id), proficiency) ASC, RANDOM()"
             : 'proficiency ASC, RANDOM()'
         const reviewRows = hasLearned
           ? fetch('proficiency < 10 AND learned = 1', reviewOrder, wantReview)
           : // Legacy knowledge base: one pool, weakest first.
-            fetch('proficiency < 10', reviewOrder, Math.min(take, Math.max(wantReview, take)))
+            fetch('proficiency < 10', reviewOrder, take)
         // Fill a shortfall from the other pool so a round is never short.
         const room = Math.max(0, take - newRows.length - reviewRows.length)
-        if (room > 0) {
-          const extraRows = hasLearned ? fetch('proficiency < 10 AND learned = 1', reviewOrder, room) : []
-          reviewRows.push(...extraRows)
+        if (room > 0 && hasLearned) {
+          reviewRows.push(...fetch('proficiency < 10 AND learned = 1', reviewOrder, room, reviewRows))
         }
         const roomNew = Math.max(0, take - newRows.length - reviewRows.length)
         if (roomNew > 0 && hasLearned) {
-          newRows.push(...fetch('proficiency < 10 AND learned = 0', 'RANDOM()', roomNew))
+          newRows.push(...fetch('proficiency < 10 AND learned = 0', 'RANDOM()', roomNew, newRows))
         }
         const rows = [...newRows, ...reviewRows].slice(0, take)
         const newIds = new Set(newRows.map((row) => row.id))
@@ -2410,13 +2677,16 @@ function createStore() {
           } catch {
             // A missing mirror must not break the question call.
           }
-          return { kind: bankKind(table), questions: [], poolNew, poolReview, finishedToday: finished }
+          return { kind: bankKind(table), questions: [], poolNew, poolReview, grading: task.grading, finishedToday: finished }
         }
         const pickOptions = conn.prepare(
-          `SELECT ${detail} AS answer FROM ${table} WHERE id<>? AND ${detail}<>? ORDER BY RANDOM() LIMIT 3`,
+          `SELECT DISTINCT ${detail} AS answer FROM ${table} WHERE id<>? AND ${detail}<>? ORDER BY RANDOM() LIMIT 3`,
         )
+        const sources = tables.includes('item_provenance') ?
+          conn.prepare('SELECT detail FROM item_provenance WHERE kind=? AND item_id=? ORDER BY shelf_id, locator') : null
         return {
           kind: bankKind(table),
+          grading: task.grading,
           poolNew,
           poolReview,
           questions: rows.map((row) => ({
@@ -2424,6 +2694,8 @@ function createStore() {
             prompt: row.prompt,
             answer: row.answer || '',
             extra: row.extra || '',
+            source: row.source || '',
+            sources: (sources?.all(table, String(row.id)) || []).map((entry) => safeJson(entry.detail, null)).filter(Boolean),
             isNew: newIds.has(row.id),
             options:
               table === 'cards'
@@ -2444,19 +2716,17 @@ function createStore() {
      * removes one and starts that lock. Items at 10 are mastered and stop
      * appearing. The score itself is never returned, so a reply cannot leak it.
      */
-    recordStudyAnswer(taskId, itemId, correct) {
+    recordStudyAnswer(taskId, itemId, verdict) {
       const task = requireStudyTaskRow(taskId)
+      if (!['correct', 'incorrect', 'partial'].includes(verdict)) throw new Error('invalid answer verdict')
+      const neutral = verdict === 'partial' && task.grading === 'neutral'
+      const correct = verdict === 'correct' || (verdict === 'partial' && task.grading === 'lenient')
       this.unsealLearningFiles(task)
-      const conn = this.openKnowledge(task, false)
+      let conn
       try {
+        conn = this.openKnowledge(task, false)
         const tables = conn.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((row) => row.name)
-        const table = tables.includes('questions')
-          ? 'questions'
-          : tables.includes('cards')
-            ? 'cards'
-            : tables.includes('points')
-              ? 'points'
-              : null
+        const table = studyQuestionTable(tables)
         if (!table) throw new Error('知识库里没有 questions、cards 或 points 表')
         const columns = conn.prepare(`PRAGMA table_info(${table})`).all().map((row) => row.name)
         const hasLearned = columns.includes('learned')
@@ -2473,10 +2743,9 @@ function createStore() {
         const lockedUntil = row.updated_at ? new Date(new Date(row.updated_at).getTime() + 3 * 86400000) : null
         const locked = previous === 0 && lockedUntil && lockedUntil.getTime() > Date.now()
         let next = previous
-        if (correct) next = locked ? 0 : Math.min(10, previous + 1)
-        else next = Math.max(0, previous - 1)
-        if (next === previous && correct && locked) {
-          // A locked correct answer must not refresh the lock: leave updated_at.
+        if (!neutral) next = correct ? (locked ? 0 : Math.min(10, previous + 1)) : Math.max(0, previous - 1)
+        if (neutral || (correct && locked)) {
+          // Neutral and locked answers keep the previous mastery timestamp.
           if (hasLearned) conn.prepare(`UPDATE ${table} SET learned=1 WHERE id=?`).run(itemId)
         } else {
           const stamp = nowIso()
@@ -2488,9 +2757,9 @@ function createStore() {
         }
         // A question additionally moves the knowledge points it covers, so the
         // outline reflects what the answers showed.
-        if (table === 'questions') {
+        if (table === 'questions' && !neutral && tables.includes('question_points') && tables.includes('points')) {
           const links = conn.prepare('SELECT point_id FROM question_points WHERE question_id=?').all(itemId)
-          if (links.length > 0 && tables.includes('points')) {
+          if (links.length > 0) {
             const pointColumns = conn.prepare('PRAGMA table_info(points)').all().map((entry) => entry.name)
             const pointLearned = pointColumns.includes('learned')
             const readPoint = conn.prepare('SELECT proficiency FROM points WHERE id=?')
@@ -2506,9 +2775,9 @@ function createStore() {
           }
         }
         // A mastered item no longer needs its mistake record.
-        if (next >= 10) {
+        if (next >= 10 && !neutral) {
           write(() => {
-            db.prepare('DELETE FROM mistakes WHERE item_id=? AND (task_id=? OR task_id IS NULL)').run(itemId, taskId)
+            db.prepare('DELETE FROM mistakes WHERE item_id=? AND task_id=?').run(itemId, taskId)
           })
         }
         // Count the answer; reaching both targets completes the day automatically.
@@ -2550,7 +2819,9 @@ function createStore() {
         return {
           itemId,
           label: row.label,
-          correct: Boolean(correct),
+          correct: neutral ? null : correct,
+          verdict,
+          grading: task.grading,
           isNew,
           locked,
           mastered: next >= 10,
@@ -2563,7 +2834,7 @@ function createStore() {
           finishedToday: finished || task.last_done_day === day,
         }
       } finally {
-        conn.close()
+        conn?.close()
         this.sealLearningFiles(task)
       }
     },
@@ -2571,15 +2842,16 @@ function createStore() {
     /** Mark today's study interaction as done, which completes the mirrored task. */
     finishStudyDay(taskId) {
       const row = requireStudyTaskRow(taskId)
-      const day = studyDayKey(new Date())
-      if (row.item_id) {
-        try {
-          this.complete(row.item_id, true, undefined, true, true)
-        } catch {
-          // The mirrored node may be gone; the day is still recorded.
-        }
-      }
-      write(() => db.prepare('UPDATE study_tasks SET last_done_day=?, updated_at=? WHERE id=?').run(day, nowIso(), taskId))
+      const now = new Date()
+      const day = studyDayKey(now)
+      if (row.last_done_day === day) return { taskId, day, doneToday: true }
+      write(() => {
+        const stamp = now.toISOString()
+        db.prepare('UPDATE study_tasks SET last_done_day=?, scheduled=0, scheduled_at=NULL, updated_at=? WHERE id=?')
+          .run(day, stamp, taskId)
+        syncStudyMirror({ ...row, last_done_day: day, updated_at: stamp, scheduled: 0, scheduled_at: null }, now)
+        db.prepare('INSERT OR IGNORE INTO completion_events VALUES (?,?,?,?,?)').run('study', taskId, day, stamp, null)
+      })
       return { taskId, day, doneToday: true }
     },
 
@@ -2764,12 +3036,12 @@ function createStore() {
         const date = new Date(base.getTime() + index * 86400000)
         const day = dayKeyOf(date)
         const target = db.prepare('SELECT * FROM study_time_targets WHERE day=?').get(day)
-        const habit = db.prepare('SELECT minutes FROM study_habits WHERE day=?').get(day)
+        const habit = db.prepare('SELECT COALESCE(SUM(seconds),0) AS seconds FROM study_activity WHERE day=?').get(day)
         days.push({
           day,
           planned: target ? Number(target.minutes) : null,
           note: target ? target.note : '',
-          actual: habit ? Number(habit.minutes) : 0,
+          actual: Math.round(habit.seconds / 60),
         })
       }
       return { weekStart: start, days }
@@ -2926,34 +3198,19 @@ function createStore() {
       return { id, shelfIds: shelfIds || [] }
     },
 
-    /** Find (or create) the 学习 root area so study tasks land in the tree. */
-    ensureLearningArea() {
-      const row = db
-        .prepare("SELECT id FROM items WHERE parent_id IS NULL AND title='学习' ORDER BY ord LIMIT 1")
-        .get()
-      if (row) return row.id
-      const created = this.addItem({ kind: 'area', title: '学习' })
-      return created.id
-    },
-
-    /** Mirror a study task into the 学习 area so the planning tree shows it. */
+    /** The work tree groups root items by category. */
     attachStudyItemNode(taskId, title) {
-      try {
-        const areaId = this.ensureLearningArea()
+      return write(() => {
         const node = this.addItem({
           kind: 'task',
           title,
-          parentId: areaId,
           note: '学习模式对话任务',
-          // Grouping by type or by tag should land on 学习, not 未分类.
           taskType: '学习',
           tags: ['学习'],
         })
-        write(() => db.prepare('UPDATE study_tasks SET item_id=? WHERE id=?').run(node.id, taskId))
+        db.prepare('UPDATE study_tasks SET item_id=? WHERE id=?').run(node.id, taskId)
         return node.id
-      } catch {
-        return null
-      }
+      })
     },
 
     registerStudyTask(input) {
@@ -2992,18 +3249,61 @@ function createStore() {
         Math.min(200, Math.round(pick(input.dailyReview, hasSplitInput ? desiredTotal - dailyNew : pick(existing && existing.daily_review, desiredTotal - dailyNew)))),
       )
       const dailyTarget = Math.max(1, dailyNew + dailyReview)
-      if (existing) {
+      const grading = input.grading ?? existing?.grading ?? 'neutral'
+      if (!['strict', 'neutral', 'lenient'].includes(grading)) throw new Error('invalid grading policy')
+      if (input.itemId && !getItem(input.itemId)) throw new Error(`item not found: ${input.itemId}`)
+      return write(() => {
+        if (existing) {
+          write(() =>
+            db
+              .prepare(
+                'UPDATE study_tasks SET title=?, template=?, daily_target=?, daily_new=?, daily_review=?, workspace_path=?, session_id=COALESCE(?, session_id), grading=?, updated_at=? WHERE id=?',
+              )
+              .run(title, template, dailyTarget, dailyNew, dailyReview, workspacePath, sessionId || null, grading, stamp, existing.id),
+          )
+          const existingItem = existing.item_id && getItem(existing.item_id)
+          const itemId = existingItem ? existingItem.id : this.attachStudyItemNode(existing.id, title)
+          if (existingItem) db.prepare('UPDATE items SET title=? WHERE id=?').run(title, itemId)
+          return {
+            id: existing.id,
+            title,
+            workspacePath,
+            template,
+            dailyTarget,
+            dailyNew,
+            dailyReview,
+            summary: safeJson(existing.summary, {}),
+            grading,
+            itemId,
+            updatedAt: stamp,
+          }
+        }
+        const id = newId('studytask')
         write(() =>
           db
             .prepare(
-              'UPDATE study_tasks SET title=?, template=?, daily_target=?, daily_new=?, daily_review=?, workspace_path=?, session_id=COALESCE(?, session_id), updated_at=? WHERE id=?',
+              'INSERT INTO study_tasks (id,title,workspace_path,template,summary,item_id,session_id,daily_target,daily_new,daily_review,created_at,updated_at,grading) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
             )
-            .run(title, template, dailyTarget, dailyNew, dailyReview, workspacePath, sessionId || null, stamp, existing.id),
+            .run(
+              id,
+              title,
+              workspacePath,
+              template,
+              '{}',
+              input.itemId || null,
+              input.sessionId || null,
+              dailyTarget,
+              dailyNew,
+              dailyReview,
+              stamp,
+              stamp,
+              grading,
+            ),
         )
-        const itemId = existing.item_id || this.attachStudyItemNode(existing.id, title)
-        if (existing.item_id) db.prepare('UPDATE items SET title=? WHERE id=?').run(title, existing.item_id)
+        const itemId = input.itemId || this.attachStudyItemNode(id, title)
+        const suspicious = /app\.asar|DeepSeek Harness/i.test(workspacePath)
         return {
-          id: existing.id,
+          id,
           title,
           workspacePath,
           template,
@@ -3011,51 +3311,14 @@ function createStore() {
           dailyNew,
           dailyReview,
           summary: {},
+          grading,
           itemId,
           updatedAt: stamp,
+          ...(suspicious
+            ? { warning: '这个路径看起来是 DSH 程序目录，不是会话工作区；请改用会话真正的工作区路径' }
+            : {}),
         }
-      }
-      const id = newId('studytask')
-      write(() =>
-        db
-          .prepare(
-            'INSERT INTO study_tasks (id,title,workspace_path,template,summary,item_id,session_id,daily_target,daily_new,daily_review,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
-          )
-          .run(
-            id,
-            title,
-            workspacePath,
-            template,
-            '{}',
-            input.itemId || null,
-            input.sessionId || null,
-            dailyTarget,
-            dailyNew,
-            dailyReview,
-            stamp,
-            stamp,
-          ),
-      )
-      if (input.itemId && !db.prepare('SELECT id FROM items WHERE id=?').get(input.itemId)) {
-        throw new Error(`item not found: ${input.itemId}`)
-      }
-      const itemId = input.itemId || this.attachStudyItemNode(id, title)
-      const suspicious = /app\.asar|DeepSeek Harness/i.test(workspacePath)
-      return {
-        id,
-        title,
-        workspacePath,
-        template,
-        dailyTarget,
-        dailyNew,
-        dailyReview,
-        summary: {},
-        itemId,
-        updatedAt: stamp,
-        ...(suspicious
-          ? { warning: '这个路径看起来是 DSH 程序目录，不是会话工作区；请改用会话真正的工作区路径' }
-          : {}),
-      }
+      })
     },
 
     setStudyTaskSummary(id, summary) {
@@ -3068,71 +3331,99 @@ function createStore() {
       return { id, summary: summary || {} }
     },
 
-    /**
-     * One heartbeat per minute while the study page is visible. Minutes are
-     * counted from the gap since the previous beat, capped so an idle tab does
-     * not inflate the numbers; a long gap starts a new segment.
-     */
-    recordStudyBeat(now = new Date()) {
-      const day = studyDayKey(now)
-      const stamp = now.toISOString()
-      const row = db.prepare('SELECT * FROM study_habits WHERE day=?').get(day)
-      if (!row) {
-        write(() =>
-          db
-            .prepare(
-              'INSERT INTO study_habits (day,started_at,ended_at,minutes,segments,updated_at) VALUES (?,?,?,?,?,?)',
-            )
-            .run(day, stamp, stamp, 1, 1, stamp),
-        )
-        return { day, minutes: 1, segments: 1 }
-      }
-      const gapMinutes = Math.max(0, (now.getTime() - new Date(row.updated_at).getTime()) / 60000)
-      const add = Math.min(2, Math.max(1, Math.round(gapMinutes)))
-      const segments = row.segments + (gapMinutes > 10 ? 1 : 0)
-      write(() =>
-        db
-          .prepare('UPDATE study_habits SET ended_at=?, minutes=?, segments=?, updated_at=? WHERE day=?')
-          .run(stamp, row.minutes + add, segments, stamp, day),
-      )
-      return { day, minutes: row.minutes + add, segments }
+
+    recordStudyBeat(sessionId, tracker, active, now = new Date()) {
+      const at = now.getTime()
+      const previous = studyTrackers.get(sessionId)
+      if (previous && previous.tracker !== tracker && at - previous.at < 30000) return { recorded: false }
+      if (!active && previous?.tracker !== tracker) return { recorded: false }
+      const addInterval = previous?.tracker === tracker && at > previous.at && at - previous.at <= 35000
+      write(() => {
+        const entry = db.prepare(`INSERT INTO study_activity (session_id,day,hour,seconds,segments)
+          VALUES (?,?,?,?,?) ON CONFLICT(session_id,day,hour) DO UPDATE SET
+          seconds=seconds+excluded.seconds, segments=segments+excluded.segments`)
+        if (addInterval) {
+          let cursor = previous.at
+          while (cursor < at) {
+            const date = new Date(cursor)
+            const intoHour = date.getMinutes() * 60000 + date.getSeconds() * 1000 + date.getMilliseconds()
+            const end = Math.min(at, cursor + 3600000 - intoHour)
+            entry.run(sessionId, studyDayKey(date), date.getHours(), Math.round((end - cursor) / 1000), 0)
+            cursor = end
+          }
+        } else if (active) {
+          entry.run(sessionId, studyDayKey(now), now.getHours(), 0, 1)
+        }
+      })
+      if (active) studyTrackers.set(sessionId, { tracker, at })
+      else studyTrackers.delete(sessionId)
+      return { recorded: true }
     },
 
-    /** Recent habits plus a small digest for the page. */
-    studyHabitSummary(days = 14) {
-      const rows = db
-        .prepare('SELECT * FROM study_habits ORDER BY day DESC LIMIT ?')
-        .all(days)
-        .map((row) => ({
-          day: row.day,
-          startedAt: row.started_at,
-          endedAt: row.ended_at,
-          minutes: row.minutes,
-          segments: row.segments,
-        }))
-      const totalMinutes = rows.reduce((sum, row) => sum + row.minutes, 0)
-      const activeDays = rows.filter((row) => row.minutes >= 5).length
-      // Consecutive days ending today or yesterday.
-      const byDay = new Set(rows.filter((row) => row.minutes >= 5).map((row) => row.day))
+    /** Session time and completion events are summarized without conversation content. */
+    studyHabitSummary(days = 14, now = new Date()) {
+      const from = new Date(now)
+      from.setDate(from.getDate() - (days - 1))
+      const first = studyDayKey(from)
+      const last = studyDayKey(now)
+      const source = db.prepare(`SELECT * FROM study_activity WHERE day BETWEEN ? AND ? ORDER BY day DESC`).all(first, last)
+      const byDay = new Map()
+      const bySession = new Map()
+      const hours = Array(24).fill(0)
+      for (const row of source) {
+        const day = byDay.get(row.day) || { day: row.day, seconds: 0, segments: 0 }
+        day.seconds += row.seconds
+        day.segments += row.segments
+        byDay.set(row.day, day)
+        bySession.set(row.session_id, (bySession.get(row.session_id) || 0) + row.seconds)
+        hours[row.hour] += row.seconds
+      }
+      const rows = Array.from(byDay.values(), (row) => ({ ...row, minutes: Math.round(row.seconds / 60) }))
+      const titles = new Map(db.prepare('SELECT session_id,title FROM study_tasks WHERE session_id IS NOT NULL').all()
+        .map((row) => [row.session_id, row.title]))
+      const sessions = [...bySession].filter(([, seconds]) => seconds > 0)
+        .sort((a, b) => b[1] - a[1])
+        .map(([id, seconds]) => ({ id, title: titles.get(id) || '', seconds }))
+      const active = rows.filter((row) => row.seconds >= 60)
+      const activeDays = active.length
+      const activeDates = new Set(active.map((row) => row.day))
+      const cursor = new Date(now)
+      if (!activeDates.has(last)) cursor.setDate(cursor.getDate() - 1)
       let streak = 0
-      const cursor = new Date()
-      for (let index = 0; index < days; index += 1) {
-        const key = studyDayKey(cursor)
-        if (!byDay.has(key)) break
+      while (activeDates.has(studyDayKey(cursor))) {
         streak += 1
         cursor.setDate(cursor.getDate() - 1)
       }
-      const completed = db
-        .prepare('SELECT COUNT(*) AS n FROM study_plan WHERE done_at IS NOT NULL')
-        .get().n
-      const planned = db.prepare('SELECT COUNT(*) AS n FROM study_plan WHERE date <= ?').get(studyDayKey(new Date())).n
+      const completions = db.prepare('SELECT kind,item_id,day,on_time FROM completion_events WHERE day BETWEEN ? AND ?').all(first, last)
+      const studyCompletion = new Set(completions.filter((row) => row.kind === 'study').map((row) => row.item_id + ':' + row.day))
+      const recentProgress = db.prepare('SELECT * FROM study_day_progress WHERE day BETWEEN ? AND ?').all(first, last)
+      const studyGoals = new Set(studyCompletion)
+      const taskRows = new Map(db.prepare('SELECT * FROM study_tasks').all().map((row) => [row.id, row]))
+      for (const row of recentProgress) {
+        const task = taskRows.get(row.task_id)
+        if (!task) continue
+        const id = row.task_id + ':' + row.day
+        const goal = this.effectiveTarget(task, row.day)
+        studyGoals.add(id)
+        if (row.answered_new >= goal.newTarget && row.answered_review >= goal.reviewTarget) studyCompletion.add(id)
+      }
+      const plannedTasks = completions.filter((row) => row.kind === 'task')
       return {
         days: rows,
-        totalMinutes,
+        sessions,
+        hours: hours.map((seconds, hour) => ({ hour, seconds })),
+        totalMinutes: Math.round(rows.reduce((sum, row) => sum + row.seconds, 0) / 60),
         activeDays,
         streak,
-        averageMinutes: activeDays === 0 ? 0 : Math.round(totalMinutes / activeDays),
-        completionRate: planned === 0 ? 0 : Math.round((completed / planned) * 100),
+        averageMinutes: activeDays ? Math.round(active.reduce((sum, row) => sum + row.seconds, 0) / (60 * activeDays)) : 0,
+        studyGoalDays: studyGoals.size,
+        studyDoneDays: studyCompletion.size,
+        completionRate: studyGoals.size ? Math.round(100 * studyCompletion.size / studyGoals.size) : 0,
+        planningCompleted: plannedTasks.length,
+        planningWithDeadline: plannedTasks.filter((row) => row.on_time !== null).length,
+        planningOnTime: plannedTasks.filter((row) => row.on_time === 1).length,
+        answered: recentProgress.reduce((total, row) => total + row.answered, 0),
+        correct: recentProgress.reduce((total, row) => total + row.correct, 0),
       }
     },
 
@@ -3208,12 +3499,20 @@ function createStore() {
       const row = db.prepare('SELECT * FROM mistakes WHERE id=?').get(id)
       if (!row) throw new Error(`mistake not found: ${id}`)
       const task = row.task_id ? db.prepare('SELECT title FROM study_tasks WHERE id=?').get(row.task_id) : null
+      const provenance = safeJson(row.provenance, [])
+      const citations = (Array.isArray(provenance) ? provenance.filter(Boolean) : []).map((source) =>
+        [source.title, source.url || source.path, source.file,
+          source.pdfPage ? 'PDF 第 ' + source.pdfPage + ' 页' : '',
+          source.bookPage ? '印刷页 ' + source.bookPage : '', source.section].filter(Boolean).join(' · '),
+      ).filter(Boolean)
       const lines = [
         '讲解下面这道错题，只讲解、不要修改熟练度、不要出题：',
         `题目：${row.question}`,
         row.answer ? `正确答案：${row.answer}` : '',
         row.reason ? `我的错误原因：${row.reason}` : '',
-        '请说明：为什么错、正确思路、以及一个记忆方法。',
+        row.memory_tip ? `已有记忆提示：${row.memory_tip}` : '',
+        citations.length > 0 ? '资料来源：\n' + citations.join('\n') : row.source ? '资料来源：' + row.source : '',
+        '请完整复述题目，再说明错因、正确思路、一个辨析方法和一句可自行回忆的提示。',
       ].filter(Boolean)
       return {
         id,
@@ -3222,74 +3521,129 @@ function createStore() {
       }
     },
 
-    /**
-     * One suggestion per study day, built from the day's plan, overdue work and
-     * the recent habit history. Cached so it is generated once after 04:00.
-     */
-    todayTip() {
-      const day = studyDayKey(new Date())
-      const cached = db.prepare('SELECT * FROM daily_tips WHERE day=?').get(day)
-      if (cached) return { day, text: cached.text, createdAt: cached.created_at, cached: true }
 
-      const today = db.prepare('SELECT * FROM study_plan WHERE date=?').all(day)
-      const overdue = db
-        .prepare('SELECT COUNT(*) AS n FROM study_plan WHERE date < ? AND done_at IS NULL')
-        .get(day).n
-      const doneToday = today.filter((row) => row.done_at).length
-      const minutes = today.reduce((sum, row) => sum + (Number(row.minutes) || 0), 0)
-      const subjects = new Map(db.prepare('SELECT id, title FROM subjects').all().map((row) => [row.id, row.title]))
-      const perSubject = new Map()
-      for (const row of today) {
-        const name = subjects.get(row.subject_id) || '未分类'
-        perSubject.set(name, (perSubject.get(name) || 0) + 1)
+    dailyAdviceInput(day, now = new Date()) {
+      const weekday = new Date(day + 'T12:00:00').getDay()
+      const habits = this.studyHabitSummary(14, now)
+      const tasks = this.listStudyTasks().filter((task) => !task.scheduled && !task.doneToday)
+      const mirrors = new Set(db.prepare('SELECT item_id FROM study_tasks WHERE item_id IS NOT NULL').all().map((row) => row.item_id))
+      const pending = allItems().filter((item) => !item.archivedAt && !item.deletedAt && !isDone(item) && !mirrors.has(item.id))
+      const end = new Date(day + 'T04:00:00')
+      end.setDate(end.getDate() + 1)
+      const cutoff = end.getTime()
+      const urgent = pending.filter((item) => item.dueAt && Date.parse(item.dueAt) < cutoff)
+      const ranked = urgent.length ? urgent : pending
+      const week = this.studyTimeWeek()
+      return {
+        day,
+        localHour: now.getHours(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        weekend: weekday === 0 || weekday === 6,
+        plan: {
+          outstanding: pending.length,
+          dueOrOverdue: urgent.length,
+          priorities: ranked.sort((a, b) => (b.priority ?? 5) - (a.priority ?? 5) ||
+            (a.dueAt || '~').localeCompare(b.dueAt || '~')).slice(0, 5).map((item) => ({
+              title: item.title.slice(0, 80),
+              priority: item.priority,
+              deadline: item.dueAt ? new Date(item.dueAt).toLocaleString() : null,
+            })),
+        },
+        study: {
+          minutesPlanned: week.days.find((entry) => entry.day === day)?.planned ?? null,
+          goals: tasks.slice(0, 5).map((task) => ({
+            title: task.title.slice(0, 80),
+            newRemaining: Math.max(0, task.targetNew - task.answeredNew),
+            reviewRemaining: Math.max(0, task.targetReview - task.answeredReview),
+          })),
+        },
+        habits: {
+          activeDays: habits.activeDays,
+          averageStudyMinutes: habits.averageMinutes,
+          commonHours: habits.hours.filter((slot) => slot.seconds >= 60)
+            .sort((a, b) => b.seconds - a.seconds).slice(0, 3).map((slot) => slot.hour),
+          studyGoalDays: habits.studyGoalDays,
+          studyDoneDays: habits.studyDoneDays,
+          planningCompleted: habits.planningCompleted,
+          planningOnTime: habits.planningOnTime,
+          planningWithDeadline: habits.planningWithDeadline,
+        },
       }
-      const parts = []
-      if (today.length > 0) {
-        const detail = Array.from(perSubject.entries())
-          .map(([name, count]) => `${name} ${count}`)
-          .join('、')
-        parts.push(`今天 ${today.length} 项计划（约 ${minutes} 分钟）：${detail}，已完成 ${doneToday} 项。`)
-      } else {
-        parts.push('今天没有学习计划，可以补一轮复习，或者休息一天。')
-      }
-      if (overdue > 0) parts.push(`另有 ${overdue} 项旧计划顺延到今天，建议先清掉它们。`)
+    },
 
-      // Per-conversation daily goals, so the advice names real numbers.
-      const studyTasks = db.prepare('SELECT * FROM study_tasks ORDER BY created_at').all()
-      if (studyTasks.length > 0) {
-        const lines = studyTasks.map((row) => {
-          const goal = this.effectiveTarget(row, day)
-          const progress = this.dayProgress(row.id, day)
-          const overdueDays = this.studyTaskOverdue(row, day)
-          const overdueText = overdueDays > 0 ? `，已逾期 ${overdueDays} 天` : ''
-          return `${row.title}：今天 ${goal.newTarget} 个新内容 + ${goal.reviewTarget} 个复习，已完成 ${progress.answeredNew} 新 + ${progress.answeredReview} 复习${overdueText}`
-        })
-        parts.push(`学习对话进度——${lines.join('；')}。`)
+    studyAdviceContext(day, settings = readSettings()) {
+      const calendar = this.readUiState('calendar-context')
+      const cached = calendar?.preference === settings.adviceRegion ? calendar : null
+      return {
+        region: cached?.region?.label || settings.adviceRegion,
+        weather: cached?.days?.[day]?.weather || null,
+        holiday: cached?.days?.[day]?.holiday || null,
       }
+    },
 
-      const habits = this.studyHabitSummary(14)
-      if (habits.activeDays === 0) {
-        parts.push('还没有学习时长记录：打开学习页就会开始计时，今天从 10 分钟开始即可。')
-      } else {
-        parts.push(`最近 ${habits.activeDays} 个学习日平均 ${habits.averageMinutes} 分钟，连续 ${habits.streak} 天。`)
-        if (habits.averageMinutes < 20) parts.push('单次时长偏短，建议每次至少 20 分钟。')
-        if (habits.completionRate < 50) parts.push('计划完成率偏低，今天可以把计划缩到 3–5 项。')
+    todayTip(now = new Date(), refresh = false) {
+      const day = studyDayKey(now)
+      const cache = db.prepare('SELECT * FROM daily_tips WHERE day=?').get(day)
+      const settings = readSettings()
+      const info = {
+        day, createdAt: cache?.created_at || '',
+        regionPreference: settings.adviceRegion,
+        region: cache?.region || '',
+        automatic: settings.dailyAdvice,
+        source: cache?.source || 'local',
       }
+      if (cache && cache.source !== 'legacy' && !refresh) return { ...info, text: cache.text, cached: true }
+      const input = this.dailyAdviceInput(day, now)
+      const context = this.studyAdviceContext(day, settings)
+      const first = input.plan.priorities[0]
+      const learning = input.study.goals[0]
+      const hour = input.habits.commonHours.find((one) => one >= now.getHours())
+      const lines = [
+        first ? '先做「' + first.title + '」。给它留 25 分钟，先完成最紧要的一步。' : '先选出今天最重要的一件事，再给它留 25 分钟。',
+        learning ? '给「' + learning.title + '」留一段时间，优先处理剩余的 ' + learning.reviewRemaining + ' 个复习项，再做新内容。' : null,
+        hour === undefined ? '在工作和学习之间留出短休息，晚上花几分钟整理明天的第一件事。' :
+          '可以把一段学习安排在 ' + String(hour).padStart(2, '0') + ':00 左右。最近这个时段用得较多。',
+        learning && (context.weather?.precipitationProbability >= 50 || context.weather?.wmoCode >= 95)
+          ? '给复习留一段室内时间，方便配合出行安排。' : null,
+      ]
+      const text = lines.filter(Boolean).join('\n')
+      const createdAt = nowIso()
+      db.prepare(`INSERT INTO daily_tips (day,text,created_at,source,region) VALUES (?,?,?,'local',?)
+        ON CONFLICT(day) DO UPDATE SET text=excluded.text,created_at=excluded.created_at,source='local',region=excluded.region
+        WHERE daily_tips.source='legacy' OR ?`).run(day, text, createdAt, context.region, Number(refresh))
+      return { ...info, source: 'local', text, region: context.region, createdAt, cached: false }
+    },
 
-      const text = parts.join('')
-      write(() =>
-        db.prepare('INSERT INTO daily_tips (day,text,created_at) VALUES (?,?,?)').run(day, text, nowIso()),
-      )
-      return { day, text, createdAt: nowIso(), cached: false }
+    claimDailyAdvice(day, now = new Date(), force = false) {
+      return write(() => {
+        const existing = db.prepare('SELECT model_attempted FROM daily_tips WHERE day=?').get(day)
+        if (existing?.model_attempted && !force) return false
+        const fallback = this.todayTip(now)
+        db.prepare(`INSERT INTO daily_tips (day,text,created_at,source,model_attempted)
+          VALUES (?,?,?,'local',1)
+          ON CONFLICT(day) DO UPDATE SET model_attempted=1`).run(day, fallback.text, nowIso())
+        return true
+      })
+    },
+
+    saveDailyAdvice(day, text, region) {
+      if (storeClosed) return
+      if (text) db.prepare("UPDATE daily_tips SET text=?,source='deepseek',region=?,created_at=? WHERE day=?")
+        .run(text, region, nowIso(), day)
+      else db.prepare('UPDATE daily_tips SET region=? WHERE day=?').run(region, day)
     },
 
     /** Give already-linked study tasks the 学习 type and tag so they never fall under 未分类. */
     normalizeStudyItems() {
       let fixed = 0
+      db.exec(`UPDATE items SET task_type='学习' WHERE parent_id IS NULL AND title='学习'
+        AND COALESCE(task_type,'')='' AND id IN (
+          SELECT mirror.parent_id FROM study_tasks JOIN items AS mirror ON mirror.id=study_tasks.item_id
+        )`)
       for (const row of db.prepare('SELECT item_id FROM study_tasks WHERE item_id IS NOT NULL').all()) {
         const item = db.prepare('SELECT * FROM items WHERE id=?').get(row.item_id)
         if (!item) continue
-        const tags = item.tags ? JSON.parse(item.tags) : []
+        const tags = safeJson(item.tags, [])
         const hasTag = tags.includes('学习')
         if (item.task_type === '学习' && hasTag) continue
         const nextTags = hasTag ? tags : [...tags, '学习']
@@ -3345,7 +3699,12 @@ function createStore() {
     },
 
     listLearning() {
-      const subjects = db.prepare('SELECT * FROM subjects ORDER BY created_at').all()
+      const subjects = db.prepare('SELECT * FROM subjects ORDER BY position IS NULL, position, created_at, id').all()
+      const subjectTasks = new Map()
+      for (const row of db.prepare('SELECT subject_id,id AS task_id FROM study_tasks WHERE subject_id IS NOT NULL ORDER BY created_at,id').all()) {
+        if (!subjectTasks.has(row.subject_id)) subjectTasks.set(row.subject_id, [])
+        subjectTasks.get(row.subject_id).push(row.task_id)
+      }
       const topics = db.prepare('SELECT * FROM topics ORDER BY created_at').all()
       const now = nowIso()
       // Attach the shelf materials linked to each plan entry in one query.
@@ -3365,6 +3724,7 @@ function createStore() {
           title: row.title,
           note: row.note,
           examDate: row.exam_date || null,
+          taskIds: subjectTasks.get(row.id) || [],
         })),
         topics: topics.map((row) => ({
           id: row.id,
@@ -3544,6 +3904,8 @@ function createStore() {
             raw.startAt || null,
             raw.location || null,
           )
+          const boardOrder = Number.isInteger(raw.boardOrder) ? raw.boardOrder : existing?.boardOrder
+          if (Number.isInteger(boardOrder)) db.prepare('UPDATE items SET board_order=? WHERE id=?').run(boardOrder, raw.id)
         }
         if (payload.plan && typeof payload.plan.bodyMarkdown === 'string') {
           db.prepare('INSERT OR REPLACE INTO plan (id,title,body_markdown,updated_at) VALUES (?,?,?,?)').run(
@@ -3565,14 +3927,18 @@ function createStore() {
       return { added, updated, settingsApplied }
     },
     scan,
+    deliverHostNotification,
     pendingNotifications() {
       // Nothing is dropped for age: a reminder written while the panel was
       // closed is still worth showing. Repeats are prevented at enqueue time.
+      const systemEnabled = readSettings().systemNotify !== false
       return db
         .prepare(
-          'SELECT id,item_id,title,due_at,kind,priority,host_notified,created_at FROM notifications WHERE delivered_at IS NULL ORDER BY created_at LIMIT 50',
+          `SELECT * FROM notifications
+            WHERE delivered_at IS NULL OR (? AND host_notified=0 AND host_attempts>=3 AND created_at>=?)
+            ORDER BY created_at DESC LIMIT 50`,
         )
-        .all()
+        .all(Number(systemEnabled), new Date(Date.now() - 86400000).toISOString())
         .map((row) => ({
           id: row.id,
           itemId: row.item_id,
@@ -3581,6 +3947,8 @@ function createStore() {
           kind: row.kind || (row.due_at ? 'short' : 'long'),
           priority: row.priority,
           hostNotified: Boolean(row.host_notified),
+          inAppPending: !row.delivered_at,
+          browserFallback: !row.host_notified && row.host_attempts >= 3 && hostDelivery !== row.id && systemEnabled,
           createdAt: row.created_at,
         }))
     },
@@ -3590,6 +3958,9 @@ function createStore() {
           db.prepare('UPDATE notifications SET delivered_at=? WHERE id=?').run(nowIso(), id)
         }
       })
+    },
+    ackSystemNotification(id) {
+      db.prepare('UPDATE notifications SET host_notified=1 WHERE id=? AND host_attempts>=3').run(id)
     },
     savePlan(bodyMarkdown) {      const updatedAt = nowIso()
       write(() =>
@@ -3956,12 +4327,26 @@ function buildTools(store) {
     },
     {
       definition: {
-        name: 'study_plan_generate',
-        description: 'Generate or regenerate the study plan for a subject up to its exam date.',
-        parameters: objectSchema({ subjectId: { ...strings, description: 'Subject id.' } }, ['subjectId']),
+        name: 'study_record_sources',
+        description: 'Record exact shelf citations for existing knowledge items. Preserve existing mastery and sources. Use PDF page numbers and printed book pages only when confirmed.',
+        parameters: objectSchema({
+          taskId: strings,
+          entries: {
+            type: 'array', minItems: 1, maxItems: 200,
+            items: objectSchema({
+              table: { type: 'string', enum: ['cards', 'points', 'questions'] },
+              itemId: strings,
+              shelfId: strings,
+              file: { ...strings, description: 'Document path relative to the shelf directory, if applicable.' },
+              pdfPage: { type: 'integer', minimum: 1, description: 'One-based PDF file page number.' },
+              bookPage: { ...strings, description: 'Printed book page or page range, where verified.' },
+              section: { ...strings, description: 'Exact chapter, section or web anchor.' },
+            }, ['table', 'itemId', 'shelfId']),
+          },
+        }, ['taskId', 'entries']),
         output: { schema: { type: 'object' }, render: renderJson },
         async execute(args) {
-          return store.generatePlan(args.subjectId)
+          return store.recordStudySources(args.taskId, args.entries)
         },
       },
     },
@@ -3999,6 +4384,7 @@ function buildTools(store) {
             },
             dailyNew: { type: 'number', description: 'New items per day (0-200).' },
             dailyReview: { type: 'number', description: 'Review items per day (0-200).' },
+            grading: { type: 'string', enum: ['strict', 'neutral', 'lenient'] },
             dailyTarget: {
               type: 'number',
               description: 'Total items that count as a finished day; split 1/3 new and 2/3 review when the two numbers are absent.',
@@ -4128,18 +4514,20 @@ function buildTools(store) {
       definition: {
         name: 'study_answer',
         description:
-          'Record one graded answer for a quiz item: +1 when correct, -1 when wrong (clamped 0..10). Call it right after the user answers.',
+          'Record one graded quiz answer. Pass verdict=correct, incorrect or partial. For partial answers, the task grading policy chooses the mastery adjustment. Older callers may use correct.',
         parameters: objectSchema(
           {
             taskId: { ...strings, description: 'Study task id.' },
             itemId: { ...strings, description: 'Item id returned by study_next_questions.' },
             correct: { type: 'boolean', description: 'Whether the answer was correct.' },
+            verdict: { type: 'string', enum: ['correct', 'incorrect', 'partial'] },
           },
-          ['taskId', 'itemId', 'correct'],
+          ['taskId', 'itemId'],
         ),
         output: { schema: { type: 'object' }, render: renderJson },
         async execute(args) {
-          return store.recordStudyAnswer(args.taskId, args.itemId, args.correct)
+          const verdict = args.verdict ?? (typeof args.correct === 'boolean' ? args.correct ? 'correct' : 'incorrect' : undefined)
+          return store.recordStudyAnswer(args.taskId, args.itemId, verdict)
         },
       },
     },
@@ -4335,6 +4723,9 @@ function buildTools(store) {
               description: "PDF path inside the workspace, e.g. 'learning/materials/book.pdf'.",
             },
             maxChars: { type: 'number', description: 'Maximum characters to return (default 400000).' },
+            numbered: { type: 'boolean', description: 'Include a one-based PDF page header before each page.' },
+            fromPage: { type: 'integer', minimum: 1 },
+            toPage: { type: 'integer', minimum: 1 },
             outFile: {
               ...strings,
               description:
@@ -4345,7 +4736,7 @@ function buildTools(store) {
         ),
         output: { schema: { type: 'object' }, render: renderJson },
         async execute(args) {
-          return store.extractPdfText(args.taskId, args.relative, args.maxChars, args.outFile)
+          return store.extractPdfText(args.taskId, args.relative, args.maxChars, args.outFile, args)
         },
       },
     },
@@ -4417,11 +4808,12 @@ function buildTools(store) {
             question: { ...strings, description: 'The question or prompt.' },
             answer: { ...strings, description: 'The correct answer.' },
             reason: { ...strings, description: 'Why it went wrong.' },
+            memoryTip: { ...strings, description: 'Concise correction, contrast, and a retrieval prompt for later review.' },
             source: { ...strings, description: 'Where it came from, e.g. a workbook and page.' },
             subjectId: strings,
             tags: { type: 'array', items: { type: 'string' } },
             taskId: { ...strings, description: 'Study task id that owns the workspace database.' },
-            itemId: { ...strings, description: 'Item id inside that database (cards.id or points.id).' },
+            itemId: { ...strings, description: 'Item id inside that database (questions.id, cards.id or points.id).' },
           },
           ['question'],
         ),
@@ -4532,6 +4924,118 @@ export function apply(ctx, config = {}) {
   DEFAULT_SETTINGS.studyDailyMinutes = runtimeConfig.studyDailyMinutes
   const store = createStore()
   ctx.effect(() => () => store.close())
+  const adviceController = new AbortController()
+  let calendarJob
+  let studyJob
+  ctx.effect(() => () => {
+    adviceController.abort()
+    calendarJob?.controller.abort()
+    studyJob?.abort()
+  })
+  const readCalendar = (settings) => {
+    const data = store.readUiState('calendar-context')
+    return data?.preference === settings.adviceRegion ? data : null
+  }
+  const calendarView = (now = new Date()) => {
+    const settings = store.readSettings()
+    const cached = readCalendar(settings)
+    const day = dayKeyOf(now)
+    return {
+      day,
+      region: cached?.region?.label || settings.adviceRegion,
+      ...cached?.days?.[day],
+      advice: cached?.advice,
+      adviceDay: cached?.adviceDay,
+      updatedAt: cached?.updatedAt,
+      updating: Boolean(calendarJob),
+    }
+  }
+  const generateAdvice = async (now, force = false) => {
+    if (!runtimeConfig.studyPanel || adviceController.signal.aborted) return
+    if (force) store.todayTip(now, true)
+    if (DEV) return
+    const settings = store.readSettings()
+    if (settings.dailyAdvice === false) return
+    const llm = ctx.get?.('llm')
+    if (typeof llm?.stream !== 'function') return
+    const providers = llm.listProviders?.().map((entry) => entry.id || entry) || []
+    const provider = providers.find((id) => id === 'deepseek-official') ||
+      providers.find((id) => typeof id === 'string' && /deepseek/i.test(id))
+    if (!provider) return
+    const day = studyDayKey(now)
+    if (!store.claimDailyAdvice(day, now, force)) return
+    studyJob?.abort()
+    const controller = new AbortController()
+    studyJob = controller
+    const signal = AbortSignal.any([adviceController.signal, controller.signal, AbortSignal.timeout(50000)])
+    const context = store.studyAdviceContext(day, settings)
+    try {
+      const text = await deepSeekAdvice(llm, provider, { ...store.dailyAdviceInput(day, now), context }, signal)
+      if (!signal.aborted && text) store.saveDailyAdvice(day, text, context.region)
+    } finally {
+      if (studyJob === controller) studyJob = undefined
+    }
+  }
+  const reportAdviceError = (error) => {
+    if (!adviceController.signal.aborted) console.warn('[life-planner] advice unavailable', error?.code || error?.name || '')
+  }
+  const refreshCalendar = (now, { force = false, refreshStudy = false } = {}) => {
+    if (adviceController.signal.aborted || (DEV && !force)) return Promise.resolve()
+    const settings = store.readSettings()
+    const cached = readCalendar(settings)
+    const day = dayKeyOf(now)
+    if (!force && !shouldRefreshCalendar(now, day, cached, settings.calendarAutoRefresh)) return Promise.resolve()
+    if (calendarJob) {
+      if (!force || calendarJob.settings.adviceRegion === settings.adviceRegion &&
+        calendarJob.settings.adviceRegionLocked === settings.adviceRegionLocked) return calendarJob.promise
+      calendarJob.controller.abort()
+    }
+    const controller = new AbortController()
+    const job = { controller, settings, refreshStudy }
+    calendarJob = job
+    const signal = AbortSignal.any([adviceController.signal, controller.signal])
+    const tomorrow = new Date(now)
+    tomorrow.setDate(now.getDate() + 1)
+    job.promise = fetchCalendarContext(settings.adviceRegion, [day, dayKeyOf(tomorrow)], signal,
+      cached?.region, settings.adviceRegionLocked)
+      .then((context) => {
+        if (signal.aborted) return
+        for (const [key, weather] of Object.entries(context.days)) {
+          if (cached?.region?.label !== context.region?.label) break
+          weather.weather ||= cached?.days?.[key]?.weather || null
+          weather.holiday ||= cached?.days?.[key]?.holiday || null
+        }
+        store.saveUiState('calendar-context', {
+          ...context, preference: settings.adviceRegion, adviceDay: day,
+          autoDay: now.getHours() >= 12 ? day : cached?.autoDay,
+          updatedAt: now.toISOString(),
+          advice: calendarAdvice(store.snapshot(now).items, context.days[day]?.weather,
+            (value) => dayKeyOf(value) === day, now),
+        })
+      })
+      .catch(reportAdviceError)
+      .finally(() => {
+        if (calendarJob !== job) return
+        calendarJob = undefined
+        if (job.refreshStudy && !signal.aborted) generateAdvice(new Date(), true).catch(reportAdviceError)
+      })
+    return job.promise
+  }
+  const updateSettings = (patch) => {
+    const previous = store.readSettings()
+    const next = store.saveSettings(patch)
+    if (previous.adviceRegion !== next.adviceRegion) {
+      studyJob?.abort()
+      refreshCalendar(new Date(), { force: true, refreshStudy: true })
+    } else if (previous.adviceRegionLocked !== next.adviceRegionLocked ||
+      previous.calendarAutoRefresh !== next.calendarAutoRefresh) {
+      const pending = calendarJob
+      calendarJob = undefined
+      pending?.controller.abort()
+      refreshCalendar(new Date(), pending?.refreshStudy ? { force: true, refreshStudy: true } : undefined)
+    }
+    return next
+  }
   // Existing registrations may predate the type/tag defaults.
   try {
     store.normalizeStudyItems()
@@ -4550,11 +5054,16 @@ export function apply(ctx, config = {}) {
   // plugin needs no scheduler service and no session.
   ctx.effect(() => {
     const tick = () => {
+      const now = new Date()
       try {
-        store.scan(new Date())
+        store.scan(now)
+        store.deliverHostNotification(now)
       } catch (error) {
         console.error('[life-planner] reminder scan failed', error)
       }
+      refreshCalendar(now).then(() => {
+        if (!calendarJob?.refreshStudy) return generateAdvice(now)
+      }).catch(reportAdviceError)
     }
     const handle = setInterval(tick, 60000)
     tick()
@@ -4613,6 +5122,12 @@ export function apply(ctx, config = {}) {
   }
 
   const canListen = typeof ctx.on === 'function'
+  const studySessions = new Set()
+  const isStudySession = (id) => {
+    if (!id || !runtimeConfig.studyMode) return false
+    const agent = ctx.get?.('agents')?.get?.(id)
+    return agent ? studyPresetAgent(agent) : studySessions.has(id)
+  }
   if (canListen) {
     ctx.effect(() =>
       ctx.on('agent/created', ({ agent }) => {
@@ -4621,6 +5136,7 @@ export function apply(ctx, config = {}) {
           if (!presets || !agent || !agent.session) return
           if (presets.presetForSession(agent.session) !== 'study-teach') return
           const info = sessionInfo(agent)
+          if (info) studySessions.add(info.id)
           if (info) {
             // No task is created here any more: an empty task kept coming back
             // after deletion. The study page or the conversation creates one.
@@ -4655,7 +5171,7 @@ export function apply(ctx, config = {}) {
           // The plugin-level switch retires the study data surface entirely; the
           // page then shows its empty state instead of an error.
           const gated = ['learning', 'study-tasks', 'shelf', 'mistakes', 'tip', 'habits', 'study-time']
-          const gatedPrefixes = ['mistake.', 'shelf.', 'topic.', 'subject.', 'studytask.', 'study-time.']
+          const gatedPrefixes = ['mistake.', 'shelf.', 'topic.', 'subject.', 'studytask.', 'study-time.', 'tip.']
           const gatedMethods = ['plan.generate', 'plan.done', 'plan.move', 'plan.materials', 'habit.beat']
           const isStudyMethod =
             gated.includes(method) ||
@@ -4679,12 +5195,13 @@ export function apply(ctx, config = {}) {
           }
           try {
             if (req.method === 'GET' && method === 'snapshot') {
-              writeJson(res, 200, { ok: true, data: store.snapshot() })
+              const at = DEV && url.searchParams.get('at')
+              writeJson(res, 200, { ok: true, data: store.snapshot(at ? new Date(at) : undefined) })
               return
             }
             if (req.method === 'GET' && method === 'session') {
               const sessionId = url.searchParams.get('sessionId') || ''
-              writeJson(res, 200, { ok: true, data: { enabled: store.isSessionEnabled(sessionId) } })
+              writeJson(res, 200, { ok: true, data: { enabled: store.isSessionEnabled(sessionId), studyTracking: isStudySession(sessionId) } })
               return
             }
             if (req.method === 'GET' && method === 'ui') {
@@ -4728,7 +5245,8 @@ export function apply(ctx, config = {}) {
               return
             }
             if (req.method === 'GET' && method === 'study-tasks') {
-              writeJson(res, 200, { ok: true, data: store.listStudyTasks() })
+              const at = DEV && url.searchParams.get('at')
+              writeJson(res, 200, { ok: true, data: store.listStudyTasks(at ? new Date(at) : undefined) })
               return
             }
             if (req.method === 'GET' && method === 'habits') {
@@ -4769,6 +5287,11 @@ export function apply(ctx, config = {}) {
             }
             if (req.method === 'GET' && method === 'tip') {
               writeJson(res, 200, { ok: true, data: store.todayTip() })
+              return
+            }
+            if (req.method === 'GET' && method === 'calendar.context') {
+              const at = DEV && url.searchParams.get('at')
+              writeJson(res, 200, { ok: true, data: calendarView(at ? new Date(at) : undefined) })
               return
             }
             if (req.method === 'GET' && method === 'study-time') {
@@ -4821,12 +5344,20 @@ export function apply(ctx, config = {}) {
                 writeJson(res, 200, { ok: true, data: store.updateSubject(body.id, body.patch || body) })
                 return
               }
+              case 'subject.move': {
+                writeJson(res, 200, { ok: true, data: store.moveStudySubject(body.id, body.anchorId, body.after) })
+                return
+              }
+              case 'subject.task': {
+                writeJson(res, 200, { ok: true, data: store.linkStudySubject(body.subjectId, body.taskId, body.linked !== false) })
+                return
+              }
               case 'topic.add': {
                 writeJson(res, 200, { ok: true, data: store.addTopic(body) })
                 return
               }
               case 'plan.generate': {
-                writeJson(res, 200, { ok: true, data: store.generatePlan(body.subjectId) })
+                writeJson(res, 410, { ok: false, error: '科目生成计划已停用，既有安排仍可查看' })
                 return
               }
               case 'plan.done': {
@@ -4841,8 +5372,32 @@ export function apply(ctx, config = {}) {
                 writeJson(res, 200, { ok: true, data: store.registerStudyTask(body) })
                 return
               }
+              case 'studytask.schedule': {
+                writeJson(res, 200, { ok: true, data: store.scheduleStudyTask(body.id, body.future === true, body.startAt) })
+                return
+              }
+              case 'tip.settings': {
+                const patch = {}
+                if (typeof body.region === 'string') patch.adviceRegion = body.region.trim().slice(0, 80)
+                if (typeof body.automatic === 'boolean') patch.dailyAdvice = body.automatic
+                updateSettings(patch)
+                writeJson(res, 200, { ok: true, data: store.todayTip() })
+                return
+              }
+              case 'calendar.refresh': {
+                refreshCalendar(new Date(), { force: true })
+                writeJson(res, 200, { ok: true, data: calendarView() })
+                return
+              }
               case 'habit.beat': {
-                writeJson(res, 200, { ok: true, data: store.recordStudyBeat() })
+                const { sessionId, tracker, active } = body
+                if (typeof sessionId !== 'string' || typeof tracker !== 'string' || !tracker || tracker.length > 80 || !isStudySession(sessionId)) {
+                  writeJson(res, 403, { ok: false, error: 'study conversation required' })
+                  return
+                }
+                const now = DEV && body.at ? new Date(body.at) : new Date()
+                if (!Number.isFinite(now.getTime())) throw new Error('invalid heartbeat time')
+                writeJson(res, 200, { ok: true, data: store.recordStudyBeat(sessionId, tracker, active === true, now) })
                 return
               }
               case 'studytask.update': {
@@ -4974,6 +5529,10 @@ export function apply(ctx, config = {}) {
                 })
                 return
               }
+              case 'item.board': {
+                writeJson(res, 200, { ok: true, data: store.moveBoardItem(body) })
+                return
+              }
               case 'item.delete': {
                 writeJson(res, 200, { ok: true, data: store.deleteItem(body.id) })
                 return
@@ -4987,7 +5546,7 @@ export function apply(ctx, config = {}) {
                 return
               }
               case 'settings.save': {
-                writeJson(res, 200, { ok: true, data: store.saveSettings(body.patch || body) })
+                writeJson(res, 200, { ok: true, data: updateSettings(body.patch || body) })
                 return
               }
               case 'import': {
@@ -4997,6 +5556,11 @@ export function apply(ctx, config = {}) {
               case 'notifications.ack': {
                 store.ackNotifications(body.ids || [])
                 writeJson(res, 200, { ok: true, data: { acked: (body.ids || []).length } })
+                return
+              }
+              case 'notifications.system': {
+                store.ackSystemNotification(body.id)
+                writeJson(res, 200, { ok: true, data: { saved: true } })
                 return
               }
               case 'dev.scan': {

@@ -17,6 +17,9 @@ function StudyHabitTab(props) {
   const plannedTotal = week
     ? (week.days || []).reduce((sum, day) => sum + (Number(day.planned) || 0), 0)
     : 0;
+  const popularHours = (data.hours || []).filter((hour) => hour.seconds > 0)
+    .sort((a, b) => b.seconds - a.seconds).slice(0, 3);
+  const duration = (seconds) => seconds >= 60 ? Math.round(seconds / 60) + t('studyMinuteUnit') : '< 1' + t('studyMinuteUnit');
 
   return h(
     'div',
@@ -29,6 +32,19 @@ function StudyHabitTab(props) {
       h('span', { className: 'lp-meta' }, `${t('habitRate')} ${data.completionRate}%`),
     ),
     error ? h('div', { className: 'lp-err' }, error) : null,
+    h('div', { className: 'lp-card lp-study-section' },
+      h('div', { className: 'lp-card-title' }, t('habitCompletion')),
+      h('div', { className: 'lp-meta' }, t('habitStudyDone') + ' ' + (data.studyDoneDays || 0) + '/' + (data.studyGoalDays || 0)),
+      h('div', { className: 'lp-meta' }, t('habitTaskDone') + ' ' + (data.planningCompleted || 0) +
+        ' · ' + t('habitOnTime') + ' ' + (data.planningOnTime || 0) + '/' + (data.planningWithDeadline || 0)),
+      popularHours.length ? h('div', { className: 'lp-meta' }, t('habitHourly') + ' · ' + popularHours.map((slot) =>
+        String(slot.hour).padStart(2, '0') + ':00 (' + duration(slot.seconds) + ')').join(' · ')) : null),
+    h('div', { className: 'lp-section' }, t('habitSessions')),
+    (data.sessions || []).length ? data.sessions.map((session, index) =>
+      h('div', { key: session.id, className: 'lp-tree-row' },
+        h('span', { className: 'lp-title' }, session.title || t('studyNav') + ' ' + (index + 1)),
+        h('span', { className: 'lp-meta' }, duration(session.seconds)))) :
+      h('div', { className: 'lp-empty' }, t('habitNoTime')),
     h(
       'div',
       { className: 'lp-section' },
@@ -56,7 +72,7 @@ function StudyHabitTab(props) {
     h('div', { className: 'lp-meta' }, t('timePlanAgentHint')),
     h('div', { className: 'lp-section' }, `${t('habitRecent')} · ${data.days.length}`),
     data.days.length === 0
-      ? h('div', { className: 'lp-empty' }, t('habitEmpty'))
+      ? null
       : data.days.map((day) =>
           h(
             'div',

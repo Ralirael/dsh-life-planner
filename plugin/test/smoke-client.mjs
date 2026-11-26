@@ -29,7 +29,10 @@ const ReactStub = {
   createElement: (type, props, ...children) => ({ type, props: props || {}, children }),
   useState: (initial) => [typeof initial === 'function' ? initial() : initial, () => {}],
   useEffect: () => {},
+  useRef: (initial) => ({ current: initial }),
   useCallback: (fn) => fn,
+  useMemo: (fn) => fn(),
+  useReducer: (_reduce, initial) => [initial, () => {}],
 }
 
 const fakeWindow = {
@@ -40,7 +43,7 @@ const fakeWindow = {
   },
 }
 
-const run = new Function('window', code)
+const run = new Function('window', code.replace('__internals: {', '__internals: { BoardView, MistakeTab, anchoredMenuPosition,'))
 run(fakeWindow)
 
 if (!captured) throw new Error('client.js never called window.__ModuleLoader__.load')
@@ -128,6 +131,8 @@ assert(grouped.size === 2, 'groupByDay puts due items on two local days')
 assert((grouped.get('2026-11-10') || []).length === 2, 'both same-day items land on one key')
 assert((grouped.get('2026-11-12') || []).length === 1, 'the later item lands on its own key')
 assert(topTask(grouped.get('2026-11-10')).id === 'b', 'topTask picks by priority, not insertion order')
+const scheduledStudy = { ...sample[0], dueAt: null, startAt: at(2026, 11, 14, 9) }
+assert(groupByDay([scheduledStudy]).get('2026-11-14')[0] === scheduledStudy, 'start-only tasks appear on the calendar at their scheduled day')
 
 const month = monthMatrix(new Date(2026, 10, 1))
 assert(month.length === 42, 'monthMatrix always yields 6 weeks')
@@ -138,5 +143,71 @@ const week = weekMatrix('2026-11-10')
 assert(week.length === 7, 'weekMatrix yields seven days')
 assert(week[0].date.getDay() === 1, 'weekMatrix starts on Monday')
 assert(week.some((cell) => cell.key === '2026-11-10'), 'weekMatrix contains the selected day')
+const { lunarDateLabel } = plugin.__internals
+assert(lunarDateLabel(new Date(2026, 10, 27, 12)) === '丙午年 十月十九', 'today uses the Chinese lunar calendar')
+assert(lunarDateLabel(new Date(2025, 6, 25, 12)).includes('闰六月初一'), 'lunar dates preserve the leap month')
+
+const descendants = (value) => Array.isArray(value) ? value.flatMap(descendants) :
+  value && typeof value === 'object' ? [value, ...descendants(value.children)] : []
+const moves = []
+const board = plugin.__internals.BoardView({
+  t: (key) => key,
+  items: sample.map((item) => item.id === 'a' ? { ...item, boardOrder: 0 } : item),
+  onMove: (move) => moves.push(move),
+  onEdit: () => {},
+})
+const cards = descendants(board).filter((entry) => entry.props.className === 'lp-card')
+assert(cards[0].props.key === 'a', 'board cards render in persisted order regardless of priority')
+const dataTransfer = { setData() {} }
+const drag = {
+  dataTransfer, preventDefault() {}, stopPropagation() {},
+  clientY: 30, currentTarget: { getBoundingClientRect: () => ({ top: 0, height: 40 }) },
+}
+cards[0].props.onDragStart(drag)
+cards.find((card) => card.props.key === 'b').props.onDrop(drag)
+assert(moves[0].id === 'a' && moves[0].anchorId === 'b' && moves[0].after, 'dropping below the midpoint requests insertion after the target')
+cards[0].props.onDragStart(drag)
+const columns = descendants(board).filter((entry) => entry.props.className === 'lp-col')
+columns.find((column) => column.props.key === 'doing').props.onDrop(drag)
+assert(moves[1].id === 'a' && moves[1].column === 'doing', 'drop into an empty column requests a status change')
+
+const anchored = plugin.__internals.anchoredMenuPosition(
+  { left: 233, right: 262, top: 258, bottom: 286, width: 29 },
+  { width: 270, height: 300 },
+  { minWidth: 180, height: 200, maxHeight: 240, align: 'end' },
+)
+assert(anchored.top + 200 < 258 && anchored.left + anchored.width <= 262, 'menus flip above a bottom-right trigger and fit in the viewport')
+
+const originalUseState = ReactStub.useState
+const mistakeState = []
+let callIndex = 0
+ReactStub.useState = (initial) => {
+  const index = callIndex++
+  if (!(index in mistakeState)) mistakeState[index] = typeof initial === 'function' ? initial() : initial
+  return [mistakeState[index], (value) => { mistakeState[index] = value }]
+}
+const mistake = {
+  id: 'offline-mistake', question: '题干\nA. 选项一\nB. 选项二', memoryTip: '主动回忆线索',
+  sources: [{ title: '参考资料', url: 'https://example.invalid/book', pdfPage: 4, bookPage: 'iii' }],
+}
+const renderMistakes = () => {
+  callIndex = 0
+  const props = { t: (key) => key, items: [mistake] }
+  return descendants(plugin.__internals.MistakeTab(props))
+}
+try {
+  renderMistakes().find((node) => node.props.key === mistake.id && node.props.onDoubleClick).props.onDoubleClick()
+  const preview = renderMistakes().find((node) => node.props.title === 'mistakePreview')
+  const previewParts = descendants(preview)
+  assert(previewParts.some((node) => node.children.includes(mistake.question)) &&
+    previewParts.some((node) => node.children.includes(mistake.memoryTip)) &&
+    previewParts.some((node) => node.children.some((one) => typeof one === 'string' && one.includes(mistake.sources[0].url))),
+    'the mistake details show the full multiline question, retrieval cue, and source')
+  previewParts.find((node) => typeof node.props.onClick === 'function' && node.children.includes('edit')).props.onClick()
+  assert(renderMistakes().some((node) => node.type === 'textarea' && node.props.value === mistake.question),
+    'the mistake editor keeps the original lines and all options')
+} finally {
+  ReactStub.useState = originalUseState
+}
 
 console.log('\nclient smoke test passed')

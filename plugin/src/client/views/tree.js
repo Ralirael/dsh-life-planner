@@ -18,6 +18,32 @@ function TreeView(props) {
   const cancelled = React.useRef(false);
   const map = childrenMap(items);
   const byId = new Map(items.map((item) => [item.id, item]));
+  const menuItem = byId.get(menuFor);
+  const actions = menuItem ? [
+    { label: t('edit'), run: () => props.onEdit(menuItem) },
+    !menuItem.derived.studyManaged && { label: t(menuItem.derived.done ? 'markUndone' : 'markDone'),
+      run: () => props.onToggle(menuItem, !menuItem.derived.done) },
+    { label: t('rename'), run: () => setRenaming({ id: menuItem.id, value: menuItem.title }) },
+    { label: t('moveUp'), run: () => props.onReorder(menuItem, 'up') },
+    { label: t('moveDown'), run: () => props.onReorder(menuItem, 'down') },
+    menuItem.parentId && { label: t('outdent'), run: () => props.onOutdent(menuItem) },
+    !menuItem.derived.studyTask && { label: t('delete'), run: () => remove(menuItem) },
+  ].filter(Boolean) : [];
+  const rowMenu = useAnchoredMenu({
+    count: actions.length, minWidth: 150, maxHeight: 300, align: 'end',
+    onChoose: (index) => actions[index]?.run(),
+    onClose: () => setMenuFor(''),
+  });
+  const openRowMenu = (item, event) => {
+    event.stopPropagation();
+    setSelectedId(item.id);
+    if (rowMenu.open && menuFor === item.id) {
+      rowMenu.hide();
+      return;
+    }
+    setMenuFor(item.id);
+    rowMenu.show(event.currentTarget);
+  };
   const focusId = props.focusId || '';
   const text = query.trim().toLowerCase();
   const filtering = text !== '' || filter !== 'all';
@@ -64,7 +90,7 @@ function TreeView(props) {
   const matches = (item) => {
     if (text && !item.title.toLowerCase().includes(text)) return false;
     if (filter === 'open') return !item.derived.done;
-    if (filter === 'blocked') return displayBlockers(item, byId, items).length > 0;
+    if (filter === 'blocked') return item.derived.blocked;
     if (filter === 'done') return item.derived.done;
     return true;
   };
@@ -350,7 +376,7 @@ function TreeView(props) {
     const kids = (map.get(item.id) || []).filter((child) => visible.has(child.id));
     const expanded = filtering || !collapsed.has(item.id);
     const progress = item.kind === 'task' ? null : progressOf(item);
-    const blockers = blockersOf(item);
+    const blockers = item.derived.studyTask ? [] : blockersOf(item);
     const selected = selectedId === item.id;
     const hint = dropHint && dropHint.id === item.id ? dropHint.zone : '';
     return h(
@@ -432,6 +458,8 @@ function TreeView(props) {
           ? h('input', {
               type: 'checkbox',
               checked: Boolean(item.derived.done),
+              disabled: Boolean(item.derived.studyManaged),
+              title: item.derived.studyManaged ? t('studyStatusManaged') : undefined,
               onClick: (event) => event.stopPropagation(),
               onChange: (event) => props.onToggle(item, event.target.checked, event),
               'aria-label': item.title,
@@ -494,7 +522,7 @@ function TreeView(props) {
               { className: 'lp-badge', title: blockers.map((dep) => dep.title).join('、') },
               t('blockedBy').replace('{n}', String(blockers.length)),
             )
-          : null,
+          : item.derived.blocked ? h('span', { className: 'lp-badge' }, t('blocked')) : null,
         item.dueAt ? h('span', { className: 'lp-meta', 'data-overdue': String(isOverdue(item)) }, toLocalInput(item.dueAt).replace('T', ' ')) : null,
         h(
           'span',
@@ -522,40 +550,31 @@ function TreeView(props) {
             {
               className: 'lp-mini',
               title: t('edit'),
-              onClick: (event) => {
-                event.stopPropagation();
-                setSelectedId(item.id);
-                setMenuFor(menuFor === item.id ? '' : item.id);
+              'aria-haspopup': 'menu',
+              'aria-expanded': rowMenu.open && menuFor === item.id,
+              'aria-controls': rowMenu.open && menuFor === item.id ? rowMenu.menuId : undefined,
+              onClick: (event) => openRowMenu(item, event),
+              onKeyDown: (event) => {
+                if (rowMenu.open && menuFor === item.id) rowMenu.onKeyDown(event);
+                else if (event.key === 'ArrowDown') {
+                  event.preventDefault();
+                  openRowMenu(item, event);
+                } else if (event.key === 'Enter' || event.key === ' ') event.stopPropagation();
               },
             },
             '⋯',
           ),
         ),
       ),
-      menuFor === item.id
+      rowMenu.open && rowMenu.pos && menuFor === item.id
         ? h(
             'div',
-            { className: 'lp-menu' },
-            h('button', { onClick: () => { setMenuFor(''); props.onEdit(item); } }, t('edit')),
-            item.kind === 'task'
-              ? h(
-                  'button',
-                  {
-                    onClick: (event) => {
-                      setMenuFor('');
-                      props.onToggle(item, !item.derived.done, event);
-                    },
-                  },
-                  item.derived.done ? t('markUndone') : t('markDone'),
-                )
-              : null,
-            h('button', { onClick: () => { setMenuFor(''); setRenaming({ id: item.id, value: item.title }); } }, t('rename')),
-            h('button', { onClick: () => { setMenuFor(''); props.onReorder(item, 'up'); } }, t('moveUp')),
-            h('button', { onClick: () => { setMenuFor(''); props.onReorder(item, 'down'); } }, t('moveDown')),
-            item.parentId
-              ? h('button', { onClick: () => { setMenuFor(''); props.onOutdent(item); } }, t('outdent'))
-              : null,
-            h('button', { onClick: (event) => { setMenuFor(''); remove(item, event); } }, t('delete')),
+            { className: 'lp-menu', id: rowMenu.menuId, role: 'menu', ref: rowMenu.menuRef,
+              style: rowMenu.pos, onKeyDown: rowMenu.onKeyDown },
+            actions.map((action, index) => h('button', {
+              ...rowMenu.getItemProps(index, false), className: 'lp-menu-item',
+              role: 'menuitem', 'aria-selected': undefined,
+            }, action.label)),
           )
         : null,
       kids.length > 0 && expanded ? renderLevel(item.id) : null,

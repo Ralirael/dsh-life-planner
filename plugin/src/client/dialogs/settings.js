@@ -5,9 +5,23 @@ function SettingsModal(props) {
     if (props.settings) setForm(props.settings);
   }, [props.settings]);
   const [appearance, setAppearance] = React.useState(() => loadAppearance());
-  const [page, setPage] = React.useState('tags');
+  const [page, setPage] = React.useState(props.initialPage || 'tags');
   const [error, setError] = React.useState('');
   const [busy, setBusy] = React.useState(false);
+  const [calendarInfo, setCalendarInfo] = React.useState(null);
+  const [refreshingRegion, setRefreshingRegion] = React.useState(false);
+  React.useEffect(() => {
+    if (page !== 'general') return undefined;
+    let active = true;
+    let timer;
+    const read = () => api('calendar.context').then((data) => {
+      if (!active) return;
+      setCalendarInfo(data);
+      if (data.updating) timer = setTimeout(read, 2000);
+    }).catch(() => {});
+    read();
+    return () => { active = false; clearTimeout(timer); };
+  }, [page, refreshingRegion]);
   const [permission, setPermission] = React.useState(
     typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
   );
@@ -65,9 +79,9 @@ function SettingsModal(props) {
 
   const textField = (key, label) =>
     h(
-      'div',
+      'label',
       { className: 'lp-field' },
-      h('label', null, label),
+      h('span', null, label),
       h('input', {
         className: 'lp-input',
         value: form[key] ?? '',
@@ -77,9 +91,9 @@ function SettingsModal(props) {
 
   const numberField = (key, label) =>
     h(
-      'div',
+      'label',
       { className: 'lp-field' },
-      h('label', null, label),
+      h('span', null, label),
       h('input', {
         className: 'lp-input',
         type: 'number',
@@ -165,6 +179,7 @@ function SettingsModal(props) {
     const weekend = parseWindowsText(form.weekendWindows);
     if (weekday === null || weekend === null) {
       setError(t('invalidWindows'));
+      setPage('notify');
       return;
     }
     setBusy(true);
@@ -184,6 +199,10 @@ function SettingsModal(props) {
       taskTypes: parseList(typesText),
       tags: parseList(tagsText),
       colorOverrides,
+      adviceRegion: (form.adviceRegion || '').trim(),
+      calendarAutoRefresh: form.calendarAutoRefresh !== false,
+      adviceRegionLocked: form.adviceRegionLocked === true,
+      dailyAdvice: form.dailyAdvice !== false,
     };
     api('settings.save', { patch })
       .then((data) => {
@@ -545,90 +564,80 @@ function SettingsModal(props) {
   };
 
 
-  const tagsPage = () => {
-    const tags = parseList(typesText);
-    return h(
-      'div',
-      { className: 'lp-settings-body' },
-      h('div', { className: 'lp-form-section' }, t('sectionTags')),
-      h(
-        'div',
-        { className: 'lp-toolbar' },
+  const group = (title, ...children) => h('section', { className: 'lp-settings-group' },
+    h('h3', { className: 'lp-form-section' }, t(title)), ...children);
+  const switchRow = (label, hint, value, onChange) => h('div', { className: 'lp-settings-switch' },
+    h('div', null, h('strong', null, t(label)), hint ? h('div', { className: 'lp-meta' }, t(hint)) : null),
+    h(Switch, { label: t(label), value, onChange }));
+
+  const classification = ({ title, hint, list, draft, onDraft, onAdd, placeholder, addLabel, selected, onSelect, empty, onRemove }) => {
+    const active = list.includes(selected) ? selected : list[0];
+    return group(title,
+      h('form', { className: 'lp-toolbar', onSubmit: (event) => { event.preventDefault(); onAdd(); } },
         h('input', {
-          className: 'lp-input',
-          value: tagDraft,
-          placeholder: t('tagNamePlaceholder'),
-          onChange: (event) => setTagDraft(event.target.value),
+          className: 'lp-input', 'aria-label': t(placeholder), placeholder: t(placeholder),
+          value: draft, onChange: (event) => onDraft(event.target.value),
         }),
-        h('button', { className: 'lp-btn', type: 'button', onClick: addTag }, t('addTag')),
-      ),
-      tags.length === 0
-        ? h('div', { className: 'lp-meta' }, t('noTags'))
-        : h(
-            'div',
-            { className: 'lp-field' },
-            h('label', null, t('existingTags')),
-            h(Dropdown, {
-              value: selectedTag || tags[0],
-              onChange: setSelectedTag,
-              options: tags.map((name) => ({ value: name, label: name })),
-            }),
-            colorSwatches(selectedTag || tags[0]),
-            h(
-              'button',
-              { className: 'lp-btn-ghost', type: 'button', onClick: () => removeType(selectedTag || tags[0]) },
-              t('delete'),
-            ),
-          ),
-      h('div', { className: 'lp-meta' }, t('taskTypeAutoHint')),
-      h('div', { className: 'lp-form-section' }, t('sectionTagLibrary')),
-      h(
-        'div',
-        { className: 'lp-toolbar' },
-        h('input', {
-          className: 'lp-input',
-          value: tagLibDraft,
-          placeholder: t('tagLibName'),
-          onChange: (event) => setTagLibDraft(event.target.value),
-        }),
-        h('button', { className: 'lp-btn', type: 'button', onClick: addTagLib }, t('tagLibAdd')),
-      ),
-      (() => {
-        const tagList = parseList(tagsText);
-        if (tagList.length === 0) return h('div', { className: 'lp-meta' }, t('tagLibEmpty'));
-        const active = tagList.includes(selectedTagLib) ? selectedTagLib : tagList[0];
-        return h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('tagLibExisting')),
-          h(Dropdown, {
-            value: active,
-            onChange: setSelectedTagLib,
-            options: tagList.map((name) => ({ value: name, label: name })),
-          }),
-          colorSwatches(active),
-          h(
-            'button',
-            { className: 'lp-btn-ghost', type: 'button', onClick: () => removeTagLib(active) },
-            t('delete'),
-          ),
-        );
-      })(),
+        h('button', { className: 'lp-btn', type: 'submit', disabled: !draft.trim() }, t(addLabel))),
+      active ? h('div', { className: 'lp-settings-classification' },
+        h(Dropdown, { value: active, onChange: onSelect, options: list.map((name) => ({ value: name, label: name })) }),
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => onRemove(active) }, t('delete')),
+        colorSwatches(active))
+      : h('div', { className: 'lp-meta' }, t(empty)),
+      hint ? h('div', { className: 'lp-meta' }, t(hint)) : null,
     );
+  };
+
+  const tagsPage = () => h('div', { className: 'lp-settings-sections' },
+    classification({
+      title: 'sectionTags', hint: 'taskTypeAutoHint', list: parseList(typesText), draft: tagDraft, onDraft: setTagDraft,
+      onAdd: addTag, placeholder: 'tagNamePlaceholder', addLabel: 'addTag', selected: selectedTag, onSelect: setSelectedTag,
+      empty: 'noTags', onRemove: removeType,
+    }),
+    classification({
+      title: 'sectionTagLibrary', list: parseList(tagsText), draft: tagLibDraft, onDraft: setTagLibDraft,
+      onAdd: addTagLib, placeholder: 'tagLibName', addLabel: 'tagLibAdd', selected: selectedTagLib, onSelect: setSelectedTagLib,
+      empty: 'tagLibEmpty', onRemove: removeTagLib,
+    }));
+
+  const regionDraftChanged = (form.adviceRegion || '').trim() !== (props.settings?.adviceRegion || '') ||
+    (form.calendarAutoRefresh !== false) !== (props.settings?.calendarAutoRefresh !== false) ||
+    Boolean(form.adviceRegionLocked) !== Boolean(props.settings?.adviceRegionLocked);
+  const refreshNow = () => {
+    setRefreshingRegion(true);
+    setError('');
+    api('calendar.refresh', {}).then((data) => {
+      setCalendarInfo(data);
+      window.dispatchEvent(new Event('lp-calendar-context-change'));
+    }).catch((err) => setError(err.message)).finally(() => setRefreshingRegion(false));
   };
 
   const generalPage = () =>
     h(
       'div',
-      { className: 'lp-settings-body' },
-      h('div', { className: 'lp-form-section' }, t('sectionData')),
-      h(
-        'div',
-        { className: 'lp-field' },
-        h('label', null, t('importData')),
+      { className: 'lp-settings-sections' },
+      group('settingsLocation',
+        h('div', { className: 'lp-setting-grid' },
+          h('label', { className: 'lp-field' }, h('span', null, t('tipRegion')),
+            h('input', { className: 'lp-input', value: form.adviceRegion || '', maxLength: 80,
+              placeholder: t('tipRegionHint'), onChange: (event) => set('adviceRegion', event.target.value) })),
+          h('label', { className: 'lp-field' }, h('span', null, t('calendarRefreshMode')),
+            h('select', { className: 'lp-select', value: form.calendarAutoRefresh !== false ? 'auto' : 'manual',
+              onChange: (event) => set('calendarAutoRefresh', event.target.value === 'auto') },
+              h('option', { value: 'auto' }, t('calendarRefreshAuto')),
+              h('option', { value: 'manual' }, t('calendarRefreshManual'))))),
+        calendarInfo?.region ? h('div', { className: 'lp-meta' }, t('settingsCurrentRegion') + ' · ' + calendarInfo.region) : null,
+        switchRow('calendarLockRegion', 'calendarLockHint', form.adviceRegionLocked === true, (next) => set('adviceRegionLocked', next)),
+        h('div', { className: 'lp-settings-switch' },
+          h('div', { className: 'lp-meta', role: 'status' },
+            t(regionDraftChanged ? 'calendarRefreshOnSave' : calendarInfo?.updating ? 'calendarRefreshing' : 'calendarRefreshHint')),
+          h('button', { type: 'button', className: 'lp-btn-ghost', onClick: refreshNow, disabled: refreshingRegion || regionDraftChanged }, t('calendarRefreshNow')))),
+      group('studyTipTitle',
+        switchRow('tipDeepSeek', 'settingsStudyAdviceHint', form.dailyAdvice !== false, (next) => set('dailyAdvice', next))),
+      group('sectionData',
         h(
           'div',
-          { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },
+          { className: 'lp-toolbar' },
           h('button', { className: 'lp-btn-ghost', type: 'button', onClick: doExport }, t('exportData')),
           h(
             'button',
@@ -636,37 +645,19 @@ function SettingsModal(props) {
             t('importData'),
           ),
           h('input', { ref: fileRef, type: 'file', accept: 'application/json', style: { display: 'none' }, onChange: doImport }),
-        ),
+        ), h('div', { className: 'lp-meta' }, t('generalHint')),
       ),
-      h('div', { className: 'lp-meta' }, t('generalHint')),
     );
 
   const notifyPage = () =>
     h(
       'div',
-      { className: 'lp-settings-body' },
-      h('div', { className: 'lp-form-section' }, t('sectionNotify')),
-      h(
-        'div',
-        { className: 'lp-field' },
-        // The slider sits right after its label instead of being pushed to the
-        // end of the row.
-        h(
-          'div',
-          { className: 'lp-switch-inline' },
-          h('label', null, t('fSystemNotify')),
-          h(Switch, {
-            value: form.systemNotify !== false,
-            onChange: (next) => {
-              set('systemNotify', next);
-              try {
-                localStorage.setItem('lpSystemNotify', next ? 'on' : 'off');
-              } catch {}
-            },
-          }),
-        ),
-        h('div', { className: 'lp-meta' }, t('fSystemNotifyHint')),
-        // Test and permission live with the switch; no second enable button.
+      { className: 'lp-settings-sections' },
+      group('sectionNotify',
+        switchRow('fSystemNotify', 'fSystemNotifyHint', form.systemNotify !== false, (next) => {
+          set('systemNotify', next);
+          try { localStorage.setItem('lpSystemNotify', next ? 'on' : 'off'); } catch {}
+        }),
         h(
           'div',
           { className: 'lp-toolbar', style: { marginTop: 6 } },
@@ -674,45 +665,32 @@ function SettingsModal(props) {
           permission === 'granted'
             ? null
             : h('button', { className: 'lp-btn-ghost', type: 'button', onClick: askPermission }, t('enableNotify')),
-          h('span', { className: 'lp-meta' }, t('notifyState').replace('{s}', permission)),
+          h('span', { className: 'lp-settings-status' }, t('notifyState').replace('{s}', t('notifyPermission_' + permission))),
         ),
-        feedback ? h('div', { className: 'lp-meta' }, feedback) : null,
       ),
-      textField('weekdayWindows', t('fWeekdayWindows')),
-      textField('weekendWindows', t('fWeekendWindows')),
-      h(
-        'div',
-        { className: 'lp-row2' },
-        numberField('notifyGapMinutes', t('fGapMinutes')),
-        numberField('nonUrgentQuotaPerWindow', t('fQuota')),
-      ),
-      h(
-        'div',
-        { className: 'lp-row2' },
-        numberField('maxRemindersPerWindow', t('fMaxPerWindow')),
-        numberField('maxDeferHours', t('fMaxDefer')),
-      ),
-      h(
-        'div',
-        { className: 'lp-row2' },
-        numberField('leadTaskDays', t('fLeadTaskDays')),
-        numberField('leadProjectDays', t('fLeadProjectDays')),
-      ),
-      numberField('longTermReminderHours', t('fLongTermHours')),
-      h('div', { className: 'lp-form-section' }, t('sectionTask')),
-      h(
-        'div',
-        { className: 'lp-row2' },
+      group('settingsNotifyWindows',
+        h('div', { className: 'lp-setting-grid' },
+          textField('weekdayWindows', t('fWeekdayWindows')),
+          textField('weekendWindows', t('fWeekendWindows')),
+          numberField('notifyGapMinutes', t('fGapMinutes')),
+          numberField('nonUrgentQuotaPerWindow', t('fQuota')),
+          numberField('maxRemindersPerWindow', t('fMaxPerWindow')),
+          numberField('maxDeferHours', t('fMaxDefer')))),
+      group('settingsNotifyLead',
+        h('div', { className: 'lp-setting-grid' },
+          numberField('leadTaskDays', t('fLeadTaskDays')),
+          numberField('leadProjectDays', t('fLeadProjectDays')),
+          numberField('longTermReminderHours', t('fLongTermHours')))),
+      group('sectionTask', h('div', { className: 'lp-setting-grid' },
         numberField('archiveAfterDays', t('fArchiveDays')),
-        numberField('deleteAfterDays', t('fDeleteDays')),
-      ),
+        numberField('deleteAfterDays', t('fDeleteDays')))),
     );
 
   const appearancePage = () =>
     h(
       'div',
-      { className: 'lp-settings-body' },
-      h('div', { className: 'lp-form-section' }, t('sectionSkin')),
+      { className: 'lp-settings-sections' },
+      group('sectionSkin',
       h(
         'div',
         { className: 'lp-field' },
@@ -780,9 +758,9 @@ function SettingsModal(props) {
             },
           }),
         ),
-      ),
+      )),
 
-      h('div', { className: 'lp-form-section' }, t('sectionFont')),
+      group('sectionFont',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -795,15 +773,15 @@ function SettingsModal(props) {
         numberInput('meta', t('fFontMeta'), appearance.font.meta, setFont),
         numberInput('base', t('fFontBase'), appearance.font.base, setFont),
       ),
-      h('div', { className: 'lp-meta' }, t('fFontHint')),
-      h('div', { className: 'lp-form-section' }, t('sectionSize')),
+      h('div', { className: 'lp-meta' }, t('fFontHint'))),
+      group('sectionSize',
       h(
         'div',
         { className: 'lp-setting-grid' },
         numberInput('calendarHeight', t('fCalHeight'), appearance.size.calendarHeight, setSize),
       ),
-      h('div', { className: 'lp-meta' }, t('fCalHeightHint')),
-      h('div', { className: 'lp-form-section' }, t('sectionMistake')),
+      h('div', { className: 'lp-meta' }, t('fCalHeightHint'))),
+      group('sectionMistake',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -817,8 +795,8 @@ function SettingsModal(props) {
         numberInput('mistakeAnswer', t('fMistakeAnswerFs'), appearance.font.mistakeAnswer, setFont),
         numberInput('mistakeReason', t('fMistakeReasonFs'), appearance.font.mistakeReason, setFont),
       ),
-      h('div', { className: 'lp-meta' }, t('fMistakeHint')),
-      h('div', { className: 'lp-form-section' }, t('sectionAccent')),
+      h('div', { className: 'lp-meta' }, t('fMistakeHint'))),
+      group('sectionAccent',
       h(
         'div',
         { className: 'lp-row2' },
@@ -844,8 +822,8 @@ function SettingsModal(props) {
             onChange: (event) => setAccent('study', event.target.value),
           }),
         ),
-      ),
-      h('div', { className: 'lp-form-section' }, t('sectionBackground')),
+      )),
+      group('sectionBackground',
       h(
         'div',
         { className: 'lp-field' },
@@ -871,7 +849,7 @@ function SettingsModal(props) {
         h('div', { className: 'lp-meta' }, t('fSurfaceHint')),
       ),
       backgroundFields('planning'),
-      studyMode ? backgroundFields('study') : null,
+      studyMode ? backgroundFields('study') : null),
     );
 
   const tabs = [
@@ -888,32 +866,27 @@ function SettingsModal(props) {
       className: 'lp-settings',
       onClose: props.onClose,
     },
-    error ? h('div', { className: 'lp-err' }, error) : null,
-      feedback ? h('div', { className: 'lp-meta lp-feedback' }, feedback) : null,
-      h(
-        'div',
-        { className: 'lp-tabs' },
+    h('div', { className: 'lp-settings-layout' },
+      h('nav', { className: 'lp-settings-nav', 'aria-label': t('settings') },
         tabs.map((tab) =>
           h(
             'button',
             {
               key: tab.key,
-              className: 'lp-tab',
+              className: 'lp-settings-nav-button',
               type: 'button',
-              'data-active': String(page === tab.key),
-              onClick: () => setPage(tab.key),
+              'aria-current': page === tab.key ? 'page' : undefined,
+              onClick: () => { setPage(tab.key); setFeedback(''); },
             },
             tab.label,
           ),
         ),
       ),
-      page === 'tags'
-        ? tagsPage()
-        : page === 'general'
-          ? generalPage()
-          : page === 'notify'
-            ? notifyPage()
-            : appearancePage(),
+      h('div', { className: 'lp-settings-body', key: page },
+        error ? h('div', { className: 'lp-err', role: 'alert' }, error) : null,
+        feedback ? h('div', { className: 'lp-meta lp-feedback', role: 'status' }, feedback) : null,
+        page === 'tags' ? tagsPage() : page === 'general' ? generalPage() : page === 'notify' ? notifyPage() : appearancePage()),
+    ),
       h(
         'div',
         { className: 'lp-modal-actions' },

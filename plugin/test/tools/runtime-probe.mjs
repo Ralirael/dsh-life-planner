@@ -198,20 +198,31 @@ const again = await call('study_shelf_add', { kind: 'dir', path: shelfDir, tags:
 check('a repeated absolute path dedupes', again.deduped === true && again.id === shelved.id)
 
 // --- PDF extraction: pdftotext when present, PDFKit on macOS otherwise ------
-// A hand-written single-page PDF keeps this portable: both engines read it.
-const pdfStream = 'BT /F1 18 Tf 20 50 Td (Hello PDF probe) Tj ET'
-const pdfSource = `%PDF-1.4
-1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
-2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
-3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 300 100] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj
-4 0 obj << /Length ${pdfStream.length} >> stream
-${pdfStream}
-endstream
-endobj
-5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
-trailer << /Root 1 0 R /Size 6 >>
-%%EOF
-`
+// A two-page fixture with a valid xref works in both Poppler and PDFKit.
+const page = (contents) => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 100] /Contents ' + contents +
+  ' 0 R /Resources << /Font << /F1 5 0 R >> >> >>'
+const stream = (label) => {
+  const content = 'BT /F1 18 Tf 20 50 Td (' + label + ') Tj ET'
+  return '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream'
+}
+const pdfObjects = [
+  '<< /Type /Catalog /Pages 2 0 R >>',
+  '<< /Type /Pages /Kids [3 0 R 6 0 R] /Count 2 >>',
+  page(4), stream('Hello PDF probe'),
+  '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  page(7), stream('Text from the second page'),
+]
+let pdfSource = '%PDF-1.4\n'
+const offsets = pdfObjects.map((content, index) => {
+  const offset = pdfSource.length
+  pdfSource += (index + 1) + ' 0 obj\n' + content + '\nendobj\n'
+  return offset
+})
+const xref = pdfSource.length
+const formatOffset = (offset) => String(offset).padStart(10, '0')
+pdfSource += 'xref\n0 ' + (offsets.length + 1) + '\n' + formatOffset(0) + ' 65535 f \n'
+for (const offset of offsets) pdfSource += formatOffset(offset) + ' 00000 n \n'
+pdfSource += 'trailer << /Root 1 0 R /Size ' + (offsets.length + 1) + ' >>\nstartxref\n' + xref + '\n%%EOF\n'
 await writeFile(join(space, 'learning', 'probe.pdf'), pdfSource)
 let pdf = null
 let pdfError = ''
@@ -225,6 +236,16 @@ check(
   Boolean(pdf) && /Hello PDF probe/.test(pdf.content),
   pdf ? `${pdf.engine}, ${pdf.chars} chars` : pdfError.slice(0, 160),
 )
+if (pdf) {
+  const extracted = await call('study_pdf_text', {
+    taskId: task.id, relative: 'learning/probe.pdf', numbered: true, fromPage: 2, toPage: 2, outFile: 'learning/page-2.txt',
+  })
+  const pageText = readFileSync(join(space, 'learning', 'page-2.txt'), 'utf8')
+  check('numbered PDF extraction preserves the file page when selecting a range',
+    extracted.pageCount === 2 && extracted.fromPage === 2 && extracted.toPage === 2 &&
+      pageText.includes('--- PDF page 2 ---') && pageText.includes('Text from the second page') &&
+      !pageText.includes('Hello PDF probe'))
+}
 
 // --- data directory: everything landed under the temp DSH_HOME --------------
 const indexPath = join(home, 'life-planner', 'data.db')

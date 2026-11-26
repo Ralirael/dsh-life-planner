@@ -3,6 +3,8 @@ function ItemEditor(props) {
   const item = props.item;
   const items = props.items;
   const isNew = !item.id;
+  const studyManaged = Boolean(item.derived?.studyManaged);
+  const studyTask = Boolean(item.derived?.studyTask);
 
   const [title, setTitle] = React.useState(item.title || '');
   const [kind, setKind] = React.useState(item.kind || 'task');
@@ -65,28 +67,23 @@ function ItemEditor(props) {
       return;
     }
     setBusy(true);
+    const existingDeps = item.dependsOn || [];
+    const depsChanged = existingDeps.length !== deps.size || existingDeps.some((id) => !deps.has(id));
     const payload = {
       title: title.trim(),
       kind,
       parentId: parentId || null,
-      dueAt: fromLocalInput(due),
-      startAt: fromLocalInput(start),
+      ...(!studyTask ? { dueAt: fromLocalInput(due), startAt: fromLocalInput(start), recurrence: freq ? { freq } : null } : {}),
       location: location.trim() || null,
       priority: kind === 'task' ? priority : null,
       note,
       tags,
       taskType: taskType || null,
-      recurrence: freq ? { freq } : null,
+      ...(isNew || depsChanged ? { dependsOn: kind === 'task' ? Array.from(deps) : [] } : {}),
     };
     const request = isNew
-      ? api('item.add', payload).then((created) =>
-          kind === 'task' && deps.size > 0
-            ? api('item.depends', { id: created.id, dependsOn: Array.from(deps) })
-            : created,
-        )
-      : api('item.update', { id: item.id, patch: payload }).then(() =>
-          api('item.depends', { id: item.id, dependsOn: kind === 'task' ? Array.from(deps) : [] }),
-        );
+      ? api('item.add', payload)
+      : api('item.update', { id: item.id, patch: payload });
     request
       .then(() => props.onSaved())
       .catch((err) => setError(err.message))
@@ -131,6 +128,7 @@ function ItemEditor(props) {
             className: 'lp-input',
             type: 'datetime-local',
             value: start,
+            disabled: studyTask,
             onChange: (event) => setStart(event.target.value),
           }),
         ),
@@ -142,6 +140,7 @@ function ItemEditor(props) {
             className: 'lp-input',
             type: 'datetime-local',
             value: due,
+            disabled: studyTask,
             onChange: (event) => setDue(event.target.value),
           }),
         ),
@@ -169,7 +168,7 @@ function ItemEditor(props) {
             )
           : null,
       ),
-      kind === 'task'
+      kind === 'task' && !studyTask
         ? h(
             'div',
             { className: 'lp-field' },
@@ -255,7 +254,7 @@ function ItemEditor(props) {
           ),
         ),
       ),
-      !isNew && kind === 'task'
+      !isNew && kind === 'task' && !studyManaged
         ? h(
             'label',
             { className: 'lp-field', style: { flexDirection: 'row', alignItems: 'center', gap: 8 } },
@@ -270,7 +269,7 @@ function ItemEditor(props) {
             }),
             t('doneLabel'),
           )
-        : null,
+        : studyManaged ? h('p', { className: 'lp-meta' }, t('studyStatusManaged')) : null,
       kind === 'task'
         ? h(
             'div',

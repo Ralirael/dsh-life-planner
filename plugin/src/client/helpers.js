@@ -35,8 +35,9 @@ function fromLocalInput(value) {
 }
 
 function timeLabel(item) {
-  if (!item.dueAt) return '';
-  const date = new Date(item.dueAt);
+  const timestamp = item.dueAt || item.startAt;
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return '';
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
@@ -112,8 +113,9 @@ function topTask(items) {
 function groupByDay(items) {
   const map = new Map();
   for (const item of items) {
-    if (!item.dueAt) continue;
-    const date = new Date(item.dueAt);
+    const timestamp = item.dueAt || item.startAt;
+    if (!timestamp) continue;
+    const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) continue;
     const key = dayKey(date);
     if (!map.has(key)) map.set(key, []);
@@ -123,7 +125,7 @@ function groupByDay(items) {
     list.sort((a, b) => {
       const rank = priorityOf(b) - priorityOf(a);
       if (rank !== 0) return rank;
-      return String(a.dueAt).localeCompare(String(b.dueAt));
+      return String(a.dueAt || a.startAt).localeCompare(String(b.dueAt || b.startAt));
     });
   }
   return map;

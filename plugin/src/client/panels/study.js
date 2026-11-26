@@ -31,15 +31,9 @@ function StudyPanel(props) {
         markLoaded('habits');
       })
       .catch(() => markLoaded('habits'));
-  // One beat per minute while the page is visible; the host caps each beat so
-  // an idle tab cannot inflate the numbers.
   React.useEffect(() => {
     loadHabits();
-    const beat = () => {
-      if (document.visibilityState !== 'visible') return;
-      api('habit.beat', {}).then(loadHabits).catch(() => {});
-    };
-    const timer = setInterval(beat, 60000);
+    const timer = setInterval(loadHabits, 60000);
     return () => clearInterval(timer);
   }, []);
   const loadLearning = () =>
