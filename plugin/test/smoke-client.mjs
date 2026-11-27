@@ -43,7 +43,7 @@ const fakeWindow = {
   },
 }
 
-const run = new Function('window', code.replace('__internals: {', '__internals: { BoardView, MistakeTab, anchoredMenuPosition,'))
+const run = new Function('window', code.replace('__internals: {', '__internals: { BoardView, CalendarView, StudyOverview, MistakeTab, anchoredMenuPosition,'))
 run(fakeWindow)
 
 if (!captured) throw new Error('client.js never called window.__ModuleLoader__.load')
@@ -107,6 +107,16 @@ for (const want of expected) {
 }
 console.log('ok - all five expected slot registrations present')
 
+const sidebarPaths = ['life-planner', 'life-planner-study'].map((id) => {
+  const slot = slotRegistrations.find((entry) => entry.options.name === 'sidebar.panellist' && entry.options.id === id)
+  const icon = slot.component({ size: 17 })
+  const svg = icon.type(icon.props)
+  const path = svg.children[0].props.d
+  assert(svg.type === 'svg' && svg.props.width === 17 && svg.props['aria-hidden'] === true && path, `${id} supplies a sidebar icon`)
+  return path
+})
+assert(sidebarPaths[0] !== sidebarPaths[1], 'planning and study have distinct sidebar icons')
+
 if (dictionaries.length !== 2) throw new Error('expected two locale dictionaries')
 if (bindings[0] !== 'life-planner') throw new Error('locale namespace mismatch')
 console.log('ok - locale namespace and dictionaries registered')
@@ -149,6 +159,38 @@ assert(lunarDateLabel(new Date(2025, 6, 25, 12)).includes('闰六月初一'), 'l
 
 const descendants = (value) => Array.isArray(value) ? value.flatMap(descendants) :
   value && typeof value === 'object' ? [value, ...descendants(value.children)] : []
+
+const { CalendarView, StudyOverview, dayKey } = plugin.__internals
+let selectedDay
+const calendar = CalendarView({
+  t: (key) => key,
+  items: sample,
+  anchor: new Date(2026, 10, 1),
+  selectedKey: '2026-11-10',
+  draft: '',
+  onSelect: (key) => { selectedDay = key },
+})
+const days = descendants(calendar).filter((entry) => entry.props.className === 'lp-cell')
+assert(days.length === 42 && days.filter((entry) => entry.props['aria-pressed']).length === 1,
+  'the month provides six weeks of native controls with one selected date')
+days.find((entry) => entry.props.key === '2026-11-12').props.onClick()
+assert(selectedDay === '2026-11-12', 'the month controls select the correct agenda day')
+
+const studyDay = dayKey(new Date(Date.now() - 4 * 3600 * 1000))
+const studyOverview = StudyOverview({
+  t: (key) => key,
+  data: {
+    plan: [
+      { id: 'completed', date: studyDay, kind: 'review', doneAt: at(2026, 11, 10, 9) },
+      { id: 'pending', date: studyDay, kind: 'review' },
+      { id: 'older', date: '2000-01-01', kind: 'review' },
+    ],
+  },
+})
+const progress = descendants(studyOverview).find((entry) => entry.props.role === 'progressbar')
+assert(progress?.props['aria-valuenow'] === 1 && progress.props['aria-valuemax'] === 2,
+  'today study progress counts completed entries and excludes other dates')
+
 const moves = []
 const board = plugin.__internals.BoardView({
   t: (key) => key,

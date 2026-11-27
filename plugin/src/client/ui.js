@@ -1,23 +1,26 @@
-function Icon(props) {
-  const size = props.size || 18;
+const SIDEBAR_ICON_PATHS = {
+  planning: 'M8.5 5H6.3A2.3 2.3 0 0 0 4 7.3v11.4A2.3 2.3 0 0 0 6.3 21h11.4a2.3 2.3 0 0 0 2.3-2.3V7.3A2.3 2.3 0 0 0 17.7 5h-2.2' +
+    'M10 3h4a1.5 1.5 0 0 1 0 3h-4a1.5 1.5 0 0 1 0-3ZM8.5 13l2.1 2.1 4.9-5',
+  study: 'M12 6.3C9.2 4.2 6 4.1 3.3 5.5v13.2c2.8-1.3 5.9-1.2 8.7.9 2.8-2.1 5.9-2.2 8.7-.9V5.5C18 4.1 14.8 4.2 12 6.3ZM12 6.3v13.3',
+};
+
+function SidebarIcon({ size = 18, variant }) {
   return h(
     'svg',
-    { width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': true, style: { display: 'block' } },
-    h('path', {
-      d: 'M4 5.5A1.5 1.5 0 0 1 5.5 4h4l1.6 2H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z',
+    {
+      width: size,
+      height: size,
+      viewBox: '0 0 24 24',
       fill: 'none',
       stroke: 'currentColor',
-      strokeWidth: 1.6,
-      strokeLinejoin: 'round',
-    }),
-    h('path', {
-      d: 'M8.5 13.5l2 2 4-4.5',
-      fill: 'none',
-      stroke: 'currentColor',
-      strokeWidth: 1.6,
+      strokeWidth: 1.75,
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
-    }),
+      'aria-hidden': true,
+      focusable: 'false',
+      style: { display: 'block' },
+    },
+    h('path', { d: SIDEBAR_ICON_PATHS[variant] }),
   );
 }
 

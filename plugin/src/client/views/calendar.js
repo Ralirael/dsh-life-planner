@@ -6,11 +6,10 @@ function CalendarView(props) {
   const scrollRef = React.useRef(null);
   const band = React.useRef(0);
   const collapsedRef = React.useRef(false);
+  const splitRef = React.useRef(false);
   const [collapsed, setCollapsed] = React.useState(false);
   const [expanded, setExpanded] = React.useState(420);
-  // Collapsed always parks at scrollTop 0 so the sticky bar sits above the
-  // day list instead of covering it.
-  const ANCHOR = 0;
+  const [layout, setLayout] = React.useState('stacked');
 
   const setCollapse = (next) => {
     collapsedRef.current = next;
@@ -33,15 +32,16 @@ function CalendarView(props) {
   };
   // Click selects, double-click on the name renames, double-click elsewhere
   // opens the editor — the same gestures as the work tree.
-  const dayRow = (item) =>
-    h(
+  const dayRow = (item) => {
+    const overdue = isOverdue(item);
+    return h(
       'div',
       {
         key: item.id,
         className: 'lp-tree-row',
         'data-done': String(item.derived.done),
         'data-selected': String(selectedId === item.id),
-        'data-overdue': String(isOverdue(item)),
+        'data-overdue': String(overdue),
         onClick: () => setSelectedId(item.id),
         onDoubleClick: () => props.onEdit(item),
       },
@@ -54,44 +54,54 @@ function CalendarView(props) {
         onChange: (event) => props.onToggle(item, event.target.checked, event),
         'aria-label': item.title,
       }),
-      h(
-        TypeChip,
-        { type: item.taskType, fallback: t('typeNone'), colorOverrides: props.colorOverrides },
+      h('div', { className: 'lp-day-row-main' },
+        h('div', { className: 'lp-day-row-heading' },
+          renaming?.id === item.id
+            ? h('input', {
+                className: 'lp-inline',
+                autoFocus: true,
+                value: renaming.value,
+                'aria-label': item.title,
+                onClick: (event) => event.stopPropagation(),
+                onDoubleClick: (event) => event.stopPropagation(),
+                onChange: (event) => setRenaming({ id: item.id, value: event.target.value }),
+                onBlur: commitRename,
+                onKeyDown: (event) => {
+                  if (event.key === 'Enter') commitRename();
+                  if (event.key === 'Escape') setRenaming(null);
+                },
+              })
+            : h('span', {
+                className: 'lp-title',
+                title: item.title,
+                onDoubleClick: (event) => {
+                  event.stopPropagation();
+                  setRenaming({ id: item.id, value: item.title });
+                },
+              }, item.title),
+          item.dueAt || item.startAt
+            ? h('span', { className: 'lp-meta', 'data-overdue': String(overdue) }, timeLabel(item))
+            : null,
+        ),
+        h('div', { className: 'lp-day-row-tags' },
+          h(TypeChip, { type: item.taskType, fallback: t('typeNone'), colorOverrides: props.colorOverrides }),
+          h(TagChips, { item, colorOverrides: props.colorOverrides }),
+          item.derived.blocked ? h('span', { className: 'lp-badge' }, t('blocked')) : null,
+        ),
       ),
-      renaming && renaming.id === item.id
-        ? h('input', {
-            className: 'lp-inline',
-            autoFocus: true,
-            value: renaming.value,
-            onClick: (event) => event.stopPropagation(),
-            onChange: (event) => setRenaming({ id: item.id, value: event.target.value }),
-            onBlur: commitRename,
-            onKeyDown: (event) => {
-              if (event.key === 'Enter') commitRename();
-              if (event.key === 'Escape') setRenaming(null);
-            },
-          })
-        : h(
-            'span',
-            {
-              className: 'lp-title',
-              title: item.title,
-              onClick: (event) => event.stopPropagation(),
-              onDoubleClick: (event) => {
-                event.stopPropagation();
-                setRenaming({ id: item.id, value: item.title });
-              },
-            },
-            item.title,
-          ),
-      h(TagChips, { item, colorOverrides: props.colorOverrides }),
-      item.derived.blocked
-        ? h('span', { className: 'lp-badge' }, t('blocked'))
-        : null,
-      item.dueAt || item.startAt
-        ? h('span', { className: 'lp-meta', 'data-overdue': String(isOverdue(item)) }, timeLabel(item))
-        : null,
+      h('button', {
+        className: 'lp-iconbtn lp-day-edit',
+        type: 'button',
+        'aria-label': `${t('edit')} · ${item.title}`,
+        title: t('edit'),
+        onClick: (event) => {
+          event.stopPropagation();
+          props.onEdit(item);
+        },
+        onDoubleClick: (event) => event.stopPropagation(),
+      }, h('span', { className: 'lp-chevron', 'data-direction': 'right', 'aria-hidden': true })),
     );
+  };
   const cells = monthMatrix(anchor);
   const week = weekMatrix(selectedKey);
   const labels = weekdayLabels(t);
@@ -128,21 +138,18 @@ function CalendarView(props) {
     t, data: todayInfo?.day === todayKey ? todayInfo : null, date: today, lunar, onSettings: props.onRegionSettings,
   });
 
-  // The month fills whatever height the panel gives us, leaving a strip of
-  // the day list visible so it is obvious there is more below.
   React.useEffect(() => {
     const node = scrollRef.current;
     if (!node) return undefined;
     const measure = () => {
+      const width = node.clientWidth;
       const height = Math.round(node.clientHeight || 0);
-      if (height <= 0) return;
-      const room = Math.max(320, height - 150);
-      const configured = Number(((currentAppearance().size || {}).calendarHeight) || 0);
-      // A configured height wins, clamped to sane bounds so the day list below
-      // always keeps a scrollable surface.
-      const capped = Math.max(320, height - 40);
-      const next = configured > 0 ? Math.min(Math.max(320, configured), capped) : room;
-      setExpanded(Number.isFinite(next) && next >= 200 ? Math.round(next) : room);
+      if (height <= 0 || width <= 0) return;
+      splitRef.current = width >= 820;
+      setLayout(splitRef.current ? 'split' : width < 475 ? 'compact' : 'stacked');
+      const room = Math.max(320, height - (splitRef.current ? 32 : 118));
+      const configured = Number(currentAppearance().size?.calendarHeight);
+      setExpanded(configured > 0 ? Math.round(Math.min(Math.max(320, configured), room)) : room);
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -156,23 +163,16 @@ function CalendarView(props) {
 
   const onScroll = (event) => {
     const node = event.currentTarget;
-    const at = node.scrollTop;
-    if (!collapsedRef.current) {
-      if (at > 4) {
-        setCollapse(true);
-        // Park at the top so the collapsed bar never overlaps the day list;
-        // the same wheel then continues scrolling the list.
-        node.scrollTop = 0;
-      }
-      return;
-    }
+    if (splitRef.current || collapsedRef.current || node.scrollTop <= 4) return;
+    setCollapse(true);
+    node.scrollTop = 0;
   };
 
   // Expanding deliberately costs more: reach the top, then keep pushing up
   // through an elastic band before the month comes back.
   const onWheel = (event) => {
     const node = scrollRef.current;
-    if (!node) return;
+    if (!node || splitRef.current) return;
     if (!collapsedRef.current) {
       if (event.deltaY > 0) band.current = 0;
       return;
@@ -198,12 +198,24 @@ function CalendarView(props) {
 
   const pick = (cell) => {
     props.onSelect(cell.key);
-    if (!cell.inMonth) props.onAnchor(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1));
+    if (cell.date.getMonth() !== anchor.getMonth() || cell.date.getFullYear() !== anchor.getFullYear()) {
+      props.onAnchor(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1));
+    }
   };
 
   const dayItems = (byDay.get(selectedKey) || []).filter((item) => !item.derived.archived);
   const openCount = openEntries(dayItems).length;
   const selectedDate = new Date(`${selectedKey}T12:00:00`);
+  const weekday = (date) => labels[(date.getDay() + 6) % 7];
+  const dayLabel = (date) => t('dayLabel')
+    .replace('{m}', String(date.getMonth() + 1)).replace('{d}', String(date.getDate())) + ' · ' + weekday(date);
+  const pendingLabel = (count) => t('calendarPendingItems').replace('{n}', String(count));
+  const cellLabel = (cell, count) => count ? `${dayLabel(cell.date)} · ${pendingLabel(count)}` : dayLabel(cell.date);
+  const toggleCalendar = () => {
+    band.current = 0;
+    setCollapse(!collapsed);
+    if (!splitRef.current && scrollRef.current) scrollRef.current.scrollTop = 0;
+  };
   // Long-term work plus anything that blew its deadline: overdue tasks keep
   // their red date and join the long-term cycle instead of disappearing.
   const longTerm =
@@ -231,212 +243,180 @@ function CalendarView(props) {
     { className: 'lp-cal-scroll', ref: scrollRef, onScroll, onWheel },
     h(
       'div',
-      {
-        className: 'lp-cal-sticky',
-        style: { height: collapsed ? 64 : expanded, transition: 'height .2s ease' },
-      },
+      { className: 'lp-calendar-layout', 'data-layout': layout },
       h(
         'div',
         {
-          className: 'lp-cal-month',
-          style: {
-            height: expanded,
-            opacity: collapsed ? 0 : 1,
-            pointerEvents: collapsed ? 'none' : 'auto',
-            transition: 'opacity .18s ease',
-          },
-          'aria-hidden': collapsed,
+          className: 'lp-cal-sticky lp-workspace-card',
+          'data-collapsed': String(collapsed),
+          style: { '--lp-month-height': `${expanded}px` },
         },
         h(
           'div',
-          { className: 'lp-cal-bar' },
+          { className: 'lp-cal-month', 'aria-hidden': collapsed },
           h(
             'div',
-            { className: 'lp-cal-side' },
+            { className: 'lp-cal-bar' },
+            h('h2', { className: 'lp-cal-title' }, monthTitle(t, anchor)),
             h(
-              'button',
-              {
-                className: 'lp-btn-ghost',
-                onClick: () => {
-                  const now = new Date();
-                  props.onAnchor(new Date(now.getFullYear(), now.getMonth(), 1));
-                  props.onSelect(dayKey(now));
+              'div',
+              { className: 'lp-cal-side' },
+              collapsed ? null : renderTodayInfo(),
+              h(
+                'button',
+                {
+                  className: 'lp-btn-ghost lp-cal-today',
+                  type: 'button',
+                  tabIndex: collapsed ? -1 : undefined,
+                  onClick: () => {
+                    const now = new Date();
+                    props.onAnchor(new Date(now.getFullYear(), now.getMonth(), 1));
+                    props.onSelect(dayKey(now));
+                  },
                 },
-              },
-              t('today'),
+                t('today'),
+              ),
+              h('div', { className: 'lp-month-nav' },
+                [-1, 1].map((step) => {
+                  const label = t(step < 0 ? 'previousMonth' : 'nextMonth');
+                  return h('button', {
+                    key: step,
+                    className: 'lp-iconbtn',
+                    type: 'button',
+                    tabIndex: collapsed ? -1 : undefined,
+                    'aria-label': label,
+                    title: label,
+                    onClick: () => props.onAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + step, 1)),
+                  }, h('span', { className: 'lp-chevron', 'data-direction': step < 0 ? 'left' : 'right', 'aria-hidden': true }));
+                }),
+              ),
             ),
-            collapsed ? null : renderTodayInfo(),
           ),
-          h('div', { className: 'lp-cal-title' }, monthTitle(t, anchor)),
+          h('div', { className: 'lp-wd', 'aria-hidden': true },
+            labels.map((label) => h('span', { key: label }, label)),
+          ),
           h(
             'div',
-            { className: 'lp-cal-side', 'data-right': 'true' },
-            h(
-              'button',
-              {
-                className: 'lp-iconbtn',
-                onClick: () => props.onAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1)),
-                'aria-label': t('previousMonth'),
-              },
-              '‹',
-            ),
-            h(
-              'button',
-              {
-                className: 'lp-iconbtn',
-                onClick: () => props.onAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1)),
-                'aria-label': t('nextMonth'),
-              },
-              '›',
-            ),
+            { className: 'lp-grid' },
+            cells.map((cell, index) => {
+              const open = openEntries(byDay.get(cell.key) || []);
+              const topPriority = open.reduce((best, entry) => Math.max(best, priorityOf(entry)), -1);
+              return h(
+                'button',
+                {
+                  key: cell.key,
+                  className: 'lp-cell',
+                  type: 'button',
+                  tabIndex: collapsed ? -1 : undefined,
+                  'aria-label': cellLabel(cell, open.length),
+                  'aria-pressed': cell.key === selectedKey,
+                  'aria-current': cell.isToday ? 'date' : undefined,
+                  'data-priority': topPriority >= 0 && cell.inMonth ? toneOf(topPriority).key : undefined,
+                  'data-dim': String(!cell.inMonth),
+                  'data-weekend': String(index % 7 >= 5),
+                  'data-today': String(cell.isToday),
+                  'data-selected': String(cell.key === selectedKey),
+                  onClick: () => pick(cell),
+                },
+                h('span', { className: 'lp-cell-top' },
+                  h('span', { className: 'lp-num' }, String(cell.day)),
+                  open.length ? h('span', { className: 'lp-count' }, String(open.length)) : null,
+                ),
+                open.slice(0, 2).map((entry) =>
+                  h('span', { key: entry.id, className: 'lp-cell-title', title: entry.title }, entry.title),
+                ),
+              );
+            }),
           ),
         ),
-        h('div', { className: 'lp-wd' }, labels.map((label) => h('div', { key: label }, label))),
         h(
           'div',
-          { className: 'lp-grid' },
-          cells.map((cell, index) => {
-            const list = byDay.get(cell.key) || [];
-            const open = openEntries(list);
-            const shown = open.slice(0, 2);
-            const hidden = open.length - shown.length;
-            // The month block is a staircase, not a rectangle: give each
-            // in-month cell the sides its dimmed neighbours cannot draw.
-            const leftEdge = cell.inMonth && (index % 7 === 0 || !(cells[index - 1] || {}).inMonth);
-            const rightEdge = cell.inMonth && (index % 7 === 6 || !(cells[index + 1] || {}).inMonth);
-            const topEdge = cell.inMonth && (index < 7 || !(cells[index - 7] || {}).inMonth);
-            const bottomEdge = cell.inMonth && (index >= 35 || !(cells[index + 7] || {}).inMonth);
-            const topPriority = open.reduce((best, entry) => Math.max(best, priorityOf(entry)), -1);
+          { className: 'lp-cal-week', 'aria-hidden': !collapsed },
+          week.map((cell) => {
+            const count = openEntries(byDay.get(cell.key) || []).length;
             return h(
-              'div',
+              'button',
               {
                 key: cell.key,
-                className: 'lp-cell',
-                tabIndex: 0,
-                role: 'button',
-                'data-priority': topPriority >= 0 && cell.inMonth ? toneOf(topPriority).key : undefined,
-                'data-dim': String(!cell.inMonth),
+                className: 'lp-weekcell',
+                type: 'button',
+                tabIndex: collapsed ? undefined : -1,
+                'aria-label': cellLabel(cell, count),
+                'aria-pressed': cell.key === selectedKey,
+                'aria-current': cell.isToday ? 'date' : undefined,
                 'data-today': String(cell.isToday),
                 'data-selected': String(cell.key === selectedKey),
-                'data-edge-left': String(leftEdge),
-                'data-edge-right': String(rightEdge),
-                'data-edge-top': String(topEdge),
-                'data-edge-bottom': String(bottomEdge),
                 onClick: () => pick(cell),
-                onKeyDown: keyActivate(() => pick(cell)),
               },
-              h(
-                'div',
-                { className: 'lp-cell-top' },
-                h('span', { className: 'lp-num' }, String(cell.day)),
-                open.length > 0 ? h('span', { className: 'lp-count' }, String(open.length)) : null,
-              ),
-              shown.map((entry) =>
-                h('div', { key: entry.id, className: 'lp-cell-title', title: entry.title }, entry.title),
-              ),
-              hidden > 0 ? h('div', { className: 'lp-cell-more' }, `+${hidden}`) : null,
+              h('span', null, weekday(cell.date)),
+              h('strong', null, String(cell.day)),
+              count ? h('span', { className: 'lp-count' }, String(count)) : null,
             );
           }),
         ),
-      ),
-      h(
-        'div',
-        {
-          className: 'lp-cal-week',
-          style: {
-            opacity: collapsed ? 1 : 0,
-            pointerEvents: collapsed ? 'auto' : 'none',
-            transition: 'opacity .18s ease',
-          },
-          'aria-hidden': !collapsed,
-        },
-        week.map((cell) => {
-          const list = byDay.get(cell.key) || [];
-          const count = openEntries(list).length;
-          return h(
-            'button',
-            {
-              key: cell.key,
-              className: 'lp-weekcell',
-              type: 'button',
-              'data-today': String(cell.isToday),
-              'data-selected': String(cell.key === selectedKey),
-              onClick: () => {
-                props.onSelect(cell.key);
-                if (cell.date.getMonth() !== anchor.getMonth() || cell.date.getFullYear() !== anchor.getFullYear()) {
-                  props.onAnchor(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1));
-                }
-              },
-            },
-            h('span', null, labels[(cell.date.getDay() + 6) % 7]),
-            h('strong', { style: { fontSize: 13 } }, String(cell.day)),
-            count > 0 ? h('span', { className: 'lp-count' }, String(count)) : null,
-          );
-        }),
-      ),
-      // Explicit affordance: the collapsed bar can always be opened by click,
-      // even if a host eats wheel events or the page is mid-scroll.
-      collapsed
-        ? h(
-            'button',
-            {
-              className: 'lp-cal-expand',
-              type: 'button',
-              title: t('expandCalendar'),
-              'aria-label': t('expandCalendar'),
-              onClick: () => {
-                setCollapse(false);
-                const node = scrollRef.current;
-                if (node) node.scrollTop = 0;
-              },
-            },
-            '▾',
-          )
-        : null,
-    ),
-    h(
-      'div',
-      { className: 'lp-day', style: { minHeight: expanded } },
-      h(
-        'div',
-        { className: 'lp-day-title' },
         h(
-          'span',
-          null,
-          `${t('dayLabel').replace('{m}', String(selectedDate.getMonth() + 1)).replace('{d}', String(selectedDate.getDate()))} · ${labels[(selectedDate.getDay() + 6) % 7]}`,
+          'button',
+          {
+            className: 'lp-iconbtn lp-cal-disclosure',
+            type: 'button',
+            title: t(collapsed ? 'expandCalendar' : 'collapseCalendar'),
+            'aria-label': t(collapsed ? 'expandCalendar' : 'collapseCalendar'),
+            'aria-expanded': !collapsed,
+            onClick: toggleCalendar,
+          },
+          h('span', { className: 'lp-chevron', 'data-direction': collapsed ? 'down' : 'up', 'aria-hidden': true }),
         ),
-        h('span', { className: 'lp-day-sub' }, t('itemsCount').replace('{n}', String(openCount))),
-        selectedKey === todayKey && lunar ? h('span', { className: 'lp-day-sub lp-cal-lunar' }, lunar) : null,
-        collapsed ? renderTodayInfo() : null,
       ),
       h(
-        'form',
-        { className: 'lp-add', onSubmit: props.onQuickAdd },
-        h('input', {
-          className: 'lp-input',
-          value: props.draft,
-          placeholder: t('addPlaceholder'),
-          onChange: (event) => props.onDraft(event.target.value),
-          // Focusing the box collapses the calendar so the whole plan area
-          // is visible instead of the box sitting half under the bar.
-          onFocus: () => {
-            const node = scrollRef.current;
-            if (node && node.scrollTop < 48) node.scrollTo({ top: 48, behavior: 'smooth' });
-          },
-        }),
-        h('button', { className: 'lp-btn', type: 'submit', disabled: !props.draft.trim() }, t('addButton')),
+        'section',
+        { className: 'lp-day lp-workspace-card', 'aria-label': t('calendarAgenda') },
+        h(
+          'div',
+          { className: 'lp-day-title' },
+          h('div', { className: 'lp-day-date', 'aria-live': 'polite' },
+            h('h2', null, h('time', { dateTime: selectedKey }, dayLabel(selectedDate))),
+            h('div', { className: 'lp-day-sub' },
+              selectedKey === todayKey && lunar ? h('span', null, lunar) : null,
+              dayItems.length ? h('span', null, openCount ? pendingLabel(openCount) : t('calendarAllDone')) : null,
+            ),
+          ),
+          collapsed ? renderTodayInfo() : null,
+        ),
+        h(
+          'form',
+          { className: 'lp-add', onSubmit: props.onQuickAdd },
+          h('input', {
+            className: 'lp-input',
+            value: props.draft,
+            placeholder: t('calendarQuickAdd'),
+            'aria-label': t('calendarQuickAdd'),
+            onChange: (event) => props.onDraft(event.target.value),
+            onFocus: (event) => {
+              const node = scrollRef.current;
+              if (!node || splitRef.current || collapsedRef.current) return;
+              if (event.currentTarget.getBoundingClientRect().bottom > node.getBoundingClientRect().bottom) {
+                setCollapse(true);
+                node.scrollTop = 0;
+              }
+            },
+          }),
+          h('button', { className: 'lp-btn lp-workspace-primary', type: 'submit', disabled: !props.draft.trim() }, t('addButton')),
+        ),
+        h('div', { key: selectedKey, className: 'lp-day-content' },
+          dayItems.length
+            ? h('div', { className: 'lp-day-list' }, dayItems.map(dayRow))
+            : h('div', { className: 'lp-workspace-empty lp-day-empty' },
+                h('span', { className: 'lp-empty-symbol' }, h(SidebarIcon, { variant: 'planning', size: 19 })),
+                h('p', null, t('emptyDay')),
+              ),
+          longTerm.length
+            ? h('section', { className: 'lp-longterm' },
+                h('h3', null, t('unscheduled')),
+                h('div', { className: 'lp-day-list' }, longTerm.map(dayRow)),
+              )
+            : null,
+        ),
       ),
-      dayItems.length === 0
-        ? h('div', { className: 'lp-empty' }, t('emptyDay'))
-        : dayItems.map((item) => dayRow(item)),
-      longTerm.length > 0
-        ? h(
-            'div',
-            { className: 'lp-longterm' },
-            h('div', { className: 'lp-section' }, t('unscheduled')),
-            longTerm.map((item) => dayRow(item)),
-          )
-        : null,
     ),
   );
 }

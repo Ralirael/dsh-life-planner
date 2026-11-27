@@ -36,6 +36,12 @@ Windows 与 macOS 使用同一份发行包。macOS 通知、PDF 取文、书架�
 3. 在 profile 目录执行 `pnpm install`；若插件目录缺依赖，再在 `plugin/` 执行一次 `pnpm install --prod`。
 4. **重启 DSH**。
 
+### 与 DeepClawd 一起使用
+
+按上述步骤安装 Life Planner 和学习模式预设。DeepClawd 与 Life Planner 在 DSH 的插件设置中分别管理。启用 DeepClawd 后，规划和今日学习使用其字体、主题色和过渡节奏。使用学习模式时，在新建会话的「模式选择」中选择「学习模式」。部分模型可从「推理档位」进入该选择器。
+
+已在 macOS 的 DSH Desktop 0.2.3-alpha.2 和 DeepClawd 0.1.0 组合中验证页面加载与主要交互。
+
 ### macOS
 
 安装步骤相同，不需要额外补丁：
@@ -44,7 +50,7 @@ Windows 与 macOS 使用同一份发行包。macOS 通知、PDF 取文、书架�
 - PDF 取文优先 `pdftotext`，没有时用系统 PDFKit；
 - 书架去重用 `realpath` + NFC，适配 APFS；
 - 无边框窗口可拖动插件页头（页签之间的空隙与整条页头）；
-- 日历折叠后可用右侧「展开日历」按钮或向上滚动展开；
+- 日历右上角可在月历和周栏之间切换，窄面板也支持滚动折叠和展开；
 - 详细检查表见[安装与排查](docs/安装与排查.md)。
 
 ## 安装后自检（5 步）

@@ -281,7 +281,7 @@ function Panel(props) {
     },
     h(
       'div',
-      { className: 'lp-head' },
+      { className: 'lp-head lp-workspace-head' },
       h(
         'div',
         {
@@ -294,14 +294,25 @@ function Panel(props) {
             strip.scrollLeft += event.deltaY;
           },
         },
-        h('button', { className: 'lp-tab', 'data-active': String(tab === 'calendar'), onClick: () => setTab('calendar') }, t('tabCalendar')),
-        h('button', { className: 'lp-tab', 'data-active': String(tab === 'tree'), onClick: () => setTab('tree') }, t('tabTree')),
-        h('button', { className: 'lp-tab', 'data-active': String(tab === 'board'), onClick: () => setTab('board') }, t('tabBoard')),
-        h('button', { className: 'lp-tab', 'data-active': String(tab === 'plan'), onClick: () => setTab('plan') }, t('tabPlan')),
-        h('button', { className: 'lp-tab', 'data-active': String(tab === 'archive'), onClick: () => setTab('archive') }, t('tabArchive')),
+        [
+          ['calendar', 'tabCalendar'],
+          ['tree', 'tabTree'],
+          ['board', 'tabBoard'],
+          ['plan', 'tabPlan'],
+          ['archive', 'tabArchive'],
+        ].map(([view, label]) => h('button', {
+          key: view,
+          type: 'button',
+          className: 'lp-tab',
+          'data-active': String(tab === view),
+          'aria-pressed': tab === view,
+          onClick: () => setTab(view),
+        }, t(label))),
       ),
-      h('button', { className: 'lp-btn-ghost', onClick: () => setSettingsOpen('tags') }, t('settings')),
-      h('button', { className: 'lp-btn-ghost', onClick: () => setEditor({ kind: 'task', title: '' }) }, t('newItem')),
+      h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setSettingsOpen('tags') }, t('settings')),
+      h('button', { className: 'lp-btn-ghost lp-workspace-primary', type: 'button', onClick: () => setEditor({ kind: 'task', title: '' }) },
+        h('span', { className: 'lp-workspace-plus', 'aria-hidden': true }, '+'), t('newItem'),
+      ),
     ),
     error ? h('div', { className: 'lp-err', style: { padding: '0 16px' } }, error) : null,
     !snapshot && !error ? h('div', { className: 'lp-meta', style: { padding: '10px 16px' } }, t('loading')) : null,
@@ -309,6 +320,7 @@ function Panel(props) {
       ? h(CalendarView, {
           t,
           items,
+          colorOverrides,
           onRename: (id, title) => run(api('item.update', { id, patch: { title } })),
           selectedKey,
           anchor,

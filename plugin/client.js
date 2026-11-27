@@ -160,6 +160,10 @@ const DICTS = {
     studyMinuteUnit: ' 分钟',
     studyDone: '已完成',
     studyTodayPlan: '今日计划',
+    studyPlanProgress: '已完成 {n}/{total}',
+    studyPlanMaterials: '{n} 份资料',
+    studyAdviceDeepSeek: 'DeepSeek',
+    studyAdviceLocal: '本地建议',
     studyNoTodayPlan: '今天还没有安排',
     studyFinish: '完成',
     studyMistakeReview: '错题复习',
@@ -267,6 +271,11 @@ const DICTS = {
     filter_done: '已完成',
     expandAll: '展开全部',
     expandCalendar: '展开日历',
+    collapseCalendar: '折叠日历',
+    calendarAgenda: '当天安排',
+    calendarPendingItems: '{n} 项待办',
+    calendarAllDone: '全部完成',
+    calendarQuickAdd: '添加当天任务',
     collapseAll: '折叠全部',
     newChild: '在此项下新建',
     newChildPlaceholder: '输入标题，回车创建；Esc 取消',
@@ -594,6 +603,10 @@ const DICTS = {
     studyMinuteUnit: ' min',
     studyDone: 'done',
     studyTodayPlan: "Today's plan",
+    studyPlanProgress: '{n}/{total} completed',
+    studyPlanMaterials: '{n} resources',
+    studyAdviceDeepSeek: 'DeepSeek',
+    studyAdviceLocal: 'Local advice',
     studyNoTodayPlan: 'Nothing planned for today',
     studyFinish: 'Finish',
     studyMistakeReview: 'Mistake review',
@@ -700,6 +713,11 @@ const DICTS = {
     filter_blocked: 'Blocked',
     filter_done: 'Done',
     expandCalendar: 'Expand calendar',
+    collapseCalendar: 'Collapse calendar',
+    calendarAgenda: 'Daily agenda',
+    calendarPendingItems: '{n} open',
+    calendarAllDone: 'All done',
+    calendarQuickAdd: 'Add a task for this day',
     expandAll: 'Expand all',
     collapseAll: 'Collapse all',
     newChild: 'New inside',
@@ -894,50 +912,8 @@ const CSS = `
 .lp-tab{border:1px solid transparent;background:transparent;color:var(--dsw-alias-label-secondary);border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer;}
 .lp-tab[data-active="true"]{background:var(--dsw-alias-bg-layer-2);background:color-mix(in srgb,var(--dsw-alias-brand-primary) 18%,transparent);color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-brand-primary);}
 .lp-body{flex:1;min-height:0;overflow:auto;padding:16px;}
-.lp-cal-scroll{flex:1;min-height:0;overflow:auto;position:relative;overflow-anchor:none;overscroll-behavior:contain;}
-.lp-cal-sticky{position:sticky;top:0;z-index:5;overflow:hidden;background:var(--lp-surface-bg,var(--dsw-alias-bg-base));border:1px solid var(--dsw-alias-border-l2);border-radius:var(--lp-r-lg,12px);margin:8px 10px 0;height:var(--lp-cal-h,420px);transition:height .2s ease;}
-.lp-cal-month{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;transition:opacity .18s ease;}
-.lp-cal-expand{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:6;width:26px;height:26px;border-radius:50%;border:1px solid var(--dsw-alias-border-l2);background:var(--lp-control-bg,var(--dsw-alias-bg-layer-2));color:var(--dsw-alias-label-secondary);cursor:pointer;line-height:1;font-size:12px;display:inline-flex;align-items:center;justify-content:center;}
-.lp-cal-expand:hover{color:var(--dsw-alias-label-primary);}
-.lp-cal-week{position:absolute;left:0;right:0;top:0;height:64px;display:flex;align-items:center;gap:6px;padding:0 12px;box-sizing:border-box;transition:opacity .18s ease;}
-.lp-cal-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--dsw-alias-border-l2);}
-.lp-cal-side{flex:1;display:flex;align-items:center;gap:6px;}
-.lp-cal-side[data-right="true"]{justify-content:flex-end;}
 .lp-iconbtn{width:28px;height:28px;border-radius:7px;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-primary);cursor:pointer;font:inherit;padding:0;line-height:1;}
 .lp-iconbtn:hover{background:var(--dsw-alias-bg-layer-2);background:color-mix(in srgb,var(--dsw-alias-label-primary) 10%,transparent);}
-.lp-cal-title{font-weight:600;font-size:var(--lp-title-fs,15px);text-align:center;white-space:nowrap;}
-.lp-wd{display:grid;grid-template-columns:repeat(7,1fr);color:var(--dsw-alias-label-secondary);font-size:var(--lp-cal-fs,12px);text-align:center;padding:7px 0;border-bottom:1px solid var(--dsw-alias-border-l2);}
-.lp-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;flex:1;min-height:0;}
-.lp-cell{border-right:1px solid var(--dsw-alias-border-l2);border-bottom:1px solid var(--dsw-alias-border-l2);border-right-color:color-mix(in srgb,var(--dsw-alias-label-primary) 25%,transparent);border-bottom-color:color-mix(in srgb,var(--dsw-alias-label-primary) 25%,transparent);padding:6px 8px;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:2px;overflow:hidden;min-height:0;}
-.lp-cell:nth-child(7n){border-right:none;}
-.lp-cell[data-edge-left="true"]{border-left:1px solid var(--dsw-alias-border-l2);border-left-color:color-mix(in srgb,var(--dsw-alias-label-primary) 25%,transparent);}
-.lp-cell[data-edge-right="true"]{border-right:1px solid var(--dsw-alias-border-l2);border-right-color:color-mix(in srgb,var(--dsw-alias-label-primary) 25%,transparent);}
-.lp-cell[data-edge-top="true"]{border-top:1px solid var(--dsw-alias-border-l2);border-top-color:color-mix(in srgb,var(--dsw-alias-label-primary) 25%,transparent);}
-.lp-cell[data-edge-bottom="true"]{border-bottom:1px solid var(--dsw-alias-border-l2);border-bottom-color:color-mix(in srgb,var(--dsw-alias-label-primary) 25%,transparent);}
-.lp-cell[data-dim="true"]{border-right-color:color-mix(in srgb,var(--dsw-alias-label-primary) 10%,transparent);border-bottom-color:color-mix(in srgb,var(--dsw-alias-label-primary) 10%,transparent);}
-.lp-cell[data-dim="true"] .lp-num,
-.lp-cell[data-dim="true"] .lp-cell-title,
-.lp-cell[data-dim="true"] .lp-cell-more,
-.lp-cell[data-dim="true"] .lp-count{opacity:.5;}
-.lp-cell[data-selected="true"]{background:var(--dsw-alias-bg-layer-2);background:color-mix(in srgb,var(--dsw-alias-brand-primary) 16%,transparent);}
-.lp-cell[data-selected="true"] .lp-cell-title{color:var(--dsw-alias-label-primary);}
-.lp-cell[data-today="true"]{box-shadow:inset 0 0 0 2px var(--dsw-alias-brand-primary);}
-.lp-cell:hover{background:var(--dsw-alias-bg-layer-1);background:color-mix(in srgb,var(--dsw-alias-label-primary) 9%,transparent);}
-.lp-cell-top{display:flex;align-items:center;justify-content:space-between;gap:4px;}
-.lp-num{font-size:var(--lp-cal-fs,12px);font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);}
-.lp-count{font-size:var(--lp-cal-fs,12px);line-height:1;padding:2px 5px;border-radius:999px;background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-bg-base);}
-.lp-cell-title{font-size:var(--lp-cal-fs,12px);color:var(--dsw-alias-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
-.lp-cell-more{font-size:var(--lp-cal-fs,12px);color:var(--dsw-alias-label-secondary);}
-.lp-weekcell{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;border-radius:8px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--dsw-alias-label-primary);font:inherit;}
-.lp-weekcell[data-today="true"]{border-color:var(--dsw-alias-brand-primary);}
-.lp-weekcell[data-selected="true"]{background:var(--dsw-alias-bg-layer-2);background:color-mix(in srgb,var(--dsw-alias-brand-primary) 20%,transparent);}
-.lp-weekcell span{font-size:var(--lp-meta-fs,11px);color:var(--dsw-alias-label-secondary);}
-/* The strip's generic span rule must not repaint the count badge. */
-.lp-weekcell .lp-count{font-size:var(--lp-meta-fs,11px);line-height:1;padding:2px 5px;border-radius:999px;background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-bg-base);}
-.lp-day{padding:56px 16px 28px;}
-.lp-day-title{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-weight:600;font-size:var(--lp-title-fs,15px);}
-.lp-day-sub{color:var(--dsw-alias-label-secondary);font-weight:400;font-size:var(--lp-fs-sm,12px);}
-.lp-add{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
 .lp-input{flex:1;min-width:140px;padding:8px 10px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;}
 .lp-select{padding:8px 10px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;}
 .lp-btn{padding:8px 12px;border-radius:8px;border:1px solid var(--dsw-alias-brand-primary);background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-bg-base);font:inherit;cursor:pointer;}
@@ -976,10 +952,6 @@ const CSS = `
 .lp-study-link{justify-content:space-between;}
 .lp-study-link>.lp-input[type=date]{flex:0 1 160px;}
 .lp-study-section summary{cursor:pointer;}
-.lp-cal-side{min-width:0;}
-.lp-cal-side>.lp-btn-ghost,.lp-cal-side>.lp-iconbtn{flex:none;}
-.lp-day-title{flex-wrap:wrap;}
-.lp-cal-lunar{white-space:normal;}
 .lp-weather{min-width:0;}
 .lp-weather-trigger{display:inline-flex;align-items:center;gap:6px;max-width:100%;min-height:30px;padding:3px 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--lp-r,8px);background:var(--lp-control-bg);color:var(--dsw-alias-label-primary);font:inherit;font-size:var(--lp-fs-sm,12px);font-variant-numeric:tabular-nums;white-space:nowrap;cursor:pointer;}
 .lp-weather-trigger:hover,.lp-weather-trigger[aria-expanded="true"]{border-color:var(--lp-accent,var(--dsw-alias-brand-primary));}
@@ -1024,7 +996,6 @@ const CSS = `
   .lp-settings-nav{flex-direction:row;overflow:auto;padding:6px 8px;border-inline-end:0;border-bottom:1px solid var(--dsw-alias-border-l2);}
   .lp-settings-nav-button{width:auto;flex:none;white-space:nowrap;}
   .lp-page .lp-settings .lp-settings-body{min-height:0;padding:10px;}
-  .lp-cal-bar .lp-weather-compact{display:none;}
 }
 .lp-study .lp-tree-row{min-height:var(--lp-row);padding:4px 8px;border-color:transparent;border-radius:var(--lp-r-sm);gap:var(--lp-gap);}
 .lp-study .lp-tree-row:hover{background:color-mix(in srgb,var(--dsw-alias-label-primary) 7%,transparent);border-color:transparent;}
@@ -1154,7 +1125,6 @@ const CSS = `
 .lp-empty{color:var(--dsw-alias-label-secondary);padding:24px 0;text-align:center;}
 .lp-section{color:var(--dsw-alias-label-secondary);font-size:var(--lp-meta-fs,11px);margin:12px 0 4px;padding:0 0 6px;border-top:none;border-bottom:1px solid var(--dsw-alias-border-l2);font-weight:500;}
 .lp-page .lp-tree-row[data-selected="true"]{background:color-mix(in srgb,var(--dsw-alias-brand-primary) 16%,transparent);box-shadow:inset 2px 0 0 var(--dsw-alias-brand-primary);}
-.lp-longterm{margin-top:26px;}
 .lp-err{color:var(--dsw-alias-state-error-primary);font-size:var(--lp-fs-sm,12px);margin:8px 0;}
 .lp-feedback{color:var(--dsw-alias-brand-primary);margin:8px 0;font-size:var(--lp-fs-sm,12px);}
 .lp-notices{position:absolute;right:16px;top:64px;z-index:30;display:flex;flex-direction:column;gap:6px;max-width:340px;}
@@ -1179,10 +1149,6 @@ const CSS = `
 .lp-swatch-panel{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;}
 .lp-swatch{width:18px;height:18px;border-radius:5px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;padding:0;}
 .lp-swatch[data-active="true"]{outline:2px solid var(--dsw-alias-label-primary);outline-offset:1px;}
-.lp-cell[data-priority="low"]:not([data-selected="true"]){background:color-mix(in srgb,var(--lp-tone-low) 12%,transparent);}
-.lp-cell[data-priority="medium"]:not([data-selected="true"]){background:color-mix(in srgb,var(--lp-tone-medium) 12%,transparent);}
-.lp-cell[data-priority="high"]:not([data-selected="true"]){background:color-mix(in srgb,var(--lp-tone-high) 12%,transparent);}
-.lp-cell[data-priority="highest"]:not([data-selected="true"]){background:color-mix(in srgb,var(--lp-tone-highest) 14%,transparent);}
 .lp-modal.lp-confirm-modal{box-sizing:border-box;width:min(380px,100%);}
 .lp-pop-list{font-size:var(--lp-fs-sm,12px);color:var(--dsw-alias-label-secondary);max-height:180px;overflow:auto;display:flex;flex-direction:column;gap:2px;}
 .lp-pop-actions{display:flex;justify-content:flex-end;gap:6px;}
@@ -1207,8 +1173,7 @@ const CSS = `
 .lp-switch-label{font-size:var(--lp-meta-fs,11px);white-space:nowrap;}
 /* Per-area font tokens: each block of the calendar page follows its own setting. */
 .lp-tab{font-size:var(--lp-tab-fs,13px);}
-.lp-modal-title,.lp-cal-title{font-size:var(--lp-title-fs,15px);}
-.lp-cal-sticky,.lp-cell,.lp-weekcell{font-size:var(--lp-cal-fs,12px);}
+.lp-modal-title{font-size:var(--lp-title-fs,15px);}
 .lp-tree-row,.lp-row,.lp-card,.lp-plan{font-size:var(--lp-task-fs,13px);}
 .lp-type{font-size:var(--lp-type-fs,11px);}
 .lp-tag,.lp-chip{font-size:var(--lp-tag-fs,12px);}
@@ -1250,7 +1215,6 @@ const CSS = `
 .lp-page .lp-toolbar{gap:var(--lp-gap);padding:8px var(--lp-pad);}
 .lp-page .lp-chip{height:var(--lp-tag-h,22px);padding:0 10px;line-height:1;font-size:var(--lp-tag-fs,12px);transition:background .12s ease,border-color .12s ease,color .12s ease;}
 .lp-page .lp-row .lp-title,.lp-page .lp-tree-row .lp-title{font-size:var(--lp-task-fs,13px);}
-.lp-page .lp-cal-scroll{font-size:var(--lp-cal-fs,12px);}
 .lp-page .lp-badge{font-size:var(--lp-meta-fs,11px);}
 .lp-page .lp-row,.lp-page .lp-tree-row{min-height:var(--lp-row);padding:4px 8px;gap:var(--lp-gap);border-radius:var(--lp-r-sm);transition:background .12s ease;}
 .lp-page .lp-actions:focus-within{opacity:1;}
@@ -1268,7 +1232,6 @@ const CSS = `
 .lp-page .lp-menu{padding:5px;border-radius:var(--lp-r-lg);}
 .lp-page .lp-menu button{padding:6px 10px;border-radius:var(--lp-r-sm);font-size:var(--lp-fs);}
 .lp-page .lp-dd-menu{padding:5px;border-radius:var(--lp-r-lg);}
-.lp-page .lp-cal-bar{padding:10px var(--lp-pad);}
 .lp-page *::-webkit-scrollbar{width:10px;height:10px;}
 .lp-page *::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--dsw-alias-label-primary) 20%,transparent);border-radius:999px;border:3px solid transparent;background-clip:padding-box;}
 .lp-page *::-webkit-scrollbar-track{background:transparent;}
@@ -1276,6 +1239,28 @@ const CSS = `
 .lp-page .lp-row[data-done="true"] .lp-ico,.lp-page .lp-tree-row[data-done="true"] .lp-ico{color:var(--dsw-alias-state-success-primary);}
 .lp-page .lp-row[data-done="true"] .lp-prio{opacity:.35;}
 @media (prefers-reduced-motion: reduce){.lp-page *{transition:none !important;}}
+
+html[data-dsh-ui-theme] .lp-page,
+html[data-dsh-ui-theme] button.lp-switch[role="switch"] {
+  --dsw-alias-brand-primary: var(--dsh-ui-accent, var(--dsw-alias-label-primary));
+  font-family: var(--dsh-ui-font, inherit);
+}
+
+/* Match DSH's conversation tabs at the same navigation level. */
+html[data-dsh-ui-theme] .lp-page .lp-head > .lp-tabs {
+  --lp-tab-fs: 13px;
+}
+
+html[data-dsh-ui-theme] button.lp-switch[role="switch"] {
+  flex: none;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+html[data-dsh-ui-theme] button.lp-switch[role="switch"]:focus-visible {
+  outline: 2px solid var(--dsh-ui-focus, var(--dsw-alias-brand-primary));
+  outline-offset: 2px;
+}
 `;
 
 // The stylesheet must exist for every panel, not only while the planning
@@ -2087,26 +2072,29 @@ function parseWindowsText(text) {
 const KIND_GLYPH = { area: '○', project: '○', task: '○' };
 
 // ---- ui.js ----
-function Icon(props) {
-  const size = props.size || 18;
+const SIDEBAR_ICON_PATHS = {
+  planning: 'M8.5 5H6.3A2.3 2.3 0 0 0 4 7.3v11.4A2.3 2.3 0 0 0 6.3 21h11.4a2.3 2.3 0 0 0 2.3-2.3V7.3A2.3 2.3 0 0 0 17.7 5h-2.2' +
+    'M10 3h4a1.5 1.5 0 0 1 0 3h-4a1.5 1.5 0 0 1 0-3ZM8.5 13l2.1 2.1 4.9-5',
+  study: 'M12 6.3C9.2 4.2 6 4.1 3.3 5.5v13.2c2.8-1.3 5.9-1.2 8.7.9 2.8-2.1 5.9-2.2 8.7-.9V5.5C18 4.1 14.8 4.2 12 6.3ZM12 6.3v13.3',
+};
+
+function SidebarIcon({ size = 18, variant }) {
   return h(
     'svg',
-    { width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': true, style: { display: 'block' } },
-    h('path', {
-      d: 'M4 5.5A1.5 1.5 0 0 1 5.5 4h4l1.6 2H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z',
+    {
+      width: size,
+      height: size,
+      viewBox: '0 0 24 24',
       fill: 'none',
       stroke: 'currentColor',
-      strokeWidth: 1.6,
-      strokeLinejoin: 'round',
-    }),
-    h('path', {
-      d: 'M8.5 13.5l2 2 4-4.5',
-      fill: 'none',
-      stroke: 'currentColor',
-      strokeWidth: 1.6,
+      strokeWidth: 1.75,
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
-    }),
+      'aria-hidden': true,
+      focusable: 'false',
+      style: { display: 'block' },
+    },
+    h('path', { d: SIDEBAR_ICON_PATHS[variant] }),
   );
 }
 
@@ -2644,6 +2632,848 @@ async function apiRequest(method, body, retriesLeft) {
   return payload.data;
 }
 
+// ---- workspace-skin.js ----
+const WORKSPACE_CSS = `
+/* Planning calendar and today's study overview share the host palette and rhythm. */
+.lp-workspace-head,
+.lp-calendar-layout,
+.lp-study-overview {
+  --lp-workspace-accent: var(--lp-accent, var(--dsh-ui-accent, var(--dsw-alias-brand-primary)));
+  --lp-workspace-accent-fill: color-mix(in srgb, var(--lp-workspace-accent) 13%, var(--dsh-ui-surface, var(--dsw-alias-bg-layer-2)));
+  --lp-workspace-on-accent: var(--dsh-ui-accent-foreground, var(--dsw-alias-bg-base));
+  --lp-workspace-surface: color-mix(in srgb, var(--lp-surface-bg, var(--dsw-alias-bg-base)) 66%, var(--dsh-ui-surface, var(--dsw-alias-bg-layer-2)));
+  --lp-workspace-muted: var(--dsh-ui-muted, var(--dsw-alias-bg-module-platform, var(--dsw-alias-bg-layer-1)));
+  --lp-workspace-text-muted: var(--dsh-ui-text-muted, var(--dsw-alias-label-secondary));
+  --lp-workspace-line: var(--dsh-ui-border, var(--dsw-alias-border-l2));
+  --lp-workspace-motion: var(--dsh-ui-motion, 210ms cubic-bezier(.23, .72, .26, 1));
+  --lp-workspace-title: max(16px, calc(var(--lp-title-fs, 24px) - 4px));
+  --lp-workspace-body: max(12px, calc(var(--lp-fs, 16px) - 2px));
+  --lp-workspace-meta: max(11px, calc(var(--lp-meta-fs, 16px) - 4px));
+}
+
+.lp-page .lp-workspace-head {
+  padding: 8px clamp(12px, 2.2vw, 24px);
+  gap: 6px;
+  border-color: var(--dsh-ui-toolbar-border, var(--lp-workspace-line));
+}
+
+.lp-page .lp-workspace-head > .lp-btn-ghost {
+  height: 29px;
+  padding-inline: 9px;
+  gap: 5px;
+  font-size: 13px;
+}
+
+.lp-page .lp-workspace-head .lp-tab {
+  min-height: calc(var(--lp-tab-fs, 13px) + 15px);
+  padding-inline: 10px;
+  transition: background-color var(--lp-workspace-motion), color var(--lp-workspace-motion), border-color var(--lp-workspace-motion);
+}
+
+.lp-page .lp-workspace-head .lp-tab:hover {
+  background: var(--lp-workspace-muted);
+}
+
+.lp-page .lp-workspace-head .lp-tab[data-active="true"] {
+  background: var(--lp-workspace-accent-fill);
+  border-color: color-mix(in srgb, var(--lp-workspace-accent) 36%, var(--lp-workspace-line));
+}
+
+.lp-page .lp-workspace-primary:is(.lp-btn, .lp-btn-ghost) {
+  color: var(--lp-workspace-on-accent);
+  background: var(--lp-workspace-accent);
+  border-color: var(--lp-workspace-accent);
+}
+
+.lp-page .lp-workspace-primary:is(.lp-btn, .lp-btn-ghost):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lp-workspace-accent) 90%, var(--dsh-ui-text, var(--dsw-alias-label-primary)));
+}
+
+.lp-page .lp-workspace-primary:is(.lp-btn, .lp-btn-ghost):disabled {
+  opacity: 1;
+  background: var(--lp-workspace-muted);
+  color: var(--lp-workspace-text-muted);
+  border-color: var(--lp-workspace-line);
+}
+
+.lp-workspace-plus {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.lp-workspace-card {
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--lp-workspace-line);
+  border-radius: var(--lp-r-lg, 12px);
+  background: var(--lp-workspace-surface);
+}
+
+.lp-workspace-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--lp-workspace-body);
+  color: var(--lp-workspace-text-muted);
+}
+
+.lp-workspace-empty p {
+  margin: 0;
+}
+
+.lp-empty-symbol {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: var(--lp-r, 8px);
+  background: var(--lp-workspace-accent-fill);
+  color: var(--lp-workspace-accent);
+}
+
+.lp-chevron {
+  display: inline-block;
+  box-sizing: border-box;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.lp-chevron[data-direction="up"] { transform: rotate(225deg); }
+.lp-chevron[data-direction="left"] { transform: rotate(135deg); }
+.lp-chevron[data-direction="right"] { transform: rotate(-45deg); }
+
+.lp-cal-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+}
+
+.lp-calendar-layout,
+.lp-study-overview-layout {
+  width: 100%;
+  max-width: 1180px;
+  box-sizing: border-box;
+  margin-inline: auto;
+  padding: 18px clamp(12px, 2.4vw, 24px) 28px;
+}
+
+.lp-calendar-layout[data-layout="split"] {
+  display: grid;
+  align-items: start;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(248px, 31%);
+}
+
+.lp-cal-sticky {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  height: var(--lp-month-height, 420px);
+  overflow: clip;
+  transition: height var(--lp-workspace-motion);
+}
+
+.lp-cal-sticky[data-collapsed="true"] {
+  height: 64px;
+}
+
+.lp-cal-month,
+.lp-cal-week {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  opacity: 1;
+  transition: opacity var(--lp-workspace-motion), visibility var(--lp-workspace-motion);
+}
+
+.lp-cal-month {
+  height: var(--lp-month-height, 420px);
+  flex-direction: column;
+}
+
+.lp-cal-month[aria-hidden="true"],
+.lp-cal-week[aria-hidden="true"] {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lp-cal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 49px;
+  padding: 0 42px 0 14px;
+  border-bottom: 1px solid var(--lp-workspace-line);
+}
+
+.lp-cal-title {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--lp-workspace-title);
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.lp-cal-side,
+.lp-month-nav {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 5px;
+}
+
+.lp-month-nav {
+  flex: none;
+  gap: 2px;
+  background: var(--lp-workspace-muted);
+  padding: 2px;
+  border-radius: var(--lp-r, 8px);
+}
+
+.lp-month-nav .lp-iconbtn,
+.lp-cal-disclosure,
+.lp-day-edit {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-color: transparent;
+  color: var(--lp-workspace-text-muted);
+  transition: background-color var(--lp-workspace-motion), color var(--lp-workspace-motion);
+}
+
+.lp-month-nav .lp-iconbtn:hover,
+.lp-cal-disclosure:hover,
+.lp-day-edit:hover {
+  background: var(--lp-workspace-accent-fill);
+  color: var(--lp-workspace-accent);
+}
+
+.lp-cal-disclosure {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  right: 9px;
+}
+
+.lp-cal-disclosure .lp-chevron {
+  transition: transform var(--lp-workspace-motion);
+}
+
+.lp-cal-sticky[data-collapsed="true"] .lp-cal-disclosure { top: 19px; }
+
+.lp-page .lp-cal-side .lp-cal-today,
+.lp-page .lp-cal-side .lp-weather-trigger,
+.lp-page .lp-day-title .lp-weather-trigger {
+  height: 29px;
+  min-height: 29px;
+  flex: none;
+  padding-inline: 7px;
+  font-size: var(--lp-workspace-meta);
+  background: transparent;
+}
+
+.lp-page .lp-cal-side .lp-cal-today:hover,
+.lp-page .lp-cal-side .lp-weather-trigger:hover,
+.lp-page .lp-day-title .lp-weather-trigger:hover {
+  background: var(--lp-workspace-muted);
+}
+
+.lp-wd,
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  padding-inline: 10px;
+}
+
+.lp-wd {
+  color: var(--lp-workspace-text-muted);
+  font-size: var(--lp-workspace-meta);
+  padding-block: 8px 5px;
+  text-align: center;
+}
+
+.lp-grid {
+  padding-bottom: 12px;
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  min-height: 0;
+  flex: 1;
+}
+
+.lp-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--lp-workspace-line) 78%, transparent);
+  border-radius: var(--lp-r-sm, 6px);
+  color: inherit;
+  text-align: start;
+  background-color: var(--lp-cell-fill, transparent);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color var(--lp-workspace-motion), border-color var(--lp-workspace-motion), box-shadow var(--lp-workspace-motion);
+}
+
+.lp-cell[data-weekend="true"] {
+  --lp-cell-fill: color-mix(in srgb, var(--lp-workspace-muted) 62%, transparent);
+}
+
+.lp-cell[data-priority="low"] { --lp-cell-tone: var(--lp-tone-low); }
+.lp-cell[data-priority="medium"] { --lp-cell-tone: var(--lp-tone-medium); }
+.lp-cell[data-priority="high"] { --lp-cell-tone: var(--lp-tone-high); }
+.lp-cell[data-priority="highest"] { --lp-cell-tone: var(--lp-tone-highest); }
+
+.lp-cell[data-priority] {
+  --lp-cell-fill: color-mix(in srgb, var(--lp-cell-tone) 11%, var(--lp-workspace-surface));
+}
+
+.lp-cell[data-dim="true"] {
+  color: var(--lp-workspace-text-muted);
+  border-color: color-mix(in srgb, var(--lp-workspace-line) 45%, transparent);
+  background: color-mix(in srgb, var(--lp-workspace-muted) 37%, transparent);
+}
+
+.lp-cell[data-dim="true"] .lp-num { opacity: .67; }
+
+.lp-cell:hover {
+  border-color: color-mix(in srgb, var(--lp-workspace-accent) 35%, var(--lp-workspace-line));
+  background-color: color-mix(in srgb, var(--lp-workspace-accent) 7%, var(--lp-cell-fill, var(--lp-workspace-surface)));
+}
+
+.lp-cell[data-selected="true"] {
+  border-color: color-mix(in srgb, var(--lp-workspace-accent) 62%, var(--lp-workspace-line));
+  background: var(--lp-workspace-accent-fill);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lp-workspace-accent) 16%, transparent);
+}
+
+.lp-cell:focus-visible {
+  outline-offset: -2px;
+}
+
+.lp-cell-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+}
+
+.lp-num {
+  display: grid;
+  place-items: center;
+  min-width: 1.52em;
+  min-height: 1.52em;
+  font-size: max(11px, calc(var(--lp-cal-fs, 18px) - 4px));
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  border-radius: 50%;
+}
+
+.lp-cell[data-today="true"] .lp-num {
+  color: var(--lp-workspace-on-accent);
+  background: var(--lp-workspace-accent);
+  font-weight: 650;
+}
+
+.lp-count {
+  font-size: max(9px, calc(var(--lp-workspace-meta) - 1px));
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 999px;
+  color: var(--dsh-ui-accent-surface-foreground, var(--dsw-alias-label-primary));
+  background: var(--lp-workspace-accent-fill);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.lp-cell-title {
+  display: block;
+  font-size: var(--lp-workspace-meta);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--lp-workspace-text-muted);
+}
+
+.lp-cal-week {
+  height: 62px;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 42px 4px 9px;
+  box-sizing: border-box;
+}
+
+.lp-weekcell {
+  flex: 1;
+  min-width: 0;
+  min-height: 49px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 1px;
+  padding: 2px;
+  border-radius: var(--lp-r-sm, 6px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--lp-workspace-text-muted);
+  font: inherit;
+  font-size: var(--lp-workspace-meta);
+  cursor: pointer;
+  transition: background-color var(--lp-workspace-motion), border-color var(--lp-workspace-motion);
+}
+
+.lp-weekcell strong {
+  color: var(--dsw-alias-label-primary);
+  font-size: var(--lp-workspace-body);
+}
+
+.lp-weekcell:hover { background: var(--lp-workspace-muted); }
+.lp-weekcell[data-selected="true"] { background: var(--lp-workspace-accent-fill); }
+.lp-weekcell[data-today="true"] { border-color: var(--lp-workspace-accent); }
+
+.lp-day {
+  padding: 14px;
+  margin-top: 14px;
+}
+
+[data-layout="split"] .lp-day {
+  margin-top: 0;
+}
+
+.lp-day-title {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-bottom: 12px;
+}
+
+.lp-day-date { flex: 1 1 auto; min-width: 0; }
+
+.lp-day-title h2 {
+  margin: 0;
+  font-size: var(--lp-workspace-title);
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.lp-day-sub {
+  display: flex;
+  gap: 4px 8px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+  color: var(--lp-workspace-text-muted);
+  font-size: var(--lp-workspace-meta);
+}
+
+.lp-day-sub:empty { display: none; }
+
+.lp-add {
+  display: flex;
+  gap: 6px;
+}
+
+.lp-page .lp-add .lp-input {
+  min-width: 0;
+  width: 100%;
+  min-height: 32px;
+  border-color: var(--lp-workspace-line);
+  background: var(--lp-workspace-muted);
+  font-size: var(--lp-workspace-body);
+}
+
+.lp-page .lp-add .lp-input:focus {
+  border-color: var(--dsh-ui-focus, var(--lp-workspace-accent));
+  background: var(--lp-workspace-surface);
+}
+
+.lp-page .lp-add .lp-btn {
+  flex: none;
+  height: auto;
+  padding-inline: 9px;
+  font-size: var(--lp-workspace-meta);
+}
+
+.lp-day-content { margin-top: 12px; }
+
+.lp-day-empty {
+  min-height: 96px;
+  padding: 8px;
+  border-radius: var(--lp-r, 8px);
+  background: color-mix(in srgb, var(--lp-workspace-muted) 70%, transparent);
+}
+
+.lp-day-list { display: grid; gap: 3px; }
+
+.lp-page .lp-day .lp-tree-row {
+  min-width: 0;
+  min-height: 36px;
+  align-items: flex-start;
+  padding: 7px 3px 7px 5px;
+  gap: 5px;
+}
+
+.lp-day .lp-tree-row > input[type="checkbox"] {
+  flex: none;
+  margin: 3px 1px 0 0;
+}
+
+.lp-day-row-main { flex: 1; min-width: 0; }
+
+.lp-day-row-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.lp-page .lp-day .lp-tree-row .lp-title {
+  font-size: max(12px, calc(var(--lp-task-fs, 20px) - 5px));
+}
+
+.lp-page .lp-day .lp-meta,
+.lp-page .lp-day .lp-badge {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--lp-workspace-meta);
+}
+
+.lp-day-row-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px 4px;
+  margin-top: 3px;
+}
+
+.lp-day-row-tags :is(.lp-tag, .lp-type) {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: max(10px, calc(var(--lp-type-fs, 20px) - 9px));
+}
+
+.lp-day-row-tags .lp-tag { font-size: max(10px, calc(var(--lp-tag-fs, 20px) - 9px)); }
+.lp-day-edit { width: 21px; height: 21px; }
+
+.lp-longterm {
+  margin-top: 12px;
+  border-top: 1px solid var(--lp-workspace-line);
+  padding-top: 10px;
+}
+
+.lp-longterm h3 {
+  margin: 0 0 4px;
+  font-size: var(--lp-workspace-meta);
+  color: var(--lp-workspace-text-muted);
+  font-weight: 650;
+}
+
+[data-layout="compact"] .lp-cal-bar {
+  padding-inline-start: 9px;
+  gap: 4px;
+}
+
+[data-layout="compact"] .lp-cal-title {
+  font-size: max(14px, calc(var(--lp-workspace-title) - 3px));
+}
+
+[data-layout="compact"] .lp-cal-side .lp-weather-compact { display: none; }
+[data-layout="compact"] .lp-cell { padding-inline: 3px; }
+
+.lp-page .lp-study-overview {
+  container: lp-study-today / inline-size;
+  padding: 0;
+  overscroll-behavior: contain;
+  font-size: var(--lp-workspace-body);
+}
+
+.lp-study-overview-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.lp-overview-heading,
+.lp-overview-card-head,
+.lp-overview-row,
+.lp-advice-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.lp-overview-heading {
+  flex-wrap: wrap;
+  min-height: 38px;
+  padding: 0 1px;
+}
+
+.lp-overview-heading h1 {
+  font-size: max(19px, var(--lp-title-fs, 24px));
+  line-height: 1.25;
+  font-weight: 650;
+  margin: 0;
+}
+
+.lp-overview-weekday {
+  color: var(--lp-workspace-text-muted);
+  font-size: var(--lp-workspace-body);
+  font-weight: 400;
+}
+
+.lp-page .lp-study-overview .lp-btn-ghost {
+  height: auto;
+  min-height: 28px;
+  flex: none;
+  font-size: var(--lp-workspace-meta);
+  padding: 4px 8px;
+}
+
+.lp-page .lp-study-overview .lp-btn-ghost:hover {
+  background: var(--lp-workspace-accent-fill);
+  border-color: var(--lp-workspace-accent);
+}
+
+.lp-overview-plan-link { gap: 8px; }
+
+.lp-study-overview-columns,
+.lp-overview-reviews {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+@container lp-study-today (min-width: 690px) {
+  .lp-study-overview-columns { grid-template-columns: minmax(0, 5fr) minmax(0, 3fr); }
+}
+
+.lp-overview-card {
+  padding: 12px 14px;
+}
+
+.lp-overview-card-head { min-height: 23px; }
+
+.lp-overview-title {
+  margin: 0;
+  font-size: max(14px, calc(var(--lp-workspace-title) - 3px));
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.lp-overview-count {
+  background: var(--lp-workspace-muted);
+  border-radius: 999px;
+  padding: 1px 6px;
+  min-width: 14px;
+  text-align: center;
+}
+
+.lp-overview-count[data-has-items="true"] {
+  color: var(--dsh-ui-accent-surface-foreground, var(--dsw-alias-label-primary));
+  background: var(--lp-workspace-accent-fill);
+}
+
+.lp-overview-count,
+.lp-overview-progress-label,
+.lp-overview-empty,
+.lp-overview-row-meta,
+.lp-advice-source {
+  color: var(--lp-workspace-text-muted);
+  font-size: var(--lp-workspace-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-overview-plan {
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-overview-plan-empty {
+  flex: 1;
+  min-height: 80px;
+  background: color-mix(in srgb, var(--lp-workspace-muted) 70%, transparent);
+  border-radius: var(--lp-r, 8px);
+  margin-top: 9px;
+  padding: 7px;
+}
+
+.lp-overview-empty {
+  margin: 5px 0 1px;
+  line-height: 1.45;
+}
+
+.lp-overview-progress {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--lp-workspace-muted);
+  overflow: hidden;
+  margin: 9px 0 3px;
+}
+
+.lp-overview-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--lp-workspace-accent);
+  border-radius: inherit;
+  transition: inline-size var(--lp-workspace-motion);
+}
+
+.lp-overview-list {
+  padding: 0;
+  margin: 3px 0 0;
+  list-style: none;
+}
+
+.lp-overview-row {
+  padding: 7px 0;
+  border-top: 1px solid var(--lp-workspace-line);
+}
+
+.lp-overview-row:first-child { border-top: 0; }
+.lp-overview-row:last-child { padding-bottom: 1px; }
+.lp-overview-row-main { min-width: 0; }
+
+.lp-overview-row-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.lp-overview-row[data-done="true"] .lp-overview-row-title { color: var(--lp-workspace-text-muted); }
+
+.lp-overview-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 9px;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.lp-overview-done {
+  color: var(--dsh-ui-running-foreground, var(--dsw-alias-state-success-primary, var(--lp-workspace-text-muted)));
+  font-size: var(--lp-workspace-meta);
+  flex: none;
+}
+
+.lp-study-advice > summary {
+  display: block;
+  cursor: pointer;
+  padding: 11px 14px;
+  list-style: none;
+  border-radius: inherit;
+  transition: background-color var(--lp-workspace-motion);
+}
+
+.lp-study-advice > summary::-webkit-details-marker { display: none; }
+.lp-study-advice > summary:hover { background: color-mix(in srgb, var(--lp-workspace-muted) 65%, transparent); }
+.lp-advice-heading { justify-content: flex-start; }
+
+.lp-advice-source {
+  padding-inline-start: 7px;
+  border-inline-start: 1px solid var(--lp-workspace-line);
+}
+
+.lp-advice-heading > .lp-chevron {
+  margin-inline-start: auto;
+  color: var(--lp-workspace-text-muted);
+  transition: transform var(--lp-workspace-motion);
+}
+
+.lp-study-advice[open] .lp-advice-heading > .lp-chevron { transform: rotate(225deg); }
+
+.lp-advice-preview {
+  display: block;
+  margin-top: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--lp-workspace-text-muted);
+  font-size: var(--lp-workspace-meta);
+}
+
+.lp-study-advice[open] .lp-advice-preview { display: none; }
+
+.lp-advice-text {
+  padding: 0 14px 14px;
+  max-width: 78ch;
+  font-size: var(--lp-workspace-body);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.lp-advice-text p { margin: 0; }
+.lp-advice-text p + p { margin-top: 9px; }
+
+.lp-overview-subjects {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.lp-overview-subject {
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: var(--lp-r-sm, 6px);
+  background: var(--lp-workspace-muted);
+}
+
+.lp-overview-subject h3 {
+  margin: 0;
+  font-size: var(--lp-workspace-body);
+  overflow-wrap: anywhere;
+}
+
+.lp-page .lp-overview-subject .lp-badge {
+  font-size: var(--lp-workspace-meta);
+}
+
+@keyframes lp-workspace-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp-day-content,
+  .lp-study-overview-layout,
+  .lp-study-advice[open] .lp-advice-text {
+    animation: lp-workspace-enter var(--lp-workspace-motion) backwards;
+  }
+}
+`;
+
+if (typeof document !== 'undefined' && !document.getElementById('life-planner-workspace-styles')) {
+  const sheet = document.createElement('style');
+  sheet.id = 'life-planner-workspace-styles';
+  sheet.textContent = WORKSPACE_CSS;
+  document.head.appendChild(sheet);
+}
+
 // ---- views/archive.js ----
 function ArchiveView(props) {
   const t = props.t;
@@ -3069,11 +3899,10 @@ function CalendarView(props) {
   const scrollRef = React.useRef(null);
   const band = React.useRef(0);
   const collapsedRef = React.useRef(false);
+  const splitRef = React.useRef(false);
   const [collapsed, setCollapsed] = React.useState(false);
   const [expanded, setExpanded] = React.useState(420);
-  // Collapsed always parks at scrollTop 0 so the sticky bar sits above the
-  // day list instead of covering it.
-  const ANCHOR = 0;
+  const [layout, setLayout] = React.useState('stacked');
 
   const setCollapse = (next) => {
     collapsedRef.current = next;
@@ -3096,15 +3925,16 @@ function CalendarView(props) {
   };
   // Click selects, double-click on the name renames, double-click elsewhere
   // opens the editor — the same gestures as the work tree.
-  const dayRow = (item) =>
-    h(
+  const dayRow = (item) => {
+    const overdue = isOverdue(item);
+    return h(
       'div',
       {
         key: item.id,
         className: 'lp-tree-row',
         'data-done': String(item.derived.done),
         'data-selected': String(selectedId === item.id),
-        'data-overdue': String(isOverdue(item)),
+        'data-overdue': String(overdue),
         onClick: () => setSelectedId(item.id),
         onDoubleClick: () => props.onEdit(item),
       },
@@ -3117,44 +3947,54 @@ function CalendarView(props) {
         onChange: (event) => props.onToggle(item, event.target.checked, event),
         'aria-label': item.title,
       }),
-      h(
-        TypeChip,
-        { type: item.taskType, fallback: t('typeNone'), colorOverrides: props.colorOverrides },
+      h('div', { className: 'lp-day-row-main' },
+        h('div', { className: 'lp-day-row-heading' },
+          renaming?.id === item.id
+            ? h('input', {
+                className: 'lp-inline',
+                autoFocus: true,
+                value: renaming.value,
+                'aria-label': item.title,
+                onClick: (event) => event.stopPropagation(),
+                onDoubleClick: (event) => event.stopPropagation(),
+                onChange: (event) => setRenaming({ id: item.id, value: event.target.value }),
+                onBlur: commitRename,
+                onKeyDown: (event) => {
+                  if (event.key === 'Enter') commitRename();
+                  if (event.key === 'Escape') setRenaming(null);
+                },
+              })
+            : h('span', {
+                className: 'lp-title',
+                title: item.title,
+                onDoubleClick: (event) => {
+                  event.stopPropagation();
+                  setRenaming({ id: item.id, value: item.title });
+                },
+              }, item.title),
+          item.dueAt || item.startAt
+            ? h('span', { className: 'lp-meta', 'data-overdue': String(overdue) }, timeLabel(item))
+            : null,
+        ),
+        h('div', { className: 'lp-day-row-tags' },
+          h(TypeChip, { type: item.taskType, fallback: t('typeNone'), colorOverrides: props.colorOverrides }),
+          h(TagChips, { item, colorOverrides: props.colorOverrides }),
+          item.derived.blocked ? h('span', { className: 'lp-badge' }, t('blocked')) : null,
+        ),
       ),
-      renaming && renaming.id === item.id
-        ? h('input', {
-            className: 'lp-inline',
-            autoFocus: true,
-            value: renaming.value,
-            onClick: (event) => event.stopPropagation(),
-            onChange: (event) => setRenaming({ id: item.id, value: event.target.value }),
-            onBlur: commitRename,
-            onKeyDown: (event) => {
-              if (event.key === 'Enter') commitRename();
-              if (event.key === 'Escape') setRenaming(null);
-            },
-          })
-        : h(
-            'span',
-            {
-              className: 'lp-title',
-              title: item.title,
-              onClick: (event) => event.stopPropagation(),
-              onDoubleClick: (event) => {
-                event.stopPropagation();
-                setRenaming({ id: item.id, value: item.title });
-              },
-            },
-            item.title,
-          ),
-      h(TagChips, { item, colorOverrides: props.colorOverrides }),
-      item.derived.blocked
-        ? h('span', { className: 'lp-badge' }, t('blocked'))
-        : null,
-      item.dueAt || item.startAt
-        ? h('span', { className: 'lp-meta', 'data-overdue': String(isOverdue(item)) }, timeLabel(item))
-        : null,
+      h('button', {
+        className: 'lp-iconbtn lp-day-edit',
+        type: 'button',
+        'aria-label': `${t('edit')} · ${item.title}`,
+        title: t('edit'),
+        onClick: (event) => {
+          event.stopPropagation();
+          props.onEdit(item);
+        },
+        onDoubleClick: (event) => event.stopPropagation(),
+      }, h('span', { className: 'lp-chevron', 'data-direction': 'right', 'aria-hidden': true })),
     );
+  };
   const cells = monthMatrix(anchor);
   const week = weekMatrix(selectedKey);
   const labels = weekdayLabels(t);
@@ -3191,21 +4031,18 @@ function CalendarView(props) {
     t, data: todayInfo?.day === todayKey ? todayInfo : null, date: today, lunar, onSettings: props.onRegionSettings,
   });
 
-  // The month fills whatever height the panel gives us, leaving a strip of
-  // the day list visible so it is obvious there is more below.
   React.useEffect(() => {
     const node = scrollRef.current;
     if (!node) return undefined;
     const measure = () => {
+      const width = node.clientWidth;
       const height = Math.round(node.clientHeight || 0);
-      if (height <= 0) return;
-      const room = Math.max(320, height - 150);
-      const configured = Number(((currentAppearance().size || {}).calendarHeight) || 0);
-      // A configured height wins, clamped to sane bounds so the day list below
-      // always keeps a scrollable surface.
-      const capped = Math.max(320, height - 40);
-      const next = configured > 0 ? Math.min(Math.max(320, configured), capped) : room;
-      setExpanded(Number.isFinite(next) && next >= 200 ? Math.round(next) : room);
+      if (height <= 0 || width <= 0) return;
+      splitRef.current = width >= 820;
+      setLayout(splitRef.current ? 'split' : width < 475 ? 'compact' : 'stacked');
+      const room = Math.max(320, height - (splitRef.current ? 32 : 118));
+      const configured = Number(currentAppearance().size?.calendarHeight);
+      setExpanded(configured > 0 ? Math.round(Math.min(Math.max(320, configured), room)) : room);
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -3219,23 +4056,16 @@ function CalendarView(props) {
 
   const onScroll = (event) => {
     const node = event.currentTarget;
-    const at = node.scrollTop;
-    if (!collapsedRef.current) {
-      if (at > 4) {
-        setCollapse(true);
-        // Park at the top so the collapsed bar never overlaps the day list;
-        // the same wheel then continues scrolling the list.
-        node.scrollTop = 0;
-      }
-      return;
-    }
+    if (splitRef.current || collapsedRef.current || node.scrollTop <= 4) return;
+    setCollapse(true);
+    node.scrollTop = 0;
   };
 
   // Expanding deliberately costs more: reach the top, then keep pushing up
   // through an elastic band before the month comes back.
   const onWheel = (event) => {
     const node = scrollRef.current;
-    if (!node) return;
+    if (!node || splitRef.current) return;
     if (!collapsedRef.current) {
       if (event.deltaY > 0) band.current = 0;
       return;
@@ -3261,12 +4091,24 @@ function CalendarView(props) {
 
   const pick = (cell) => {
     props.onSelect(cell.key);
-    if (!cell.inMonth) props.onAnchor(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1));
+    if (cell.date.getMonth() !== anchor.getMonth() || cell.date.getFullYear() !== anchor.getFullYear()) {
+      props.onAnchor(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1));
+    }
   };
 
   const dayItems = (byDay.get(selectedKey) || []).filter((item) => !item.derived.archived);
   const openCount = openEntries(dayItems).length;
   const selectedDate = new Date(`${selectedKey}T12:00:00`);
+  const weekday = (date) => labels[(date.getDay() + 6) % 7];
+  const dayLabel = (date) => t('dayLabel')
+    .replace('{m}', String(date.getMonth() + 1)).replace('{d}', String(date.getDate())) + ' · ' + weekday(date);
+  const pendingLabel = (count) => t('calendarPendingItems').replace('{n}', String(count));
+  const cellLabel = (cell, count) => count ? `${dayLabel(cell.date)} · ${pendingLabel(count)}` : dayLabel(cell.date);
+  const toggleCalendar = () => {
+    band.current = 0;
+    setCollapse(!collapsed);
+    if (!splitRef.current && scrollRef.current) scrollRef.current.scrollTop = 0;
+  };
   // Long-term work plus anything that blew its deadline: overdue tasks keep
   // their red date and join the long-term cycle instead of disappearing.
   const longTerm =
@@ -3294,212 +4136,180 @@ function CalendarView(props) {
     { className: 'lp-cal-scroll', ref: scrollRef, onScroll, onWheel },
     h(
       'div',
-      {
-        className: 'lp-cal-sticky',
-        style: { height: collapsed ? 64 : expanded, transition: 'height .2s ease' },
-      },
+      { className: 'lp-calendar-layout', 'data-layout': layout },
       h(
         'div',
         {
-          className: 'lp-cal-month',
-          style: {
-            height: expanded,
-            opacity: collapsed ? 0 : 1,
-            pointerEvents: collapsed ? 'none' : 'auto',
-            transition: 'opacity .18s ease',
-          },
-          'aria-hidden': collapsed,
+          className: 'lp-cal-sticky lp-workspace-card',
+          'data-collapsed': String(collapsed),
+          style: { '--lp-month-height': `${expanded}px` },
         },
         h(
           'div',
-          { className: 'lp-cal-bar' },
+          { className: 'lp-cal-month', 'aria-hidden': collapsed },
           h(
             'div',
-            { className: 'lp-cal-side' },
+            { className: 'lp-cal-bar' },
+            h('h2', { className: 'lp-cal-title' }, monthTitle(t, anchor)),
             h(
-              'button',
-              {
-                className: 'lp-btn-ghost',
-                onClick: () => {
-                  const now = new Date();
-                  props.onAnchor(new Date(now.getFullYear(), now.getMonth(), 1));
-                  props.onSelect(dayKey(now));
+              'div',
+              { className: 'lp-cal-side' },
+              collapsed ? null : renderTodayInfo(),
+              h(
+                'button',
+                {
+                  className: 'lp-btn-ghost lp-cal-today',
+                  type: 'button',
+                  tabIndex: collapsed ? -1 : undefined,
+                  onClick: () => {
+                    const now = new Date();
+                    props.onAnchor(new Date(now.getFullYear(), now.getMonth(), 1));
+                    props.onSelect(dayKey(now));
+                  },
                 },
-              },
-              t('today'),
+                t('today'),
+              ),
+              h('div', { className: 'lp-month-nav' },
+                [-1, 1].map((step) => {
+                  const label = t(step < 0 ? 'previousMonth' : 'nextMonth');
+                  return h('button', {
+                    key: step,
+                    className: 'lp-iconbtn',
+                    type: 'button',
+                    tabIndex: collapsed ? -1 : undefined,
+                    'aria-label': label,
+                    title: label,
+                    onClick: () => props.onAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + step, 1)),
+                  }, h('span', { className: 'lp-chevron', 'data-direction': step < 0 ? 'left' : 'right', 'aria-hidden': true }));
+                }),
+              ),
             ),
-            collapsed ? null : renderTodayInfo(),
           ),
-          h('div', { className: 'lp-cal-title' }, monthTitle(t, anchor)),
+          h('div', { className: 'lp-wd', 'aria-hidden': true },
+            labels.map((label) => h('span', { key: label }, label)),
+          ),
           h(
             'div',
-            { className: 'lp-cal-side', 'data-right': 'true' },
-            h(
-              'button',
-              {
-                className: 'lp-iconbtn',
-                onClick: () => props.onAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1)),
-                'aria-label': t('previousMonth'),
-              },
-              '‹',
-            ),
-            h(
-              'button',
-              {
-                className: 'lp-iconbtn',
-                onClick: () => props.onAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1)),
-                'aria-label': t('nextMonth'),
-              },
-              '›',
-            ),
+            { className: 'lp-grid' },
+            cells.map((cell, index) => {
+              const open = openEntries(byDay.get(cell.key) || []);
+              const topPriority = open.reduce((best, entry) => Math.max(best, priorityOf(entry)), -1);
+              return h(
+                'button',
+                {
+                  key: cell.key,
+                  className: 'lp-cell',
+                  type: 'button',
+                  tabIndex: collapsed ? -1 : undefined,
+                  'aria-label': cellLabel(cell, open.length),
+                  'aria-pressed': cell.key === selectedKey,
+                  'aria-current': cell.isToday ? 'date' : undefined,
+                  'data-priority': topPriority >= 0 && cell.inMonth ? toneOf(topPriority).key : undefined,
+                  'data-dim': String(!cell.inMonth),
+                  'data-weekend': String(index % 7 >= 5),
+                  'data-today': String(cell.isToday),
+                  'data-selected': String(cell.key === selectedKey),
+                  onClick: () => pick(cell),
+                },
+                h('span', { className: 'lp-cell-top' },
+                  h('span', { className: 'lp-num' }, String(cell.day)),
+                  open.length ? h('span', { className: 'lp-count' }, String(open.length)) : null,
+                ),
+                open.slice(0, 2).map((entry) =>
+                  h('span', { key: entry.id, className: 'lp-cell-title', title: entry.title }, entry.title),
+                ),
+              );
+            }),
           ),
         ),
-        h('div', { className: 'lp-wd' }, labels.map((label) => h('div', { key: label }, label))),
         h(
           'div',
-          { className: 'lp-grid' },
-          cells.map((cell, index) => {
-            const list = byDay.get(cell.key) || [];
-            const open = openEntries(list);
-            const shown = open.slice(0, 2);
-            const hidden = open.length - shown.length;
-            // The month block is a staircase, not a rectangle: give each
-            // in-month cell the sides its dimmed neighbours cannot draw.
-            const leftEdge = cell.inMonth && (index % 7 === 0 || !(cells[index - 1] || {}).inMonth);
-            const rightEdge = cell.inMonth && (index % 7 === 6 || !(cells[index + 1] || {}).inMonth);
-            const topEdge = cell.inMonth && (index < 7 || !(cells[index - 7] || {}).inMonth);
-            const bottomEdge = cell.inMonth && (index >= 35 || !(cells[index + 7] || {}).inMonth);
-            const topPriority = open.reduce((best, entry) => Math.max(best, priorityOf(entry)), -1);
+          { className: 'lp-cal-week', 'aria-hidden': !collapsed },
+          week.map((cell) => {
+            const count = openEntries(byDay.get(cell.key) || []).length;
             return h(
-              'div',
+              'button',
               {
                 key: cell.key,
-                className: 'lp-cell',
-                tabIndex: 0,
-                role: 'button',
-                'data-priority': topPriority >= 0 && cell.inMonth ? toneOf(topPriority).key : undefined,
-                'data-dim': String(!cell.inMonth),
+                className: 'lp-weekcell',
+                type: 'button',
+                tabIndex: collapsed ? undefined : -1,
+                'aria-label': cellLabel(cell, count),
+                'aria-pressed': cell.key === selectedKey,
+                'aria-current': cell.isToday ? 'date' : undefined,
                 'data-today': String(cell.isToday),
                 'data-selected': String(cell.key === selectedKey),
-                'data-edge-left': String(leftEdge),
-                'data-edge-right': String(rightEdge),
-                'data-edge-top': String(topEdge),
-                'data-edge-bottom': String(bottomEdge),
                 onClick: () => pick(cell),
-                onKeyDown: keyActivate(() => pick(cell)),
               },
-              h(
-                'div',
-                { className: 'lp-cell-top' },
-                h('span', { className: 'lp-num' }, String(cell.day)),
-                open.length > 0 ? h('span', { className: 'lp-count' }, String(open.length)) : null,
-              ),
-              shown.map((entry) =>
-                h('div', { key: entry.id, className: 'lp-cell-title', title: entry.title }, entry.title),
-              ),
-              hidden > 0 ? h('div', { className: 'lp-cell-more' }, `+${hidden}`) : null,
+              h('span', null, weekday(cell.date)),
+              h('strong', null, String(cell.day)),
+              count ? h('span', { className: 'lp-count' }, String(count)) : null,
             );
           }),
         ),
-      ),
-      h(
-        'div',
-        {
-          className: 'lp-cal-week',
-          style: {
-            opacity: collapsed ? 1 : 0,
-            pointerEvents: collapsed ? 'auto' : 'none',
-            transition: 'opacity .18s ease',
-          },
-          'aria-hidden': !collapsed,
-        },
-        week.map((cell) => {
-          const list = byDay.get(cell.key) || [];
-          const count = openEntries(list).length;
-          return h(
-            'button',
-            {
-              key: cell.key,
-              className: 'lp-weekcell',
-              type: 'button',
-              'data-today': String(cell.isToday),
-              'data-selected': String(cell.key === selectedKey),
-              onClick: () => {
-                props.onSelect(cell.key);
-                if (cell.date.getMonth() !== anchor.getMonth() || cell.date.getFullYear() !== anchor.getFullYear()) {
-                  props.onAnchor(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1));
-                }
-              },
-            },
-            h('span', null, labels[(cell.date.getDay() + 6) % 7]),
-            h('strong', { style: { fontSize: 13 } }, String(cell.day)),
-            count > 0 ? h('span', { className: 'lp-count' }, String(count)) : null,
-          );
-        }),
-      ),
-      // Explicit affordance: the collapsed bar can always be opened by click,
-      // even if a host eats wheel events or the page is mid-scroll.
-      collapsed
-        ? h(
-            'button',
-            {
-              className: 'lp-cal-expand',
-              type: 'button',
-              title: t('expandCalendar'),
-              'aria-label': t('expandCalendar'),
-              onClick: () => {
-                setCollapse(false);
-                const node = scrollRef.current;
-                if (node) node.scrollTop = 0;
-              },
-            },
-            '▾',
-          )
-        : null,
-    ),
-    h(
-      'div',
-      { className: 'lp-day', style: { minHeight: expanded } },
-      h(
-        'div',
-        { className: 'lp-day-title' },
         h(
-          'span',
-          null,
-          `${t('dayLabel').replace('{m}', String(selectedDate.getMonth() + 1)).replace('{d}', String(selectedDate.getDate()))} · ${labels[(selectedDate.getDay() + 6) % 7]}`,
+          'button',
+          {
+            className: 'lp-iconbtn lp-cal-disclosure',
+            type: 'button',
+            title: t(collapsed ? 'expandCalendar' : 'collapseCalendar'),
+            'aria-label': t(collapsed ? 'expandCalendar' : 'collapseCalendar'),
+            'aria-expanded': !collapsed,
+            onClick: toggleCalendar,
+          },
+          h('span', { className: 'lp-chevron', 'data-direction': collapsed ? 'down' : 'up', 'aria-hidden': true }),
         ),
-        h('span', { className: 'lp-day-sub' }, t('itemsCount').replace('{n}', String(openCount))),
-        selectedKey === todayKey && lunar ? h('span', { className: 'lp-day-sub lp-cal-lunar' }, lunar) : null,
-        collapsed ? renderTodayInfo() : null,
       ),
       h(
-        'form',
-        { className: 'lp-add', onSubmit: props.onQuickAdd },
-        h('input', {
-          className: 'lp-input',
-          value: props.draft,
-          placeholder: t('addPlaceholder'),
-          onChange: (event) => props.onDraft(event.target.value),
-          // Focusing the box collapses the calendar so the whole plan area
-          // is visible instead of the box sitting half under the bar.
-          onFocus: () => {
-            const node = scrollRef.current;
-            if (node && node.scrollTop < 48) node.scrollTo({ top: 48, behavior: 'smooth' });
-          },
-        }),
-        h('button', { className: 'lp-btn', type: 'submit', disabled: !props.draft.trim() }, t('addButton')),
+        'section',
+        { className: 'lp-day lp-workspace-card', 'aria-label': t('calendarAgenda') },
+        h(
+          'div',
+          { className: 'lp-day-title' },
+          h('div', { className: 'lp-day-date', 'aria-live': 'polite' },
+            h('h2', null, h('time', { dateTime: selectedKey }, dayLabel(selectedDate))),
+            h('div', { className: 'lp-day-sub' },
+              selectedKey === todayKey && lunar ? h('span', null, lunar) : null,
+              dayItems.length ? h('span', null, openCount ? pendingLabel(openCount) : t('calendarAllDone')) : null,
+            ),
+          ),
+          collapsed ? renderTodayInfo() : null,
+        ),
+        h(
+          'form',
+          { className: 'lp-add', onSubmit: props.onQuickAdd },
+          h('input', {
+            className: 'lp-input',
+            value: props.draft,
+            placeholder: t('calendarQuickAdd'),
+            'aria-label': t('calendarQuickAdd'),
+            onChange: (event) => props.onDraft(event.target.value),
+            onFocus: (event) => {
+              const node = scrollRef.current;
+              if (!node || splitRef.current || collapsedRef.current) return;
+              if (event.currentTarget.getBoundingClientRect().bottom > node.getBoundingClientRect().bottom) {
+                setCollapse(true);
+                node.scrollTop = 0;
+              }
+            },
+          }),
+          h('button', { className: 'lp-btn lp-workspace-primary', type: 'submit', disabled: !props.draft.trim() }, t('addButton')),
+        ),
+        h('div', { key: selectedKey, className: 'lp-day-content' },
+          dayItems.length
+            ? h('div', { className: 'lp-day-list' }, dayItems.map(dayRow))
+            : h('div', { className: 'lp-workspace-empty lp-day-empty' },
+                h('span', { className: 'lp-empty-symbol' }, h(SidebarIcon, { variant: 'planning', size: 19 })),
+                h('p', null, t('emptyDay')),
+              ),
+          longTerm.length
+            ? h('section', { className: 'lp-longterm' },
+                h('h3', null, t('unscheduled')),
+                h('div', { className: 'lp-day-list' }, longTerm.map(dayRow)),
+              )
+            : null,
+        ),
       ),
-      dayItems.length === 0
-        ? h('div', { className: 'lp-empty' }, t('emptyDay'))
-        : dayItems.map((item) => dayRow(item)),
-      longTerm.length > 0
-        ? h(
-            'div',
-            { className: 'lp-longterm' },
-            h('div', { className: 'lp-section' }, t('unscheduled')),
-            longTerm.map((item) => dayRow(item)),
-          )
-        : null,
     ),
   );
 }
@@ -5835,7 +6645,7 @@ function Panel(props) {
     },
     h(
       'div',
-      { className: 'lp-head' },
+      { className: 'lp-head lp-workspace-head' },
       h(
         'div',
         {
@@ -5848,14 +6658,25 @@ function Panel(props) {
             strip.scrollLeft += event.deltaY;
           },
         },
-        h('button', { className: 'lp-tab', 'data-active': String(tab === 'calendar'), onClick: () => setTab('calendar') }, t('tabCalendar')),
-        h('button', { className: 'lp-tab', 'data-active': String(tab === 'tree'), onClick: () => setTab('tree') }, t('tabTree')),
-        h('button', { className: 'lp-tab', 'data-active': String(tab === 'board'), onClick: () => setTab('board') }, t('tabBoard')),
-        h('button', { className: 'lp-tab', 'data-active': String(tab === 'plan'), onClick: () => setTab('plan') }, t('tabPlan')),
-        h('button', { className: 'lp-tab', 'data-active': String(tab === 'archive'), onClick: () => setTab('archive') }, t('tabArchive')),
+        [
+          ['calendar', 'tabCalendar'],
+          ['tree', 'tabTree'],
+          ['board', 'tabBoard'],
+          ['plan', 'tabPlan'],
+          ['archive', 'tabArchive'],
+        ].map(([view, label]) => h('button', {
+          key: view,
+          type: 'button',
+          className: 'lp-tab',
+          'data-active': String(tab === view),
+          'aria-pressed': tab === view,
+          onClick: () => setTab(view),
+        }, t(label))),
       ),
-      h('button', { className: 'lp-btn-ghost', onClick: () => setSettingsOpen('tags') }, t('settings')),
-      h('button', { className: 'lp-btn-ghost', onClick: () => setEditor({ kind: 'task', title: '' }) }, t('newItem')),
+      h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setSettingsOpen('tags') }, t('settings')),
+      h('button', { className: 'lp-btn-ghost lp-workspace-primary', type: 'button', onClick: () => setEditor({ kind: 'task', title: '' }) },
+        h('span', { className: 'lp-workspace-plus', 'aria-hidden': true }, '+'), t('newItem'),
+      ),
     ),
     error ? h('div', { className: 'lp-err', style: { padding: '0 16px' } }, error) : null,
     !snapshot && !error ? h('div', { className: 'lp-meta', style: { padding: '10px 16px' } }, t('loading')) : null,
@@ -5863,6 +6684,7 @@ function Panel(props) {
       ? h(CalendarView, {
           t,
           items,
+          colorOverrides,
           onRename: (id, title) => run(api('item.update', { id, patch: { title } })),
           selectedKey,
           anchor,
@@ -6581,15 +7403,39 @@ function MistakeTab(props) {
 }
 
 // ---- panels/study-overview.js ----
-function StudyOverview(props) {
-  const t = props.t;
-  // The learning data comes from the parent page, which every tab shares.
-  const data = props.data || null;
+function StudyAdvice({ t, tip }) {
+  const text = (tip?.text || t('tipPending')).trim();
+  const lead = text.split(/\r?\n/, 1)[0].replace(/\*\*([^*]+)\*\*/g, '$1');
+  return h(
+    'details',
+    { className: 'lp-workspace-card lp-study-advice' },
+    h('summary', null,
+      h('span', { className: 'lp-advice-heading' },
+        h('span', { className: 'lp-overview-title' }, t('studyTipTitle')),
+        tip ? h('span', { className: 'lp-advice-source' },
+          t(tip.source === 'deepseek' ? 'studyAdviceDeepSeek' : 'studyAdviceLocal'),
+        ) : null,
+        h('span', { className: 'lp-chevron', 'data-direction': 'down', 'aria-hidden': true }),
+      ),
+      h('span', { className: 'lp-advice-preview', 'aria-hidden': true }, lead),
+    ),
+    h('div', { className: 'lp-advice-text' },
+      // Advice can contain simple emphasis. Keep the response as text nodes.
+      text.split(/\r?\n\s*\r?\n/).map((paragraph, paragraphIndex) =>
+        h('p', { key: paragraphIndex }, paragraph.split(/(\*\*[^*\n]+\*\*)/g).map((part, partIndex) =>
+          partIndex % 2 ? h('strong', { key: partIndex }, part.slice(2, -2)) : part,
+        )),
+      ),
+    ),
+  );
+}
+
+function StudyOverview({ t, data, onReload, onOpenPlan }) {
   const [tip, setTip] = React.useState(null);
   const [error, setError] = React.useState('');
   const loadTip = () => api('tip').then(setTip).catch((err) => setError(err.message));
   const reload = () => {
-    if (typeof props.onReload === 'function') props.onReload();
+    if (typeof onReload === 'function') onReload();
     return loadTip();
   };
   React.useEffect(() => {
@@ -6605,104 +7451,132 @@ function StudyOverview(props) {
     api('mistake.review', { id: mistake.id, days: 3 })
       .then(reload)
       .catch((err) => setError(err.message));
-  const subjects = (data && data.subjects) || [];
-  const topics = (data && data.topics) || [];
+  const subjects = data?.subjects || [];
+  const topics = data?.topics || [];
+  const topicsById = new Map(topics.map((topic) => [topic.id, topic]));
   const due = topics.filter((topic) => topic.due);
   // Study days roll over at 04:00, like the host-side scheduler.
-  const todayKey = dayKey(new Date(Date.now() - 4 * 3600 * 1000));
-  const todayPlan = ((data && data.plan) || []).filter((entry) => entry.date === todayKey);
-  const dueMistakes = ((data && data.mistakes) || []).filter((entry) => entry.due);
-  // Mastery is owned by the tutor: the page only displays it.
+  const studyDate = new Date(Date.now() - 4 * 3600 * 1000);
+  const todayKey = dayKey(studyDate);
+  const dateLabel = t('dayLabel')
+    .replace('{m}', String(studyDate.getMonth() + 1))
+    .replace('{d}', String(studyDate.getDate()));
+  const weekday = weekdayLabels(t)[(studyDate.getDay() + 6) % 7];
+  const todayPlan = (data?.plan || []).filter((entry) => entry.date === todayKey);
+  const dueMistakes = (data?.mistakes || []).filter((entry) => entry.due);
+  const completed = todayPlan.filter((entry) => entry.doneAt).length;
+  const progressLabel = t('studyPlanProgress')
+    .replace('{n}', String(completed)).replace('{total}', String(todayPlan.length));
   const masteryLabel = (value) => `${Math.min(10, Math.max(0, Number(value) || 0))}/10`;
+
+  const reviewCard = (title, entries, empty, renderRow) =>
+    h(
+      'section',
+      { className: 'lp-workspace-card lp-overview-card' },
+      h('header', { className: 'lp-overview-card-head' },
+        h('h2', { className: 'lp-overview-title' }, title),
+        h('span', { className: 'lp-overview-count', 'data-has-items': String(entries.length > 0) }, entries.length),
+      ),
+      entries.length
+        ? h('ul', { className: 'lp-overview-list' }, entries.map(renderRow))
+        : h('p', { className: 'lp-overview-empty' }, empty),
+    );
+
   return h(
     'div',
-    { className: 'lp-body' },
-    error ? h('div', { className: 'lp-err' }, error) : null,
-    h(
-          'div',
-          { className: 'lp-card', style: { marginBottom: 8 } },
-          h('div', { className: 'lp-card-title' }, t('studyTipTitle')),
-          tip ? h('div', { className: 'lp-meta' }, t(tip.source === 'deepseek' ? 'tipDeepSeek' : 'tipLocal')) : null,
-          h(
-            'div',
-            { className: 'lp-card-meta', style: { whiteSpace: 'pre-wrap', lineHeight: 1.6 } },
-            tip?.text || t('tipPending'),
-          ),
-    ),
-    h(
-      'div',
-      { className: 'lp-toolbar' },
-      h('span', { className: 'lp-meta' }, `1. ${t('studyTodayPlan')} ${todayPlan.filter((entry) => !entry.doneAt).length}/${todayPlan.length}`),
-      h('span', { className: 'lp-meta' }, `· ${t('studyDue')} ${due.length}`),
-      h('div', { style: { flex: 1 } }),
-    ),
-    todayPlan.length === 0
-      ? h('div', { className: 'lp-empty' }, t('studyNoTodayPlan'))
-      : todayPlan.map((entry) =>
-          h(
-            'div',
-            { key: entry.id, className: 'lp-tree-row', 'data-done': String(Boolean(entry.doneAt)) },
-            h(
-              'span',
-              { className: 'lp-title' },
-              (topics.find((topic) => topic.id === entry.topicId) || {}).title || entry.kind,
-            ),
-            h('span', { className: 'lp-badge' }, entry.kind === 'review' ? t('masteryReview') : t('masteryLearning')),
-            h('span', { className: 'lp-meta' }, `${entry.minutes}${t('studyMinuteUnit')}`),
-            entry.materials && entry.materials.length > 0
-              ? h(
-                  'span',
-                  { className: 'lp-meta', title: entry.materials.map((one) => one.title).join('、') },
-                  `📎${entry.materials.length}`,
-                )
-              : null,
-            entry.doneAt
-              ? h('span', { className: 'lp-meta' }, t('studyDone'))
-              : h('button', { className: 'lp-btn-ghost', onClick: () => finishPlan(entry) }, t('studyFinish')),
-          ),
+    { className: 'lp-body lp-study-overview' },
+    h('div', { className: 'lp-study-overview-layout' },
+      h('header', { className: 'lp-overview-heading' },
+        h('h1', null, h('time', { dateTime: todayKey }, dateLabel),
+          h('span', { className: 'lp-overview-weekday' }, ' · ' + weekday),
         ),
-    h('div', { className: 'lp-section' }, `2. ${t('studyDue')} · ${due.length}`),
-    due.length === 0
-      ? h('div', { className: 'lp-empty' }, t('studyNoDue'))
-      : due.map((topic) =>
-          h(
-            'div',
-            { key: topic.id, className: 'lp-tree-row' },
-            h('span', { className: 'lp-title' }, topic.title),
-          ),
+        h('button', { className: 'lp-btn-ghost lp-overview-plan-link', type: 'button', onClick: onOpenPlan },
+          t('studyTabPlan'),
+          h('span', { className: 'lp-chevron', 'data-direction': 'right', 'aria-hidden': true }),
         ),
-    h('div', { className: 'lp-section' }, `3. ${t('studyMistakeReview')} · ${dueMistakes.length}`),
-    dueMistakes.length === 0
-      ? h('div', { className: 'lp-empty' }, t('studyNoMistake'))
-      : dueMistakes.map((mistake) =>
-          h(
-            'div',
-            { key: mistake.id, className: 'lp-tree-row' },
-            h('span', { className: 'lp-title', title: mistake.reason || '' }, mistake.question),
-            h('span', { className: 'lp-meta' }, mistake.answer),
-            h('button', { className: 'lp-btn-ghost', onClick: () => finishMistake(mistake) }, t('studyFinish')),
-          ),
-        ),
-    subjects.map((subject) =>
-      h(
-        'div',
-        { key: subject.id, className: 'lp-group' },
-        h('div', { className: 'lp-group-head' }, h('span', null, subject.title)),
-        topics
-          .filter((topic) => topic.subjectId === subject.id)
-          .map((topic) =>
-            h(
-              'div',
-              { key: topic.id, className: 'lp-tree-row' },
-              h('span', { className: 'lp-title' }, topic.title),
-              h(
-                'span',
-                { className: 'lp-badge', 'data-mastery': topic.mastery, title: t('masteryReadOnly') },
-                masteryLabel(topic.mastery),
-              ),
-            ),
-          ),
       ),
+      error ? h('div', { className: 'lp-err', role: 'alert' }, error) : null,
+      h('div', { className: 'lp-study-overview-columns' },
+        h('section', { className: 'lp-workspace-card lp-overview-card lp-overview-plan' },
+          h('header', { className: 'lp-overview-card-head' },
+            h('h2', { className: 'lp-overview-title' }, t('studyTodayPlan')),
+            todayPlan.length ? h('span', { className: 'lp-overview-progress-label', 'aria-live': 'polite' }, progressLabel) : null,
+          ),
+          todayPlan.length
+            ? h(React.Fragment, null,
+                h('div', {
+                  className: 'lp-overview-progress',
+                  role: 'progressbar',
+                  'aria-label': t('studyTodayPlan'),
+                  'aria-valuemin': 0,
+                  'aria-valuemax': todayPlan.length,
+                  'aria-valuenow': completed,
+                  'aria-valuetext': progressLabel,
+                }, h('span', { style: { inlineSize: `${completed / todayPlan.length * 100}%` } })),
+                h('ul', { className: 'lp-overview-list' }, todayPlan.map((entry) => {
+                  const materialCount = entry.materials?.length || 0;
+                  return h('li', { key: entry.id, className: 'lp-overview-row', 'data-done': Boolean(entry.doneAt) },
+                    h('div', { className: 'lp-overview-row-main' },
+                      h('span', { className: 'lp-overview-row-title' }, topicsById.get(entry.topicId)?.title || entry.kind),
+                      h('div', { className: 'lp-overview-row-meta' },
+                        h('span', null, t(entry.kind === 'review' ? 'masteryReview' : 'masteryLearning')),
+                        entry.minutes > 0 ? h('span', null, `${entry.minutes}${t('studyMinuteUnit')}`) : null,
+                        materialCount ? h('span', {
+                          title: entry.materials.map((one) => one.title).join('、'),
+                        }, t('studyPlanMaterials').replace('{n}', String(materialCount))) : null,
+                      ),
+                    ),
+                    entry.doneAt
+                      ? h('span', { className: 'lp-overview-done' }, t('studyDone'))
+                      : h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => finishPlan(entry) }, t('studyFinish')),
+                  );
+                })),
+              )
+            : h('div', { className: 'lp-workspace-empty lp-overview-plan-empty' },
+                h('span', { className: 'lp-empty-symbol' }, h(SidebarIcon, { variant: 'study', size: 19 })),
+                h('p', null, t('studyNoTodayPlan')),
+              ),
+        ),
+        h('div', { className: 'lp-overview-reviews' },
+          reviewCard(t('studyDue'), due, t('studyNoDue'), (topic) =>
+            h('li', { key: topic.id, className: 'lp-overview-row' },
+              h('span', { className: 'lp-overview-row-title' }, topic.title),
+            ),
+          ),
+          reviewCard(t('studyMistakeReview'), dueMistakes, t('studyNoMistake'), (mistake) =>
+            h('li', { key: mistake.id, className: 'lp-overview-row' },
+              h('div', { className: 'lp-overview-row-main' },
+                h('span', { className: 'lp-overview-row-title', title: mistake.reason || '' }, mistake.question),
+                h('div', { className: 'lp-overview-row-meta' }, mistake.answer),
+              ),
+              h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => finishMistake(mistake) }, t('studyFinish')),
+            ),
+          ),
+        ),
+      ),
+      h(StudyAdvice, { t, tip }),
+      subjects.length ? h('section', { className: 'lp-workspace-card lp-overview-card' },
+        h('header', { className: 'lp-overview-card-head' },
+          h('h2', { className: 'lp-overview-title' }, t('studySubjects')),
+        ),
+        h('div', { className: 'lp-overview-subjects' }, subjects.map((subject) =>
+          h('div', { key: subject.id, className: 'lp-overview-subject' },
+            h('h3', null, subject.title),
+            h('ul', { className: 'lp-overview-list' }, topics
+              .filter((topic) => topic.subjectId === subject.id)
+              .map((topic) =>
+                h('li', { key: topic.id, className: 'lp-overview-row' },
+                  h('span', { className: 'lp-overview-row-title' }, topic.title),
+                  h('span', {
+                    className: 'lp-badge',
+                    'data-mastery': topic.mastery,
+                    title: t('masteryReadOnly'),
+                  }, masteryLabel(topic.mastery)),
+                ),
+              )),
+          ),
+        )),
+      ) : null,
     ),
   );
 }
@@ -7595,7 +8469,7 @@ function StudyPanel(props) {
     },
     h(
       'div',
-      { className: 'lp-head' },
+      { className: 'lp-head lp-workspace-head' },
       h(
         'div',
         { className: 'lp-tabs' },
@@ -7604,8 +8478,10 @@ function StudyPanel(props) {
             'button',
             {
               key: item.key,
+              type: 'button',
               className: 'lp-tab',
               'data-active': String(tab === item.key),
+              'aria-pressed': tab === item.key,
               onClick: () => setTab(item.key),
             },
             item.label,
@@ -7619,7 +8495,7 @@ function StudyPanel(props) {
     loading.learning && !data
       ? h('div', { className: 'lp-empty' }, t('loading'))
       : tab === 'today'
-        ? h(StudyOverview, { t, data, onReload: loadLearning })
+        ? h(StudyOverview, { t, data, onReload: loadLearning, onOpenPlan: () => setTab('plan') })
         : null,
     tab === 'plan' ? h(StudyPlanTab, { t, data, shelf, onReload: loadLearning, onError: setError }) : null,
     tab === 'shelf'
@@ -7717,7 +8593,7 @@ return {
       ctx.slots.inject('sidebar.panellist', () =>
         ctx.slots.register(
           { name: 'sidebar.panellist', id: 'life-planner', order: 20, label: () => t('navLabel') },
-          Icon,
+          ({ size }) => h(SidebarIcon, { size, variant: 'planning' }),
         ),
       ),
     );
@@ -7740,7 +8616,7 @@ return {
       ctx.slots.inject('sidebar.panellist', () =>
         ctx.slots.register(
           { name: 'sidebar.panellist', id: 'life-planner-study', order: 21, label: () => t('studyNav') },
-          Icon,
+          ({ size }) => h(SidebarIcon, { size, variant: 'study' }),
         ),
       ),
     );

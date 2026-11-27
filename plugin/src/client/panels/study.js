@@ -108,7 +108,7 @@ function StudyPanel(props) {
     },
     h(
       'div',
-      { className: 'lp-head' },
+      { className: 'lp-head lp-workspace-head' },
       h(
         'div',
         { className: 'lp-tabs' },
@@ -117,8 +117,10 @@ function StudyPanel(props) {
             'button',
             {
               key: item.key,
+              type: 'button',
               className: 'lp-tab',
               'data-active': String(tab === item.key),
+              'aria-pressed': tab === item.key,
               onClick: () => setTab(item.key),
             },
             item.label,
@@ -132,7 +134,7 @@ function StudyPanel(props) {
     loading.learning && !data
       ? h('div', { className: 'lp-empty' }, t('loading'))
       : tab === 'today'
-        ? h(StudyOverview, { t, data, onReload: loadLearning })
+        ? h(StudyOverview, { t, data, onReload: loadLearning, onOpenPlan: () => setTab('plan') })
         : null,
     tab === 'plan' ? h(StudyPlanTab, { t, data, shelf, onReload: loadLearning, onError: setError }) : null,
     tab === 'shelf'
