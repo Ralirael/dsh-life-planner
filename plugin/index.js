@@ -5157,12 +5157,18 @@ export function apply(ctx, config = {}) {
   // sees 404 for every call. Declaring both as dependencies makes Cordis
   // re-enter this callback once they are ready.
   ctx.inject(['webServer', 'connection'], (webCtx) => {
+    const { connection } = webCtx
     webCtx.effect(() =>
       webCtx.webServer.register({
         kind: 'prefix',
         path: API_PREFIX,
-        handler: async (req, res) => {
-          if (webCtx.connection.requestRejection(req) !== undefined) {
+        auth: 'required',
+        handler: async (req, res, peer) => {
+          // Current DSH supplies the authenticated peer. Older hosts expose a request guard instead.
+          const authorized = peer === undefined
+            ? typeof connection.requestRejection === 'function' && connection.requestRejection(req) === undefined
+            : peer?.principal?.kind === 'owner'
+          if (!authorized) {
             writeJson(res, 403, { ok: false, error: 'forbidden' })
             return
           }

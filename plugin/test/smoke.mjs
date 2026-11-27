@@ -29,7 +29,9 @@ const fakeWebServer = {
     return () => {}
   },
 }
-const fakeConnection = { requestRejection: () => undefined }
+const fakeConnection = {}
+const ownerPeer = { principal: { kind: 'owner' } }
+const memberPeer = { principal: { kind: 'member' } }
 const makeChild = () => ({
   effect(fn) {
     const dispose = fn()
@@ -107,6 +109,7 @@ assert(read.bodyMarkdown.includes('每天学英语'), 'plan document reads back'
 
 // --- route layer -----------------------------------------------------------
 assert(routes.length === 1 && routes[0].path === '/life-planner/api', 'one API prefix route registered')
+assert(routes[0].auth === 'required', 'the host authenticates planner requests before dispatch')
 assert(
   injected[0] === 'webServer,connection',
   'route registration rides injected services instead of reading them at apply time',
@@ -147,9 +150,11 @@ function makeRes() {
   return res
 }
 
-async function request(method, path, body) {
+async function request(method, path, body, { peer = ownerPeer, legacy = false } = {}) {
   const res = makeRes()
-  await routes[0].handler(makeReq(method, path, body), res)
+  const req = makeReq(method, path, body)
+  if (legacy) await routes[0].handler(req, res)
+  else await routes[0].handler(req, res, peer)
   let json = null
   try {
     json = res.body ? JSON.parse(res.body) : null
@@ -163,6 +168,19 @@ async function request(method, path, body) {
 const snapshot = await request('GET', '/life-planner/api/snapshot')
 assert(snapshot.status === 200 && snapshot.json.ok, 'GET snapshot answers OK')
 assert(snapshot.json.data.items.length === 2, 'snapshot lists both tasks')
+
+const snapshotPath = '/life-planner/api/snapshot'
+assert((await request('GET', snapshotPath, undefined, { legacy: true })).status === 403, 'a request without an authenticated peer or legacy guard is rejected')
+assert((await request('GET', snapshotPath, undefined, { peer: memberPeer })).status === 403, 'a non-owner peer cannot read planning data')
+try {
+  fakeConnection.requestRejection = () => undefined
+  assert((await request('GET', snapshotPath, undefined, { legacy: true })).status === 200, 'the legacy guard can admit an older host request')
+  assert((await request('GET', snapshotPath, undefined, { peer: memberPeer })).status === 403, 'an authenticated non-owner cannot fall back to the legacy guard')
+  fakeConnection.requestRejection = () => 403
+  assert((await request('GET', snapshotPath, undefined, { legacy: true })).status === 403, 'the legacy host rejection is honored')
+} finally {
+  delete fakeConnection.requestRejection
+}
 
 const toggled = await request('POST', '/life-planner/api/session.toggle', { sessionId: 'session-b', enabled: true })
 assert(toggled.json.data.enabled === true, 'route turns the per-session switch on')
