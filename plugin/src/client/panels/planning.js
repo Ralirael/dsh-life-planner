@@ -253,6 +253,7 @@ function Panel(props) {
     setNotices((current) => current.filter((entry) => entry.id !== note.id));
   };
 
+  const openNewTask = () => setEditor({ kind: 'task', title: '' });
   const quickAdd = (event) => {        event.preventDefault();
     const title = draft.trim();
     if (!title) return;
@@ -310,7 +311,7 @@ function Panel(props) {
         }, t(label))),
       ),
       h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setSettingsOpen('tags') }, t('settings')),
-      h('button', { className: 'lp-btn-ghost lp-workspace-primary', type: 'button', onClick: () => setEditor({ kind: 'task', title: '' }) },
+      h('button', { className: 'lp-btn-ghost lp-workspace-primary', type: 'button', onClick: openNewTask },
         h('span', { className: 'lp-workspace-plus', 'aria-hidden': true }, '+'), t('newItem'),
       ),
     ),
@@ -337,7 +338,7 @@ function Panel(props) {
     tab === 'tree'
       ? h(
           'div',
-          { className: 'lp-body', style: { padding: 0 } },
+          { className: 'lp-body lp-tree-page' },
           h(TreeView, {
             t,
             items,
@@ -385,8 +386,13 @@ function Panel(props) {
     tab === 'board'
       ? h(
           'div',
-          { className: 'lp-body', style: { padding: 0 } },
-          h(BoardView, { t, items, colorOverrides, onEdit: (item) => setEditor(item), onMove: moveBoardItem }),
+          { className: 'lp-body lp-board-page' },
+          h(BoardView, {
+            t, items, colorOverrides,
+            onCreate: openNewTask,
+            onEdit: (item) => setEditor(item),
+            onMove: moveBoardItem,
+          }),
         )
       : null,
     tab === 'plan'
@@ -490,8 +496,8 @@ function Panel(props) {
             confirmCard.lines.map((line, index) => h('div', { key: index }, line)),
           ),
           h(
-            'div',
-            { className: 'lp-pop-actions' },
+            DialogActions,
+            null,
             h('button', { className: 'lp-btn-ghost', onClick: () => setConfirmCard(null) }, t('cancel')),
             h(
               'button',

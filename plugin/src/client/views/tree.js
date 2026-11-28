@@ -81,9 +81,16 @@ function TreeView(props) {
   if (items.length === 0) {
     return h(
       'div',
-      { className: 'lp-empty' },
-      h('div', null, t('emptyTree')),
-      h('button', { className: 'lp-btn', style: { marginTop: 12 }, onClick: () => props.onNew() }, `+ ${t('newItem')}`),
+      { className: 'lp-tree-workspace' },
+      h('section', { className: 'lp-workspace-card lp-tree-empty' },
+        h('span', { className: 'lp-empty-symbol' }, h(SidebarIcon, { variant: 'planning', size: 20 })),
+        h('h2', null, t('emptyTree')),
+        h('p', null, t('emptyTreeHint')),
+        h('button', { className: 'lp-btn lp-workspace-primary', type: 'button', onClick: () => props.onNew() },
+          h('span', { className: 'lp-workspace-plus', 'aria-hidden': true }, '+'),
+          t('newTask'),
+        ),
+      ),
     );
   }
 
@@ -133,7 +140,7 @@ function TreeView(props) {
       .map(([key, list]) =>
         h(
           'div',
-          { key, className: 'lp-group' },
+          { key, className: 'lp-group lp-workspace-card' },
           h(
             'div',
             { className: 'lp-group-head' },
@@ -141,14 +148,15 @@ function TreeView(props) {
               className: 'lp-group-dot',
               style: { background: colorOfName(key, props.colorOverrides) },
             }),
-            h('span', null, `${key} · ${list.length}`),
+            h('h2', { className: 'lp-tree-group-label' }, key),
+            h('span', { className: 'lp-tree-group-count' }, list.length),
           ),
           list.map((item) =>
             h(
               'div',
               {
                 key: item.id,
-                className: 'lp-row',
+                className: 'lp-row lp-tree-flat-row',
                 tabIndex: 0,
                 role: 'button',
                 'data-done': String(item.derived.done),
@@ -322,25 +330,24 @@ function TreeView(props) {
         const open = filtering || !collapsed.has(groupId);
         return h(
           'div',
-          { key: groupId, className: 'lp-group' },
+          { key: groupId, className: 'lp-group lp-workspace-card' },
           h(
-            'div',
-            {
-              className: 'lp-group-head lp-group-toggle',
-              'data-open': String(open),
-              onClick: () => {
-                const next = new Set(collapsed);
-                if (next.has(groupId)) next.delete(groupId);
-                else next.add(groupId);
-                setCollapsed(next);
-              },
+            'header',
+            { className: 'lp-group-head' },
+            h('button', {
+              className: 'lp-tree-group-toggle',
+              type: 'button',
+              'aria-expanded': open,
+              onClick: () => toggle(groupId),
             },
-            h('span', { className: 'lp-caret', 'data-open': String(open) }, '▾'),
-            h('span', {
-              className: 'lp-group-dot',
-              style: { background: colorOfName(label, props.colorOverrides) },
-            }),
-            h('span', null, `${label} · ${list.length}`),
+              h('span', { className: 'lp-caret', 'data-open': String(open), 'aria-hidden': true }, '▾'),
+              h('span', {
+                className: 'lp-group-dot',
+                style: { background: colorOfName(label, props.colorOverrides) },
+              }),
+              h('span', { className: 'lp-tree-group-label' }, label),
+              h('span', { className: 'lp-tree-group-count' }, list.length),
+            ),
             // Creating here pre-fills the category; the editor still lets you change it.
             h(
               'button',
@@ -348,6 +355,7 @@ function TreeView(props) {
                 className: 'lp-iconbtn lp-group-add',
                 type: 'button',
                 title: t('newItem'),
+                'aria-label': `${t('newTask')} · ${label}`,
                 onClick: (event) => {
                   event.stopPropagation();
                   if (typeof props.onNew === 'function') props.onNew({ taskType: type });
@@ -356,7 +364,7 @@ function TreeView(props) {
               '+',
             ),
           ),
-          open ? h('div', { className: 'lp-children' }, list.map((item) => renderNode(item))) : null,
+          open ? h('div', { className: 'lp-tree-group-body' }, list.map((item) => renderNode(item))) : null,
         );
       });
     const createRow = creating && creating.parentId === null ? renderCreateRow(null) : null;
@@ -385,7 +393,7 @@ function TreeView(props) {
       h(
         'div',
         {
-          className: 'lp-row',
+          className: 'lp-row lp-tree-entry',
           tabIndex: 0,
           role: 'button',
           'data-done': String(item.derived.done),
@@ -394,7 +402,9 @@ function TreeView(props) {
           'data-item-id': item.id,
           draggable: true,
           onClick: () => setSelectedId(item.id),
-          onKeyDown: keyActivate(() => setSelectedId(item.id)),
+          onKeyDown: (event) => {
+            if (event.target === event.currentTarget) keyActivate(() => setSelectedId(item.id))(event);
+          },
           'data-dragging': String(draggingId === item.id),
           onDragStart: (event) => {
             event.dataTransfer.effectAllowed = 'move';
@@ -433,97 +443,96 @@ function TreeView(props) {
           },
           onDrop: (event) => dropOn(event, item),
         },
-        kids.length > 0
-          ? h(
-              'button',
-              {
+        h('div', { className: 'lp-tree-row-leading' },
+          kids.length > 0
+            ? h('button', {
                 className: 'lp-caret',
+                type: 'button',
+                'aria-expanded': expanded,
+                'aria-label': item.title,
                 onClick: (event) => {
                   event.stopPropagation();
                   toggle(item.id);
                 },
-                'aria-label': item.title,
-              },
-              expanded ? '▾' : '▸',
-            )
-          : h('span', { className: 'lp-caret', 'data-empty': 'true' }, '▸'),
-        item.kind === 'task'
-          ? h('span', {
-              className: 'lp-prio',
-              style: { background: toneOf(item.priority).color },
-              title: `P${item.priority ?? 5}`,
-            })
-          : null,
-        item.kind === 'task'
-          ? h('input', {
-              type: 'checkbox',
-              checked: Boolean(item.derived.done),
-              disabled: Boolean(item.derived.studyManaged),
-              title: item.derived.studyManaged ? t('studyStatusManaged') : undefined,
-              onClick: (event) => event.stopPropagation(),
-              onChange: (event) => props.onToggle(item, event.target.checked, event),
-              'aria-label': item.title,
-            })
-          : h('span', { style: { width: 13, flex: 'none' } }),
-        h('span', { className: 'lp-ico', 'data-kind': item.kind, style: item.taskType ? { color: colorOfName(item.taskType, props.colorOverrides) } : undefined }, KIND_GLYPH[item.kind] || '○'),
-        item.recurrence && item.recurrence.freq
-          ? h('span', { className: 'lp-meta', title: t('freqLabel') }, '⟳')
-          : null,
-        h(TypeChip, {
-          type: item.taskType,
-          fallback: t('typeNone'),
-          colorOverrides: props.colorOverrides,
-        }),
-        renaming && renaming.id === item.id
-          ? h('input', {
-              className: 'lp-inline',
-              autoFocus: true,
-              value: renaming.value,
-              onChange: (event) => setRenaming({ id: item.id, value: event.target.value }),
-              onKeyDown: (event) => {
-                if (event.key === 'Enter') event.currentTarget.blur();
-                if (event.key === 'Escape') {
-                  cancelled.current = true;
-                  setRenaming(null);
-                }
-              },
-              onBlur: commitRename,
-            })
-          : h(
-              'span',
-              {
-                className: 'lp-title',
-                title: item.title,
-                onClick: (event) => {
-                  event.stopPropagation();
-                  setSelectedId(item.id);
-                },
-                onDoubleClick: (event) => {
-                  event.stopPropagation();
-                  setRenaming({ id: item.id, value: item.title });
-                },
-              },
-              item.title,
+              }, expanded ? '▾' : '▸')
+            : h('span', { className: 'lp-caret', 'data-empty': 'true', 'aria-hidden': true }),
+          item.kind === 'task' ? h('span', {
+            className: 'lp-prio',
+            style: { background: toneOf(item.priority).color },
+            title: `P${item.priority ?? 5}`,
+          }) : h('span', { 'aria-hidden': true }),
+          item.kind === 'task' ? h('input', {
+            type: 'checkbox',
+            checked: Boolean(item.derived.done),
+            disabled: Boolean(item.derived.studyManaged),
+            title: item.derived.studyManaged ? t('studyStatusManaged') : undefined,
+            onClick: (event) => event.stopPropagation(),
+            onChange: (event) => props.onToggle(item, event.target.checked, event),
+            'aria-label': item.title,
+          }) : h('span', { 'aria-hidden': true }),
+          h('span', {
+            className: 'lp-ico',
+            'data-kind': item.kind,
+            style: item.taskType ? { color: colorOfName(item.taskType, props.colorOverrides) } : undefined,
+          }, KIND_GLYPH[item.kind] || '○'),
+        ),
+        h('div', { className: 'lp-tree-row-content' },
+          h('div', { className: 'lp-tree-row-name', onDoubleClick: () => props.onEdit(item) },
+            renaming?.id === item.id
+              ? h('input', {
+                  className: 'lp-inline',
+                  autoFocus: true,
+                  value: renaming.value,
+                  'aria-label': item.title,
+                  onDoubleClick: (event) => event.stopPropagation(),
+                  onChange: (event) => setRenaming({ id: item.id, value: event.target.value }),
+                  onKeyDown: (event) => {
+                    if (event.key === 'Enter') event.currentTarget.blur();
+                    if (event.key === 'Escape') {
+                      cancelled.current = true;
+                      setRenaming(null);
+                    }
+                  },
+                  onBlur: commitRename,
+                })
+              : h('span', {
+                  className: 'lp-title',
+                  title: item.title,
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    setSelectedId(item.id);
+                  },
+                  onDoubleClick: (event) => {
+                    event.stopPropagation();
+                    setRenaming({ id: item.id, value: item.title });
+                  },
+                }, item.title),
+            h('div', { className: 'lp-tree-row-tags' },
+              item.recurrence?.freq ? h('span', { className: 'lp-meta', title: t('freqLabel') }, '⟳') : null,
+              item.taskType ? h(TypeChip, {
+                type: item.taskType,
+                fallback: t('typeNone'),
+                colorOverrides: props.colorOverrides,
+              }) : null,
+              h(TagChips, { item, colorOverrides: props.colorOverrides }),
             ),
-        h(TagChips, { item, colorOverrides: props.colorOverrides }),
-        h('span', {
-          className: 'lp-fill',
-          onDoubleClick: (event) => {
-            event.stopPropagation();
-            props.onEdit(item);
-          },
-        }),
-        progress && progress.total > 0
-          ? h('span', { className: 'lp-progress' }, `${progress.done}/${progress.total}`)
-          : null,
-        blockers.length > 0
-          ? h(
-              'span',
-              { className: 'lp-badge', title: blockers.map((dep) => dep.title).join('、') },
-              t('blockedBy').replace('{n}', String(blockers.length)),
-            )
-          : item.derived.blocked ? h('span', { className: 'lp-badge' }, t('blocked')) : null,
-        item.dueAt ? h('span', { className: 'lp-meta', 'data-overdue': String(isOverdue(item)) }, toLocalInput(item.dueAt).replace('T', ' ')) : null,
+          ),
+          h('div', { className: 'lp-tree-row-details' },
+            progress && progress.total > 0
+              ? h('span', { className: 'lp-progress' }, `${progress.done}/${progress.total}`)
+              : null,
+            blockers.length > 0
+              ? h('span', { className: 'lp-badge', title: blockers.map((dep) => dep.title).join('、') },
+                  t('blockedBy').replace('{n}', String(blockers.length)),
+                )
+              : item.derived.blocked ? h('span', { className: 'lp-badge' }, t('blocked')) : null,
+            item.dueAt ? h('time', {
+              className: 'lp-meta',
+              dateTime: item.dueAt,
+              'data-overdue': String(isOverdue(item)),
+            }, toLocalInput(item.dueAt).replace('T', ' ')) : null,
+          ),
+        ),
         h(
           'span',
           { className: 'lp-actions' },
@@ -531,7 +540,9 @@ function TreeView(props) {
             'button',
             {
               className: 'lp-mini',
+              type: 'button',
               title: t('newChild'),
+              'aria-label': t('newChild'),
               onClick: (event) => {
                 event.stopPropagation();
                 if (collapsed.has(item.id)) {
@@ -549,6 +560,7 @@ function TreeView(props) {
             'button',
             {
               className: 'lp-mini',
+              type: 'button',
               title: t('edit'),
               'aria-haspopup': 'menu',
               'aria-expanded': rowMenu.open && menuFor === item.id,
@@ -586,27 +598,33 @@ function TreeView(props) {
 
   return h(
     'div',
-    null,
+    { className: 'lp-tree-workspace' },
     h(
       'div',
-      { className: 'lp-toolbar' },
-      h('button', { className: 'lp-btn-ghost', onClick: () => props.onNew() }, `+ ${t('newItem')}`),
-      filters.map((value) =>
-        h(
-          'button',
-          {
-            key: value,
-            className: 'lp-chip',
-            'data-active': String(filter === value),
-            onClick: () => setFilter(value),
-          },
-          t(`filter_${value}`),
-        ),
-      ),
-      h('div', { style: { flex: 1 } }),
+      { className: 'lp-tree-toolbar' },
+      h('input', {
+        className: 'lp-search',
+        type: 'search',
+        placeholder: t('search'),
+        'aria-label': t('search'),
+        value: query,
+        onChange: (event) => setQuery(event.target.value),
+      }),
       h(
         'div',
-        { style: { width: 132 } },
+        { className: 'lp-tree-status-filters', role: 'group', 'aria-label': t('treeStatusFilters') },
+        filters.map((value) =>
+          h('button', {
+            key: value,
+            className: 'lp-chip',
+            type: 'button',
+            'data-active': String(filter === value),
+            'aria-pressed': filter === value,
+            onClick: () => setFilter(value),
+          }, t(`filter_${value}`)),
+        ),
+      ),
+      h('div', { className: 'lp-tree-toolbar-actions' },
         h(Dropdown, {
           value: groupBy,
           onChange: setGroupBy,
@@ -616,28 +634,25 @@ function TreeView(props) {
             { value: 'type', label: t('groupType') },
           ],
         }),
+        h('div', { className: 'lp-tree-fold-actions' },
+          h('button', {
+            className: 'lp-btn-ghost',
+            type: 'button',
+            onClick: () => setCollapsed(new Set()),
+          }, t('expandAll')),
+          h('button', {
+            className: 'lp-btn-ghost',
+            type: 'button',
+            onClick: () =>
+              setCollapsed(new Set(items.filter((item) => (map.get(item.id) || []).length > 0).map((item) => item.id))),
+          }, t('collapseAll')),
+        ),
       ),
-      h('button', { className: 'lp-btn-ghost', onClick: () => setCollapsed(new Set()) }, t('expandAll')),
-      h(
-        'button',
-        {
-          className: 'lp-btn-ghost',
-          onClick: () =>
-            setCollapsed(new Set(items.filter((item) => (map.get(item.id) || []).length > 0).map((item) => item.id))),
-        },
-        t('collapseAll'),
-      ),
-      h('input', {
-        className: 'lp-search',
-        placeholder: t('search'),
-        value: query,
-        onChange: (event) => setQuery(event.target.value),
-      }),
     ),
     h(
       'div',
       {
-        style: { padding: '8px 12px 28px', minHeight: 200 },
+        className: 'lp-tree-content',
         onDragOver: (event) => {
           if (!dragRef.current) return;
           event.preventDefault();
@@ -654,7 +669,7 @@ function TreeView(props) {
         },
       },
       groupBy === 'hierarchy' ? renderHierarchy() : renderGroups(),
-      visible.size === 0 ? h('div', { className: 'lp-empty' }, t('noMatch')) : null,
+      visible.size === 0 ? h('div', { className: 'lp-workspace-card lp-workspace-empty lp-tree-no-match' }, t('noMatch')) : null,
     ),
   );
 }

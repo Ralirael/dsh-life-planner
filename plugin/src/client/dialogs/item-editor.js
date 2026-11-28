@@ -7,9 +7,7 @@ function ItemEditor(props) {
   const studyTask = Boolean(item.derived?.studyTask);
 
   const [title, setTitle] = React.useState(item.title || '');
-  const [kind, setKind] = React.useState(item.kind || 'task');
-  // One node type: the kind selector is gone, the value only feeds legacy calls.
-  void setKind;
+  const kind = item.kind || 'task';
   const [taskType, setTaskType] = React.useState(item.taskType || '');
   const [parentId, setParentId] = React.useState(item.parentId || '');
   const [due, setDue] = React.useState(toLocalInput(item.dueAt));
@@ -90,158 +88,115 @@ function ItemEditor(props) {
       .finally(() => setBusy(false));
   };
 
+  const input = (key, attributes, tag) => dialogField(t(key), attributes, tag);
+  const select = (key, attributes) => dialogSelect(t(key), attributes);
+
   return h(
     Modal,
-    { title: isNew ? t('newItem') : t('edit'), onClose: props.onClose },
-    error ? h('div', { className: 'lp-err' }, error) : null,
-    h('div', { className: 'lp-form-section' }, t('sectionBasic')),
-      h(
-        'div',
-        { className: 'lp-field' },
-        h('label', null, t('titleLabel')),
-        h('input', { className: 'lp-input', value: title, onChange: (event) => setTitle(event.target.value) }),
-      ),
-      h('div', { className: 'lp-form-section' }, t('sectionClass')),
-      h(
-        'div',
-        { className: 'lp-field' },
-        h('label', null, t('parentLabel')),
-        h(Dropdown, {
-          value: parentId,
-          onChange: setParentId,
-          placeholder: t('rootParent'),
-          options: [
-            { value: '', label: t('rootParent') },
-            ...parentOptions.map((entry) => ({ value: entry.id, label: entry.title })),
-          ],
-        }),
-      ),
-      h('div', { className: 'lp-form-section' }, t('sectionTime')),
-      h(
-        'div',
-        { className: 'lp-row2' },
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('startLabel')),
+    { className: 'lp-item-editor', title: t(isNew ? 'newTask' : 'editTaskDialog'), onClose: props.onClose },
+    error ? h('div', { className: 'lp-err', role: 'alert' }, error) : null,
+    input('titleLabel', {
+      value: title,
+      'aria-required': true,
+      onChange: (event) => setTitle(event.target.value),
+    }),
+    h('div', { className: 'lp-dialog-grid' },
+      input('dueLabel', {
+        type: 'datetime-local', value: due, disabled: studyTask,
+        onChange: (event) => setDue(event.target.value),
+      }),
+      kind === 'task' ? select('priorityLabel', {
+        value: priority,
+        onChange: setPriority,
+        options: Array.from({ length: 10 }, (_, value) => ({ value, label: String(value) })),
+      }) : null,
+    ),
+    h('div', { className: 'lp-dialog-grid' },
+      select('typeLabel', {
+        value: taskType,
+        onChange: setTaskType,
+        options: [
+          { value: '', label: t('typeNone') },
+          ...Array.from(new Set([...(props.taskTypes || []), item.taskType].filter(Boolean)))
+            .map((name) => ({ value: name, label: name })),
+        ],
+      }),
+      parentOptions.length || parentId ? select('parentLabel', {
+        value: parentId,
+        onChange: setParentId,
+        placeholder: t('rootParent'),
+        options: [
+          { value: '', label: t('rootParent') },
+          ...parentOptions.map((entry) => ({ value: entry.id, label: entry.title })),
+        ],
+      }) : null,
+    ),
+    !isNew && kind === 'task' && !studyManaged
+      ? h('label', { className: 'lp-dialog-check' },
           h('input', {
-            className: 'lp-input',
-            type: 'datetime-local',
-            value: start,
-            disabled: studyTask,
+            type: 'checkbox',
+            checked: done,
+            onChange: (event) => {
+              const next = event.target.checked;
+              setDone(next);
+              props.onToggle(item, next, event);
+            },
+          }),
+          t('doneLabel'),
+        )
+      : studyManaged ? h('p', { className: 'lp-meta' }, t('studyStatusManaged')) : null,
+    h('div', { className: 'lp-dialog-options' },
+      h(DialogDisclosure, {
+        title: t('sectionTime'),
+        hint: start || location || freq ? t('dialogHasDetails') : undefined,
+      },
+        h('div', { className: 'lp-dialog-grid' },
+          input('startLabel', {
+            type: 'datetime-local', value: start, disabled: studyTask,
             onChange: (event) => setStart(event.target.value),
           }),
-        ),
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('dueLabel')),
-          h('input', {
-            className: 'lp-input',
-            type: 'datetime-local',
-            value: due,
-            disabled: studyTask,
-            onChange: (event) => setDue(event.target.value),
-          }),
-        ),
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('locationLabel')),
-          h('input', {
-            className: 'lp-input',
-            value: location,
-            placeholder: t('locationHint'),
+          input('locationLabel', {
+            value: location, placeholder: t('locationHint'),
             onChange: (event) => setLocation(event.target.value),
           }),
         ),
-        kind === 'task'
-          ? h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('priorityLabel')),
-              h(Dropdown, {
-                value: priority,
-                onChange: setPriority,
-                options: Array.from({ length: 10 }, (_, value) => ({ value, label: String(value) })),
-              }),
-            )
-          : null,
+        kind === 'task' && !studyTask ? select('freqLabel', {
+          value: freq,
+          onChange: setFreq,
+          options: [
+            { value: '', label: t('freqNone') },
+            { value: 'daily', label: t('freqDaily') },
+            { value: 'weekly', label: t('freqWeekly') },
+            { value: 'monthly', label: t('freqMonthly') },
+          ],
+        }) : null,
       ),
-      kind === 'task' && !studyTask
-        ? h(
-            'div',
-            { className: 'lp-field' },
-            h('label', null, t('freqLabel')),
-            h(Dropdown, {
-              value: freq,
-              onChange: setFreq,
-              options: [
-                { value: '', label: t('freqNone') },
-                { value: 'daily', label: t('freqDaily') },
-                { value: 'weekly', label: t('freqWeekly') },
-                { value: 'monthly', label: t('freqMonthly') },
-              ],
-            }),
-          )
-        : null,
-      h('div', { className: 'lp-form-section' }, t('sectionExtra')),
-      h(
-        'div',
-        { className: 'lp-field' },
-        h('label', null, t('noteLabel')),
-        h('textarea', { className: 'lp-input', rows: 3, value: note, onChange: (event) => setNote(event.target.value) }),
-      ),
-      h(
-        'div',
-        { className: 'lp-row2' },
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('typeLabel')),
-          h(Dropdown, {
-            value: taskType,
-            onChange: setTaskType,
-            placeholder: t('typeNone'),
-            options: [
-              { value: '', label: t('typeNone') },
-              ...Array.from(
-                new Set([...(props.taskTypes || []), item.taskType].filter(Boolean)),
-              ).map((name) => ({ value: name, label: name })),
-            ],
-          }),
-        ),
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('tagsLabel')),
-          h(
-            'div',
-            { className: 'lp-taglist' },
-            tagChoices.length === 0
-              ? h('span', { className: 'lp-meta' }, t('tagsEmpty'))
-              : tagChoices.map((tag) =>
-                  h(
-                    'button',
-                    {
-                      key: tag,
-                      type: 'button',
-                      className: 'lp-chip',
-                      'data-active': String(tags.includes(tag)),
-                      style: { color: colorOfName(tag, props.colorOverrides) },
-                      onClick: () => toggleTag(tag),
-                    },
-                    tag,
-                  ),
-                ),
-          ),
-          h(
-            'div',
-            { style: { display: 'flex', gap: 6, marginTop: 4 } },
+      h(DialogDisclosure, {
+        title: t('taskNotesAndTags'),
+        hint: note.trim() || tags.length ? t('dialogHasDetails') : undefined,
+      },
+        input('noteLabel', {
+          rows: 3, value: note,
+          onChange: (event) => setNote(event.target.value),
+        }, 'textarea'),
+        h('div', { className: 'lp-field' },
+          h('span', null, t('tagsLabel')),
+          tagChoices.length ? h('div', { className: 'lp-taglist' }, tagChoices.map((tag) =>
+            h('button', {
+              key: tag,
+              type: 'button',
+              className: 'lp-chip',
+              'data-active': String(tags.includes(tag)),
+              'aria-pressed': tags.includes(tag),
+              style: { color: colorOfName(tag, props.colorOverrides) },
+              onClick: () => toggleTag(tag),
+            }, tag))) : null,
+          h('div', { className: 'lp-dialog-inline' },
             h('input', {
               className: 'lp-input',
               value: tagDraft,
               placeholder: t('tagsNewHint'),
+              'aria-label': t('tagsNewHint'),
               onChange: (event) => setTagDraft(event.target.value),
               onKeyDown: (event) => {
                 if (event.key === 'Enter') {
@@ -254,68 +209,33 @@ function ItemEditor(props) {
           ),
         ),
       ),
-      !isNew && kind === 'task' && !studyManaged
-        ? h(
-            'label',
-            { className: 'lp-field', style: { flexDirection: 'row', alignItems: 'center', gap: 8 } },
-            h('input', {
-              type: 'checkbox',
-              checked: done,
-              onChange: (event) => {
-                const next = event.target.checked;
-                setDone(next);
-                props.onToggle(item, next, event);
-              },
-            }),
-            t('doneLabel'),
-          )
-        : studyManaged ? h('p', { className: 'lp-meta' }, t('studyStatusManaged')) : null,
-      kind === 'task'
-        ? h(
-            'div',
-            { className: 'lp-field' },
-            h('label', null, `${t('depsLabel')} · ${t('depsHint')}`),                dependencyOptions.length === 0
-              ? h('div', { className: 'lp-meta' }, t('noDeps'))
-              : h(
-                  'div',
-                  { className: 'lp-deps' },
-                  dependencyOptions.map((entry) =>
-                    h(
-                      'label',
-                      { key: entry.id },
-                      h('input', {
-                        type: 'checkbox',
-                        checked: deps.has(entry.id),
-                        onChange: () => toggleDep(entry.id),
-                      }),
-                      entry.title,
-                    ),
-                  ),
-                ),
-          )
-        : null,
-      h(
-        'div',
-        { className: 'lp-modal-actions' },
-        !isNew
-          ? h(
-              'button',
-              {
-                className: 'lp-btn-ghost',
-                disabled: busy,
-                onClick: () => {
-                  setBusy(true);
-                  api('item.archive', { id: item.id })
-                    .then(() => props.onSaved())
-                    .catch((err) => setError(err.message))
-                    .finally(() => setBusy(false));
-                },
-              },
-              t('archive'),
-            )
-          : null,
-        h('button', { className: 'lp-btn-ghost', onClick: props.onClose, disabled: busy }, t('cancel')),
-        h('button', { className: 'lp-btn', onClick: save, disabled: busy || !title.trim() }, t('save')),
-      ),
+      kind === 'task' && (dependencyOptions.length || deps.size) ? h(DialogDisclosure, {
+        title: t('depsLabel'),
+        hint: deps.size ? t('itemsCount').replace('{n}', String(deps.size)) : undefined,
+      },
+        h('p', { className: 'lp-meta' }, t('depsHint')),
+        dependencyOptions.length ? h('div', { className: 'lp-deps' }, dependencyOptions.map((entry) =>
+          h('label', { key: entry.id },
+            h('input', { type: 'checkbox', checked: deps.has(entry.id), onChange: () => toggleDep(entry.id) }),
+            entry.title,
+          ))) : h('p', { className: 'lp-meta' }, t('noDeps')),
+      ) : null,
+    ),
+    h(DialogActions, null,
+      !isNew ? h('button', {
+        className: 'lp-btn-ghost lp-dialog-side-action',
+        type: 'button',
+        disabled: busy,
+        onClick: () => {
+          setBusy(true);
+          api('item.archive', { id: item.id })
+            .then(() => props.onSaved())
+            .catch((err) => setError(err.message))
+            .finally(() => setBusy(false));
+        },
+      }, t('archive')) : null,
+      h('button', { className: 'lp-btn-ghost', type: 'button', onClick: props.onClose, disabled: busy }, t('cancel')),
+      h('button', { className: 'lp-btn', type: 'button', onClick: save, disabled: busy || !title.trim() }, t('save')),
+    ),
   );
 }

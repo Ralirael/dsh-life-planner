@@ -54,11 +54,36 @@ function keyActivate(handler) {
   };
 }
 
-/**
- * One dialog shell for every modal: a fixed backdrop, Esc to close, the first
- * focusable child focused on open, Tab cycling inside, and a click on the
- * backdrop closing it. Callers keep their own title and action buttons.
- */
+function DialogActions({ children }) {
+  return h('footer', { className: 'lp-modal-actions' }, ...(Array.isArray(children) ? children : [children]));
+}
+
+function dialogField(label, attributes, tag = 'input') {
+  return h('label', { className: 'lp-field' },
+    h('span', null, label),
+    h(tag, { className: 'lp-input', ...attributes }),
+  );
+}
+
+function dialogSelect(label, attributes) {
+  return h('div', { className: 'lp-field' },
+    h('span', null, label),
+    h(Dropdown, { label, ...attributes }),
+  );
+}
+
+function DialogDisclosure({ title, hint, children }) {
+  return h('details', { className: 'lp-dialog-disclosure' },
+    h('summary', null,
+      h('span', { className: 'lp-chevron', 'data-direction': 'right', 'aria-hidden': true }),
+      h('span', null, title),
+      hint ? h('span', { className: 'lp-dialog-disclosure-hint' }, hint) : null,
+    ),
+    h('div', { className: 'lp-dialog-disclosure-body' }, ...(Array.isArray(children) ? children : [children])),
+  );
+}
+
+/** Keep a trailing DialogActions outside the scrollable body. */
 function Modal(props) {
   const panelRef = React.useRef(null);
   const closeRef = React.useRef(props.onClose);
@@ -72,7 +97,7 @@ function Modal(props) {
     const focusables = () =>
       Array.from(
         node.querySelectorAll(
-          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]',
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, a[href], [tabindex]',
         ),
       ).filter((element) => element.getClientRects().length > 0 && element.tabIndex >= 0);
     const first = focusables()[0];
@@ -117,6 +142,8 @@ function Modal(props) {
     : props.children === undefined
       ? []
       : [props.children];
+  const last = children[children.length - 1];
+  const footer = last?.type === DialogActions ? last : null;
   return h(
     'div',
     {
@@ -137,9 +164,12 @@ function Modal(props) {
         style: props.wide ? { width: 'min(760px,100%)' } : undefined,
         onClick: (event) => event.stopPropagation(),
       },
-      // Spread the children back into argument position: an array child would
-      // make React ask for keys on dialog content that never needs any.
-      ...[props.title ? h('div', { className: 'lp-modal-title' }, props.title) : null, ...children],
+      props.title ? h('header', { className: 'lp-modal-heading' },
+        h('h2', { className: 'lp-modal-title' }, props.title),
+        props.titleMeta ? h('span', { className: 'lp-dialog-version' }, props.titleMeta) : null,
+      ) : null,
+      h('div', { className: 'lp-modal-body' }, ...(footer ? children.slice(0, -1) : children)),
+      footer,
     ),
   );
 }
@@ -364,6 +394,7 @@ function Dropdown(props) {
         style: { background: controlSurface(0.45), backdropFilter: 'blur(6px)' },
         'data-lp-surface': 'control',
         'aria-haspopup': 'listbox',
+        'aria-label': props.label ? [props.label, current?.label].filter(Boolean).join(' · ') : undefined,
         'aria-expanded': String(menu.open),
         'aria-controls': menu.open ? menu.menuId : undefined,
         'aria-activedescendant':

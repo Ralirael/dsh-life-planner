@@ -1,3 +1,26 @@
+const BOARD_ICON_PATHS = {
+  todo: 'M5 4h14v16H5z M8 9h8 M8 13h6',
+  doing: 'M12 7v5l3 2 M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Z',
+  blocked: 'M4 12a8 8 0 1 1 16 0 8 8 0 0 1-16 0Z M8.5 15.5l7-7',
+  done: 'M4 12a8 8 0 1 1 16 0 8 8 0 0 1-16 0Z M8.5 12l2.3 2.3 4.6-4.6',
+  time: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Z M12 7v5l3.5 2',
+};
+
+function BoardIcon({ name }) {
+  return h('svg', {
+    viewBox: '0 0 24 24',
+    width: 14,
+    height: 14,
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true,
+    focusable: 'false',
+  }, h('path', { d: BOARD_ICON_PATHS[name] }));
+}
+
 function BoardView(props) {
   const t = props.t;
   const byId = new Map(props.items.map((item) => [item.id, item]));
@@ -5,6 +28,7 @@ function BoardView(props) {
   const [filterValue, setFilterValue] = React.useState('');
   const [beforeDate, setBeforeDate] = React.useState('');
   const dragging = React.useRef(null);
+  const [draggedId, setDraggedId] = React.useState('');
   const [dropTarget, setDropTarget] = React.useState('');
   const canMove = (item, from, to) => {
     if (from === to) return true;
@@ -13,6 +37,7 @@ function BoardView(props) {
   };
   const endDrag = () => {
     dragging.current = null;
+    setDraggedId('');
     setDropTarget('');
   };
   const drop = (event, column, anchorId, after) => {
@@ -25,12 +50,12 @@ function BoardView(props) {
       props.onMove({ id: source.item.id, column, anchorId, after });
     }
   };
-  const dragOver = (event, column, key) => {
+  const dragOver = (event, column, key, anchorId) => {
     const source = dragging.current;
     if (!source) return;
     event.preventDefault();
     event.stopPropagation();
-    const allowed = canMove(source.item, source.column, column);
+    const allowed = source.item.id !== anchorId && canMove(source.item, source.column, column);
     event.dataTransfer.dropEffect = allowed ? 'move' : 'none';
     setDropTarget(allowed ? key : '');
   };
@@ -124,127 +149,152 @@ function BoardView(props) {
     const target = columns[position + (event.key === 'ArrowRight' ? 1 : -1)];
     if (target && canMove(item, column, target.key)) props.onMove({ id: item.id, column: target.key });
   };
+  const dateFilter = filterDim === 'due' && filterValue === 'before';
+  const filterActive = Boolean(filterValue && (!dateFilter || beforeDate));
+
+  const renderCard = (item, column, index) => {
+    const priority = item.priority;
+    const deadline = item.dueAt ? toLocalInput(item.dueAt).replace('T', ' ') : '';
+    const overdue = isOverdue(item);
+    return h(
+      'div',
+      {
+        key: item.id,
+        className: 'lp-card',
+        tabIndex: 0,
+        role: 'button',
+        draggable: true,
+        'data-item-id': item.id,
+        'aria-keyshortcuts': 'Alt+ArrowUp Alt+ArrowDown Alt+ArrowLeft Alt+ArrowRight',
+        'data-drop': dropTarget === item.id + ':after' ? 'after'
+          : dropTarget === item.id + ':before' ? 'before' : undefined,
+        'data-done': String(item.derived.done),
+        'data-dragging': draggedId === item.id ? 'true' : undefined,
+        onClick: () => props.onEdit(item),
+        onKeyDown: (event) => onCardKey(item, column, index, event),
+        onDragStart: (event) => {
+          dragging.current = { item, column };
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('application/x-life-planner-board-task', item.id);
+          setDraggedId(item.id);
+        },
+        onDragEnd: endDrag,
+        onDragOver: (event) => dragOver(event, column, item.id + (afterMiddle(event) ? ':after' : ':before'), item.id),
+        onDrop: (event) => drop(event, column, item.id, afterMiddle(event)),
+      },
+      h('div', { className: 'lp-board-card-head' },
+        h('div', { className: 'lp-card-title', title: item.title }, item.title),
+        priority != null ? h('span', {
+          className: 'lp-card-prio',
+          title: `${t('priorityLabel')} ${priority}`,
+          style: { '--lp-board-priority': toneOf(priority).color },
+        }, `P${priority}`) : null,
+      ),
+      item.taskType || item.tags?.length || item.location ? h('div', { className: 'lp-board-labels' },
+        item.taskType
+          ? h(TypeChip, { type: item.taskType, fallback: t('typeNone'), colorOverrides: props.colorOverrides })
+          : null,
+        h(TagChips, { item, colorOverrides: props.colorOverrides }),
+      ) : null,
+      deadline ? h('time', {
+        className: 'lp-meta lp-board-deadline',
+        dateTime: item.dueAt,
+        'data-overdue': String(overdue),
+        title: `${t(overdue ? 'dueOverdue' : 'dueLabel')} ${deadline}`,
+      }, h(BoardIcon, { name: 'time' }), deadline) : null,
+    );
+  };
+
   return h(
     'div',
-    { className: 'lp-board' },
+    { className: 'lp-board', 'data-dragging': draggedId ? 'true' : undefined },
     h(
       'div',
-      { className: 'lp-filters', style: { gridColumn: '1 / -1' } },
-      h(Dropdown, {
-        value: filterDim,
-        onChange: (next) => {
-          setFilterDim(next);
-          setFilterValue('');
-        },
-        options: [
-          { value: '', label: t('filterNone') },
-          { value: 'tag', label: t('filterTag') },
-          { value: 'type', label: t('filterType') },
-          { value: 'priority', label: t('filterPriority') },
-          { value: 'due', label: t('filterDue') },
-        ],
-      }),
-      filterDim
-        ? h(Dropdown, {
-            value: filterValue,
-            onChange: setFilterValue,
-            placeholder: t('filterValue'),
-            options: valueOptions,
-          })
-        : null,
-      filterDim === 'due' && filterValue === 'before'
-        ? h('input', {
-            className: 'lp-input',
-            type: 'date',
-            style: { width: 160, flex: 'none' },
-            value: beforeDate,
-            onChange: (event) => setBeforeDate(event.target.value),
-          })
-        : null,
-      filterValue
-        ? h(
-            'button',
-            {
-              className: 'lp-btn-ghost',
-              onClick: () => {
-                setFilterDim('');
-                setFilterValue('');
-              },
-            },
-            t('filterClear'),
-          )
-        : null,
-      h('span', { className: 'lp-meta' }, t('boardDragHint')),
-    ),
-    columns.map((column) =>
-      h(
-        'div',
-        {
-          key: column.key,
-          className: 'lp-col',
-          'data-column': column.key,
-          'data-drop': dropTarget === column.key ? 'inside' : undefined,
-          onDragOver: (event) => dragOver(event, column.key, column.key),
-          onDragLeave: (event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) setDropTarget('');
+      { className: 'lp-board-toolbar' },
+      h('div', { className: 'lp-board-filters' },
+        h(Dropdown, {
+          value: filterDim,
+          onChange: (next) => {
+            setFilterDim(next);
+            setFilterValue('');
           },
-          onDrop: (event) => drop(event, column.key),
-        },
-        h('div', { className: 'lp-col-head' }, `${column.label} · ${buckets[column.key].length}`),
-        buckets[column.key].map((item, index) =>
-          h(
-            'div',
-            {
-              key: item.id,
-              className: 'lp-card',
-              tabIndex: 0,
-              role: 'button',
-              draggable: true,
-              'data-item-id': item.id,
-              'aria-keyshortcuts': 'Alt+ArrowUp Alt+ArrowDown Alt+ArrowLeft Alt+ArrowRight',
-              'data-drop': dropTarget === item.id + ':after' ? 'after' : dropTarget === item.id + ':before' ? 'before' : undefined,
-              'data-done': String(item.derived.done),
-              style: { borderLeft: `3px solid ${toneOf(item.priority).color}` },
-              onClick: () => props.onEdit(item),
-              onKeyDown: (event) => onCardKey(item, column.key, index, event),
-              onDragStart: (event) => {
-                dragging.current = { item, column: column.key };
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('application/x-life-planner-board-task', item.id);
-              },
-              onDragEnd: endDrag,
-              onDragOver: (event) => dragOver(event, column.key, item.id + (afterMiddle(event) ? ':after' : ':before')),
-              onDrop: (event) => drop(event, column.key, item.id, afterMiddle(event)),
-            },
-            h(TypeChip, {
-              type: item.taskType,
-              fallback: t('typeNone'),
-              colorOverrides: props.colorOverrides,
-            }),
-            h('div', { className: 'lp-card-title', title: item.title }, item.title),
-            h(TagChips, { item, colorOverrides: props.colorOverrides }),
-            h(
-              'div',
-              { className: 'lp-card-meta' },
-              item.priority !== undefined && item.priority !== null
-                ? h(
-                    'span',
-                    { className: 'lp-card-prio', style: { color: toneOf(item.priority).color } },
-                    `P${item.priority}`,
-                  )
-                : h('span', { className: 'lp-card-prio' }, '—'),
-              item.dueAt
-                ? h(
-                    'span',
-                    { className: 'lp-meta', 'data-overdue': String(isOverdue(item)) },
-                    toLocalInput(item.dueAt).replace('T', ' '),
-                  )
-                : null,
-            ),
-          ),
-        ),
-        h('div', { className: 'lp-col-space', 'aria-hidden': true }),
+          options: [
+            { value: '', label: t('filterNone') },
+            { value: 'tag', label: t('filterTag') },
+            { value: 'type', label: t('filterType') },
+            { value: 'priority', label: t('filterPriority') },
+            { value: 'due', label: t('filterDue') },
+          ],
+        }),
+        filterDim ? h(Dropdown, {
+          value: filterValue,
+          onChange: setFilterValue,
+          placeholder: t('filterValue'),
+          options: valueOptions,
+        }) : null,
+        dateFilter ? h('input', {
+          className: 'lp-input',
+          type: 'date',
+          'aria-label': t('dueBefore'),
+          value: beforeDate,
+          onChange: (event) => setBeforeDate(event.target.value),
+        }) : null,
+        filterValue ? h('button', {
+          className: 'lp-btn-ghost',
+          type: 'button',
+          onClick: () => {
+            setFilterDim('');
+            setFilterValue('');
+          },
+        }, t('filterClear')) : null,
       ),
+      h('div', { className: 'lp-board-hint', title: t('boardDragHint') },
+        h('span', null, t('boardDragAction')),
+        h('span', { className: 'lp-board-keys' },
+          h('kbd', null, 'Alt'), h('span', { 'aria-hidden': true }, '+'), h('kbd', null, t('boardArrowKeys')),
+        ),
+      ),
+    ),
+    h('div', { className: 'lp-board-scroll', role: 'region', tabIndex: 0, 'aria-label': t('tabBoard') },
+      h('div', { className: 'lp-board-lanes' }, columns.map((column) => {
+        const cards = buckets[column.key];
+        const isDropColumn = dropTarget === column.key;
+        let empty = t(filterActive ? 'boardNoMatches' : 'boardEmpty');
+        if (isDropColumn) empty = t('boardDropHere');
+        else if (!filterActive && !draggedId && column.key === 'todo' && props.onCreate) {
+          empty = h('button', {
+            className: 'lp-board-create',
+            type: 'button',
+            onClick: props.onCreate,
+          }, h('span', { 'aria-hidden': true }, '+'), t('newTask'));
+        }
+        return h(
+          'section',
+          {
+            key: column.key,
+            className: 'lp-col',
+            'aria-label': column.label,
+            'data-column': column.key,
+            'data-drop': isDropColumn ? 'inside' : undefined,
+            onDragOver: (event) => dragOver(event, column.key, column.key),
+            onDragLeave: (event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setDropTarget('');
+            },
+            onDrop: (event) => drop(event, column.key),
+          },
+          h('header', { className: 'lp-col-head' },
+            h('span', { className: 'lp-board-status' }, h(BoardIcon, { name: column.key })),
+            h('h2', null, column.label),
+            h('span', { className: 'lp-board-count' }, cards.length),
+          ),
+          h('div', { className: 'lp-board-cards' },
+            cards.length
+              ? cards.map((item, index) => renderCard(item, column.key, index))
+              : h('div', { className: 'lp-board-empty' }, empty),
+            h('div', { className: 'lp-col-space', 'aria-hidden': true }),
+          ),
+        );
+      })),
     ),
   );
 }

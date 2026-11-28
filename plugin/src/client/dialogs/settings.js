@@ -120,7 +120,6 @@ function SettingsModal(props) {
     h(
       'div',
       { className: 'lp-field' },
-      h('label', null, `${t('tagColor')} · ${name}`),
       h(
         'div',
         { className: 'lp-swatch-panel' },
@@ -130,6 +129,8 @@ function SettingsModal(props) {
             type: 'button',
             className: 'lp-swatch',
             'data-active': String((colorOverrides[name] || colorOfName(name, colorOverrides)) === color),
+            'aria-pressed': (colorOverrides[name] || colorOfName(name, colorOverrides)) === color,
+            'aria-label': color,
             style: { background: color },
             onClick: () => setColor(name, color),
           }),
@@ -414,9 +415,9 @@ function SettingsModal(props) {
 
   const numberInput = (key, label, value, onChange) =>
     h(
-      'div',
+      'label',
       { className: 'lp-field' },
-      h('label', null, label),
+      h('span', null, label),
       h('input', {
         className: 'lp-input',
         type: 'number',
@@ -430,11 +431,12 @@ function SettingsModal(props) {
     const mask = layer.mask || {};
     const inputRef = area === 'study' ? bgStudyRef : bgPlanningRef;
     const setLayer = (patch) => setBackgroundLayer(area, patch);
+    const title = t(area === 'study' ? 'fBgStudy' : 'fBgPlanning');
     return h(
-      'div',
-      { className: 'lp-field' },
-      h('label', null, area === 'study' ? t('fBgStudy') : t('fBgPlanning')),
+      DialogDisclosure,
+      { title },
       h(Dropdown, {
+        label: title,
         value: layer.mode || 'none',
         onChange: (value) => setLayer({ mode: value }),
         options: [
@@ -565,7 +567,8 @@ function SettingsModal(props) {
 
 
   const group = (title, ...children) => h('section', { className: 'lp-settings-group' },
-    h('h3', { className: 'lp-form-section' }, t(title)), ...children);
+    h('h3', { className: 'lp-settings-heading' }, t(title)), ...children);
+  const advanced = (title, ...children) => h(DialogDisclosure, { title: t(title) }, ...children);
   const switchRow = (label, hint, value, onChange) => h('div', { className: 'lp-settings-switch' },
     h('div', null, h('strong', null, t(label)), hint ? h('div', { className: 'lp-meta' }, t(hint)) : null),
     h(Switch, { label: t(label), value, onChange }));
@@ -580,15 +583,15 @@ function SettingsModal(props) {
         }),
         h('button', { className: 'lp-btn', type: 'submit', disabled: !draft.trim() }, t(addLabel))),
       active ? h('div', { className: 'lp-settings-classification' },
-        h(Dropdown, { value: active, onChange: onSelect, options: list.map((name) => ({ value: name, label: name })) }),
+        h(Dropdown, { label: t(title), value: active, onChange: onSelect, options: list.map((name) => ({ value: name, label: name })) }),
         h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => onRemove(active) }, t('delete')),
-        colorSwatches(active))
+        h(DialogDisclosure, { title: t('tagColor') }, colorSwatches(active)))
       : h('div', { className: 'lp-meta' }, t(empty)),
       hint ? h('div', { className: 'lp-meta' }, t(hint)) : null,
     );
   };
 
-  const tagsPage = () => h('div', { className: 'lp-settings-sections' },
+  const tagsPage = () => h('div', { className: 'lp-settings-sections lp-settings-collections' },
     classification({
       title: 'sectionTags', hint: 'taskTypeAutoHint', list: parseList(typesText), draft: tagDraft, onDraft: setTagDraft,
       onAdd: addTag, placeholder: 'tagNamePlaceholder', addLabel: 'addTag', selected: selectedTag, onSelect: setSelectedTag,
@@ -634,7 +637,7 @@ function SettingsModal(props) {
           h('button', { type: 'button', className: 'lp-btn-ghost', onClick: refreshNow, disabled: refreshingRegion || regionDraftChanged }, t('calendarRefreshNow')))),
       group('studyTipTitle',
         switchRow('tipDeepSeek', 'settingsStudyAdviceHint', form.dailyAdvice !== false, (next) => set('dailyAdvice', next))),
-      group('sectionData',
+      advanced('sectionData',
         h(
           'div',
           { className: 'lp-toolbar' },
@@ -668,7 +671,7 @@ function SettingsModal(props) {
           h('span', { className: 'lp-settings-status' }, t('notifyState').replace('{s}', t('notifyPermission_' + permission))),
         ),
       ),
-      group('settingsNotifyWindows',
+      advanced('settingsNotifyWindows',
         h('div', { className: 'lp-setting-grid' },
           textField('weekdayWindows', t('fWeekdayWindows')),
           textField('weekendWindows', t('fWeekendWindows')),
@@ -676,12 +679,12 @@ function SettingsModal(props) {
           numberField('nonUrgentQuotaPerWindow', t('fQuota')),
           numberField('maxRemindersPerWindow', t('fMaxPerWindow')),
           numberField('maxDeferHours', t('fMaxDefer')))),
-      group('settingsNotifyLead',
+      advanced('settingsNotifyLead',
         h('div', { className: 'lp-setting-grid' },
           numberField('leadTaskDays', t('fLeadTaskDays')),
           numberField('leadProjectDays', t('fLeadProjectDays')),
           numberField('longTermReminderHours', t('fLongTermHours')))),
-      group('sectionTask', h('div', { className: 'lp-setting-grid' },
+      advanced('sectionTask', h('div', { className: 'lp-setting-grid' },
         numberField('archiveAfterDays', t('fArchiveDays')),
         numberField('deleteAfterDays', t('fDeleteDays')))),
     );
@@ -696,20 +699,24 @@ function SettingsModal(props) {
         { className: 'lp-field' },
         h('label', null, t('fSkinPreset')),
         h(Dropdown, {
+          label: t('fSkinPreset'),
           value: skinChoice,
           onChange: chooseSkin,
           options: listSkinOptions(),
         }),
+      ),
+      advanced('skinManage',
         h(
           'div',
-          { className: 'lp-toolbar', style: { marginTop: 6 } },
+          { className: 'lp-toolbar' },
           h('input', {
             className: 'lp-input',
             value: skinName,
+            'aria-label': t('skinNamePlaceholder'),
             placeholder: t('skinNamePlaceholder'),
             onChange: (event) => setSkinName(event.target.value),
           }),
-          h('button', { className: 'lp-btn', type: 'button', onClick: saveCurrentSkin }, t('skinSaveAs')),
+          h('button', { className: 'lp-btn', type: 'button', disabled: !skinName.trim(), onClick: saveCurrentSkin }, t('skinSaveAs')),
           skinChoice.indexOf('user:') === 0
             ? h('button', { className: 'lp-btn-ghost', type: 'button', onClick: removeCurrentSkin }, t('skinDelete'))
             : null,
@@ -760,7 +767,7 @@ function SettingsModal(props) {
         ),
       )),
 
-      group('sectionFont',
+      advanced('sectionFont',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -774,14 +781,14 @@ function SettingsModal(props) {
         numberInput('base', t('fFontBase'), appearance.font.base, setFont),
       ),
       h('div', { className: 'lp-meta' }, t('fFontHint'))),
-      group('sectionSize',
+      advanced('sectionSize',
       h(
         'div',
         { className: 'lp-setting-grid' },
         numberInput('calendarHeight', t('fCalHeight'), appearance.size.calendarHeight, setSize),
       ),
       h('div', { className: 'lp-meta' }, t('fCalHeightHint'))),
-      group('sectionMistake',
+      advanced('sectionMistake',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -796,7 +803,7 @@ function SettingsModal(props) {
         numberInput('mistakeReason', t('fMistakeReasonFs'), appearance.font.mistakeReason, setFont),
       ),
       h('div', { className: 'lp-meta' }, t('fMistakeHint'))),
-      group('sectionAccent',
+      advanced('sectionAccent',
       h(
         'div',
         { className: 'lp-row2' },
@@ -823,7 +830,7 @@ function SettingsModal(props) {
           }),
         ),
       )),
-      group('sectionBackground',
+      advanced('sectionBackground',
       h(
         'div',
         { className: 'lp-field' },
@@ -862,7 +869,8 @@ function SettingsModal(props) {
   return h(
     Modal,
     {
-      title: `${t('settings')} · v__PLUGIN_VERSION__`,
+      title: t('settings'),
+      titleMeta: 'v__PLUGIN_VERSION__',
       className: 'lp-settings',
       onClose: props.onClose,
     },
@@ -888,8 +896,8 @@ function SettingsModal(props) {
         page === 'tags' ? tagsPage() : page === 'general' ? generalPage() : page === 'notify' ? notifyPage() : appearancePage()),
     ),
       h(
-        'div',
-        { className: 'lp-modal-actions' },
+        DialogActions,
+        null,
         h('button', { className: 'lp-btn-ghost', onClick: props.onClose, disabled: busy }, t('cancel')),
         h('button', { className: 'lp-btn', onClick: save, disabled: busy }, t('save')),
       ),

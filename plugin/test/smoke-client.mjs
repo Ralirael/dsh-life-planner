@@ -43,7 +43,7 @@ const fakeWindow = {
   },
 }
 
-const run = new Function('window', code.replace('__internals: {', '__internals: { BoardView, CalendarView, StudyOverview, MistakeTab, anchoredMenuPosition,'))
+const run = new Function('window', code.replace('__internals: {', '__internals: { BoardView, CalendarView, StudyOverview, MistakeTab, TreeView, ItemEditor, DialogActions, DialogDisclosure, anchoredMenuPosition,'))
 run(fakeWindow)
 
 if (!captured) throw new Error('client.js never called window.__ModuleLoader__.load')
@@ -212,6 +212,52 @@ cards[0].props.onDragStart(drag)
 const columns = descendants(board).filter((entry) => entry.props.className === 'lp-col')
 columns.find((column) => column.props.key === 'doing').props.onDrop(drag)
 assert(moves[1].id === 'a' && moves[1].column === 'doing', 'drop into an empty column requests a status change')
+
+let openedCreate = false
+const emptyBoard = plugin.__internals.BoardView({
+  t: (key) => key,
+  items: [],
+  onCreate: () => { openedCreate = true },
+})
+const createActions = descendants(emptyBoard).filter((node) => node.props.className === 'lp-board-create')
+assert(createActions.length === 1, 'the empty board has a single new-task action')
+createActions[0].props.onClick()
+assert(openedCreate, 'the empty to-do column opens the task editor')
+
+let treeOpenedCreate = false
+const emptyTree = plugin.__internals.TreeView({
+  t: (key) => key,
+  items: [],
+  onNew: () => { treeOpenedCreate = true },
+})
+const treeCreate = descendants(emptyTree).find((node) => node.type === 'button' && node.children.includes('newTask'))
+treeCreate.props.onClick()
+assert(treeOpenedCreate, 'the work tree empty state opens the task editor')
+
+let treeToggledTask
+const tree = plugin.__internals.TreeView({
+  t: (key) => key,
+  items: [sample[0], { ...sample[1], parentId: sample[0].id }],
+  onToggle: (item) => { treeToggledTask = item.id },
+})
+const parentRow = descendants(tree).find((node) => node.props['data-item-id'] === sample[0].id)
+const descendantControls = descendants(parentRow)
+assert(descendantControls.some((node) => node.type === 'button' && node.props['aria-expanded'] === true),
+  'the work tree parent row exposes the subtask disclosure control')
+descendantControls.find((node) => node.props.type === 'checkbox').props.onChange({ target: { checked: true } })
+assert(treeToggledTask === sample[0].id, 'the redesigned work tree keeps the task completion action')
+
+const { ItemEditor, DialogActions, DialogDisclosure } = plugin.__internals
+const newTaskEditor = ItemEditor({ t: (key) => key, item: { title: '' }, items: [] })
+const taskDialog = newTaskEditor.type({ ...newTaskEditor.props, children: newTaskEditor.children })
+const taskDialogFrame = descendants(taskDialog).find((node) => node.props.role === 'dialog')
+const taskDialogBody = taskDialogFrame.children.find((node) => node.props.className === 'lp-modal-body')
+assert(taskDialogFrame.children.at(-1).type === DialogActions &&
+  !descendants(taskDialogBody).some((node) => node.type === DialogActions),
+  'the task editor keeps its actions outside the scroller')
+const taskDetails = descendants(taskDialogBody).filter((node) => node.type === DialogDisclosure)
+assert(taskDetails.map((node) => node.props.title).join(',') === 'sectionTime,taskNotesAndTags',
+  'the empty task form groups optional inputs and omits unavailable dependencies')
 
 const anchored = plugin.__internals.anchoredMenuPosition(
   { left: 233, right: 262, top: 258, bottom: 286, width: 29 },

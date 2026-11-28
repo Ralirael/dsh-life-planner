@@ -15,6 +15,18 @@ const DICTS = {
     studyDoubleClick: '双击打开设置',
     studyNoSubjectLink: '未关联科目',
     boardDragHint: "拖动卡片排序或换列 · Alt + 方向键也可移动",
+    boardDragAction: '拖动卡片排序或换列',
+    boardArrowKeys: '方向键',
+    boardEmpty: '暂无任务',
+    boardNoMatches: '无符合条件的任务',
+    boardDropHere: '松开移动到此列',
+    newTask: '新建任务',
+    editTaskDialog: '编辑任务',
+    dialogHasDetails: '已填写',
+    taskNotesAndTags: '备注与标签',
+    skinManage: '管理皮肤',
+    studyTaskLinks: '关联科目与资料',
+    shelfExtraDetails: '标签与备注',
     studyNoActive: "暂无进行中的学习任务",
     studyDropFuture: "将学习任务拖到这里，安排稍后开始",
     studyStartOptional: "开始时间（选填）",
@@ -263,7 +275,9 @@ const DICTS = {
     planPlaceholder: '写下长期计划和个人情况。',
     saveButton: '保存规划书',
     emptyDay: '这一天没有安排。',
-    emptyTree: '还没有任何条目，先建一个领域或项目。',
+    emptyTree: '还没有任务',
+    emptyTreeHint: '新建任务后，可在其下添加子任务。',
+    treeStatusFilters: '按任务状态筛选',
     search: '搜索标题',
     filter_all: '全部',
     filter_open: '未完成',
@@ -411,7 +425,7 @@ const DICTS = {
     priorityHigh: '高',
     priorityMedium: '中',
     priorityLow: '低',
-    rootParent: '无依赖',
+    rootParent: '顶层任务',
     switchLabel: '计划',
     stateOn: '开',
     stateOff: '关',
@@ -458,6 +472,18 @@ const DICTS = {
     studyDoubleClick: 'Double-click to open settings',
     studyNoSubjectLink: 'No subject',
     boardDragHint: "Drag to reorder or move between columns · Alt + arrow keys also work",
+    boardDragAction: 'Drag cards to move or reorder',
+    boardArrowKeys: 'Arrow keys',
+    boardEmpty: 'No tasks',
+    boardNoMatches: 'No matching tasks',
+    boardDropHere: 'Release to move here',
+    newTask: 'New task',
+    editTaskDialog: 'Edit task',
+    dialogHasDetails: 'Filled in',
+    taskNotesAndTags: 'Notes and tags',
+    skinManage: 'Manage skins',
+    studyTaskLinks: 'Subject and resources',
+    shelfExtraDetails: 'Tags and notes',
     studyNoActive: "No active study tasks",
     studyDropFuture: "Drop a study task here to schedule it for later",
     studyStartOptional: "Start time (optional)",
@@ -706,7 +732,9 @@ const DICTS = {
     planPlaceholder: 'Write down your long-term plan and situation.',
     saveButton: 'Save plan',
     emptyDay: 'Nothing planned for this day.',
-    emptyTree: 'No items yet. Create an area or project first.',
+    emptyTree: 'No tasks yet',
+    emptyTreeHint: 'Create a task to start organizing subtasks.',
+    treeStatusFilters: 'Filter by task status',
     search: 'Search titles',
     filter_all: 'All',
     filter_open: 'Open',
@@ -854,7 +882,7 @@ const DICTS = {
     priorityHigh: 'High',
     priorityMedium: 'Medium',
     priorityLow: 'Low',
-    rootParent: 'No dependency',
+    rootParent: 'Top-level task',
     switchLabel: 'Planner',
     stateOn: 'On',
     stateOff: 'Off',
@@ -926,10 +954,10 @@ const CSS = `
 .lp-study .lp-toolbar{padding:10px 0;border-bottom:1px solid var(--dsw-alias-border-l2);margin-bottom:4px;}
 .lp-study .lp-toolbar .lp-input{flex:1;min-width:140px;max-width:none;}
 .lp-study .lp-head .lp-meta{font-variant-numeric:tabular-nums;}
-.lp-board .lp-card[draggable],.lp-drag-handle{cursor:grab;}
-.lp-board .lp-col[data-drop="inside"],.lp-study-planner [data-drop="inside"]{outline:2px solid var(--lp-accent,var(--dsw-alias-brand-primary));outline-offset:-2px;}
-.lp-board .lp-card[data-drop="before"],.lp-study-subject-head[data-drop="before"]{box-shadow:0 -3px var(--lp-accent,var(--dsw-alias-brand-primary));}
-.lp-board .lp-card[data-drop="after"],.lp-study-subject-head[data-drop="after"]{box-shadow:0 3px var(--lp-accent,var(--dsw-alias-brand-primary));}
+.lp-drag-handle{cursor:grab;}
+.lp-study-planner [data-drop="inside"]{outline:2px solid var(--lp-accent,var(--dsw-alias-brand-primary));outline-offset:-2px;}
+.lp-study-subject-head[data-drop="before"]{box-shadow:0 -3px var(--lp-accent,var(--dsw-alias-brand-primary));}
+.lp-study-subject-head[data-drop="after"]{box-shadow:0 3px var(--lp-accent,var(--dsw-alias-brand-primary));}
 .lp-study-planner,.lp-card.lp-study-section{display:grid;gap:12px;}
 .lp-study-planner-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:12px;align-items:start;}
 .lp-study-section{align-content:start;padding:12px;min-width:0;}
@@ -971,32 +999,6 @@ const CSS = `
 .lp-weather-advice li+li{margin-top:4px;}
 .lp-weather-advice p{margin:4px 0 0;}
 
-.lp-page .lp-modal.lp-settings{box-sizing:border-box;width:min(850px,100%);max-height:min(88vh,830px);gap:0;padding:0;overflow:hidden;}
-.lp-settings>.lp-modal-title{padding:16px 20px;border-bottom:1px solid var(--dsw-alias-border-l2);}
-.lp-settings-layout{display:grid;grid-template-columns:minmax(132px,20%) minmax(0,1fr);min-height:0;}
-.lp-settings-nav{display:flex;flex-direction:column;gap:4px;min-width:0;padding:12px;border-inline-end:1px solid var(--dsw-alias-border-l2);background:color-mix(in srgb,var(--dsw-alias-label-primary) 3%,transparent);}
-.lp-settings-nav-button{width:100%;border:1px solid transparent;border-radius:var(--lp-r,8px);padding:8px 9px;background:transparent;color:var(--dsw-alias-label-secondary);text-align:start;font:inherit;cursor:pointer;}
-.lp-settings-nav-button:hover{color:var(--dsw-alias-label-primary);background:var(--lp-control-bg,var(--dsw-alias-bg-layer-2));}
-.lp-settings-nav-button[aria-current="page"]{background:color-mix(in srgb,var(--lp-accent,var(--dsw-alias-brand-primary)) 13%,transparent);border-color:color-mix(in srgb,var(--lp-accent,var(--dsw-alias-brand-primary)) 35%,transparent);color:var(--dsw-alias-label-primary);font-weight:650;}
-.lp-page .lp-settings .lp-settings-body{min-height:min(42vh,330px);max-height:none;padding:14px 16px;}
-.lp-settings-sections,.lp-settings-group{display:grid;gap:10px;min-width:0;}
-.lp-settings-group{padding:12px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--lp-r-lg,12px);}
-.lp-settings-group .lp-form-section{margin:0;padding:0;border:0;color:var(--dsw-alias-label-primary);font:inherit;font-weight:650;}
-.lp-settings-switch{display:flex;justify-content:space-between;align-items:center;gap:12px;min-width:0;}
-.lp-settings-switch>div{min-width:0;}
-.lp-settings-switch .lp-meta{margin-top:2px;}
-.lp-settings-switch .lp-toggle{flex:none;}
-.lp-settings-classification{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;}
-.lp-settings-classification>.lp-field{grid-column:1 / -1;}
-.lp-settings-classification .lp-swatch-panel{border-radius:var(--lp-r-sm,6px);}
-.lp-settings-status{display:inline-block;border-radius:var(--lp-r-sm,6px);padding:3px 7px;color:var(--dsw-alias-label-secondary);background:var(--lp-control-bg,var(--dsw-alias-bg-layer-2));font-size:var(--lp-fs-sm,12px);}
-.lp-page .lp-settings>.lp-modal-actions{position:static;flex:none;margin:0;padding:10px 16px;background:transparent;}
-@media (max-width:660px){
-  .lp-settings-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);}
-  .lp-settings-nav{flex-direction:row;overflow:auto;padding:6px 8px;border-inline-end:0;border-bottom:1px solid var(--dsw-alias-border-l2);}
-  .lp-settings-nav-button{width:auto;flex:none;white-space:nowrap;}
-  .lp-page .lp-settings .lp-settings-body{min-height:0;padding:10px;}
-}
 .lp-study .lp-tree-row{min-height:var(--lp-row);padding:4px 8px;border-color:transparent;border-radius:var(--lp-r-sm);gap:var(--lp-gap);}
 .lp-study .lp-tree-row:hover{background:color-mix(in srgb,var(--dsw-alias-label-primary) 7%,transparent);border-color:transparent;}
 .lp-study-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:8px;}
@@ -1016,9 +1018,6 @@ const CSS = `
 .lp-mistake-grid[data-fixed="true"] .lp-mistake-answer{-webkit-line-clamp:3;}
 .lp-mistake-grid[data-fixed="true"] .lp-mistake-reason{-webkit-line-clamp:4;}
 .lp-body .lp-toolbar .lp-input{min-width:0;}
-.lp-mistake-preview{width:min(760px,100%);max-height:80vh;overflow:auto;}
-.lp-mistake-preview .lp-pre-block{margin-top:10px;}
-.lp-mistake-preview .lp-pre-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;padding:10px 12px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);}
 .lp-mistake-preview .lp-mistake-sources{margin:4px 0 0;padding-inline-start:28px;}
 .lp-bar{display:block;height:8px;min-width:2px;border-radius:4px;background:color-mix(in srgb,var(--dsw-alias-brand-primary) 55%,transparent);}
 .lp-dd{position:relative;display:flex;min-width:0;width:100%;}
@@ -1068,42 +1067,12 @@ const CSS = `
 .lp-tree-row:hover{background:var(--dsw-alias-bg-layer-1);border-color:var(--dsw-alias-border-l2);}
 .lp-tree-row[data-done="true"] .lp-title{opacity:.5;text-decoration:line-through;}
 .lp-tree-row[data-overdue="true"] .lp-title{color:var(--dsw-alias-state-error-primary);}
-.lp-backdrop{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.58);display:flex;align-items:center;justify-content:center;padding:24px;}
-.lp-modal{width:min(560px,100%);max-height:85vh;overflow:auto;border-radius:14px;border:1px solid var(--dsw-alias-border-l2);background:var(--lp-modal-bg,var(--lp-surface-bg,var(--dsw-alias-bg-base))) !important;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 48px rgba(0,0,0,.32);}
-.lp-modal-title{font-weight:600;font-size:var(--lp-title-fs,15px);}
 .lp-field{display:flex;flex-direction:column;gap:4px;}
 .lp-field label{font-size:var(--lp-meta-fs,11px);color:var(--dsw-alias-label-secondary);}
 .lp-row2{display:flex;gap:12px;}
 .lp-row2 > *{flex:1;min-width:0;}
 .lp-deps{max-height:160px;overflow:auto;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;}
 .lp-deps label{display:flex;align-items:center;gap:8px;font-size:var(--lp-fs,13px);color:var(--dsw-alias-label-primary);}
-.lp-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;}
-.lp-form-section{display:flex;align-items:center;gap:10px;font-size:var(--lp-meta-fs,11px);color:var(--dsw-alias-label-secondary);margin:10px 0 0;}
-.lp-settings-body{display:flex;flex-direction:column;gap:8px;max-height:min(70vh,620px);overflow-y:auto;overflow-x:hidden;padding:2px 4px 2px 2px;}
-/* Settings never scrolls sideways: rows reflow instead. */
-.lp-page .lp-settings{width:min(720px,100%);overflow-x:hidden;}
-.lp-page .lp-settings .lp-settings-body{width:100%;box-sizing:border-box;}
-.lp-page .lp-settings .lp-row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:start;}
-/* Compact field groups: as many columns as the width allows. */
-.lp-page .lp-settings .lp-setting-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 14px;align-items:start;}
-.lp-page .lp-settings .lp-setting-grid .lp-field{min-width:0;}
-.lp-page .lp-settings .lp-field{min-width:0;}
-.lp-page .lp-settings .lp-field label{white-space:normal;overflow-wrap:anywhere;}
-.lp-page .lp-settings .lp-toolbar{flex-wrap:wrap;padding:0;border:0;}
-.lp-page .lp-settings .lp-input,
-.lp-page .lp-settings .lp-select,
-.lp-page .lp-settings .lp-search{min-width:0;max-width:100%;width:100%;flex:0 0 auto;box-sizing:border-box;}
-/* Only a horizontal row lets an input share space with its neighbours. */
-.lp-page .lp-settings .lp-toolbar .lp-input,
-.lp-page .lp-settings .lp-toolbar .lp-select,
-.lp-page .lp-settings .lp-toolbar .lp-search{flex:1 1 140px;width:auto;}
-.lp-page .lp-settings input[type="range"]{flex:1 1 120px;width:auto;}
-.lp-page .lp-settings .lp-btn,
-.lp-page .lp-settings .lp-btn-ghost{flex:none;white-space:nowrap;}
-.lp-page .lp-settings .lp-taglist{flex-wrap:wrap;}
-.lp-page .lp-settings .lp-meta{white-space:normal;overflow-wrap:anywhere;}
-.lp-page .lp-settings .lp-section{white-space:normal;overflow-wrap:anywhere;}
-.lp-page .lp-settings .lp-week{grid-template-columns:repeat(auto-fit,minmax(72px,1fr));}
 /* Study panels follow the same surface rule so a background shows through. */
 .lp-page .lp-study .lp-input,
 .lp-page .lp-study .lp-select,
@@ -1119,8 +1088,6 @@ const CSS = `
 .lp-week-day{display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--lp-r-sm,#6px);}
 .lp-week-day .lp-input{width:100%;min-width:0;}
 .lp-week-day .lp-week-value{font-size:var(--lp-task-fs,13px);color:var(--dsw-alias-label-primary);}
-.lp-form-section::after{content:'';flex:1;height:1px;background:var(--dsw-alias-border-l2);}
-.lp-page .lp-modal-actions{position:sticky;bottom:-20px;z-index:2;background:var(--dsw-alias-bg-base);padding:12px 0 0;border-top:1px solid var(--dsw-alias-border-l2);}
 .lp-plan{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid var(--dsw-alias-border-l2);background:var(--lp-surface-bg,var(--dsw-alias-bg-layer-1));color:var(--dsw-alias-label-primary);font:inherit;line-height:1.6;resize:vertical;}
 .lp-empty{color:var(--dsw-alias-label-secondary);padding:24px 0;text-align:center;}
 .lp-section{color:var(--dsw-alias-label-secondary);font-size:var(--lp-meta-fs,11px);margin:12px 0 4px;padding:0 0 6px;border-top:none;border-bottom:1px solid var(--dsw-alias-border-l2);font-weight:500;}
@@ -1139,9 +1106,7 @@ const CSS = `
 .lp-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px var(--lp-pad);border-bottom:1px solid var(--dsw-alias-border-l2);}
 .lp-filters .lp-dd{width:150px;flex:none;}
 .lp-group{margin-top:6px;}
-.lp-group-toggle{cursor:pointer;user-select:none;}
 .lp-group-add{margin-left:auto;width:22px;height:22px;padding:0;font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;opacity:.65;}
-.lp-group-toggle:hover .lp-group-add{opacity:1;}
 .lp-caret{display:inline-block;width:12px;text-align:center;font-size:10px;transition:transform .15s ease;}
 .lp-caret[data-open="false"]{transform:rotate(-90deg);}
 .lp-group-head{display:flex;align-items:center;gap:6px;font-size:var(--lp-type-fs,11px);color:var(--dsw-alias-label-secondary);padding:6px 8px;border-bottom:1px solid var(--dsw-alias-border-l2);}
@@ -1149,18 +1114,12 @@ const CSS = `
 .lp-swatch-panel{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;}
 .lp-swatch{width:18px;height:18px;border-radius:5px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;padding:0;}
 .lp-swatch[data-active="true"]{outline:2px solid var(--dsw-alias-label-primary);outline-offset:1px;}
-.lp-modal.lp-confirm-modal{box-sizing:border-box;width:min(380px,100%);}
 .lp-pop-list{font-size:var(--lp-fs-sm,12px);color:var(--dsw-alias-label-secondary);max-height:180px;overflow:auto;display:flex;flex-direction:column;gap:2px;}
-.lp-pop-actions{display:flex;justify-content:flex-end;gap:6px;}
-.lp-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;align-items:stretch;}
-.lp-col{display:flex;flex-direction:column;gap:8px;min-width:0;min-height:min(60vh,640px);border-radius:var(--lp-r,8px);}
-.lp-col-space{flex:1;min-height:52px;}
-.lp-col-head{font-size:var(--lp-title-fs,15px);color:var(--dsw-alias-label-secondary);padding:4px 2px;border-bottom:1px solid var(--dsw-alias-border-l2);}.lp-card{border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:8px;background:var(--lp-surface-bg,var(--dsw-alias-bg-layer-1));cursor:pointer;display:flex;flex-direction:column;gap:4px;align-items:flex-start;}
+.lp-card{border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:8px;background:var(--lp-surface-bg,var(--dsw-alias-bg-layer-1));cursor:pointer;display:flex;flex-direction:column;gap:4px;align-items:flex-start;}
 .lp-card:hover{border-color:var(--dsw-alias-brand-primary);}
 .lp-card[data-done="true"]{opacity:.6;}
 .lp-card-title{font-size:var(--lp-task-fs,13px);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lp-card-meta{display:flex;gap:8px;align-items:center;color:var(--dsw-alias-label-secondary);font-size:var(--lp-meta-fs,11px);}
-.lp-card-prio{font-variant-numeric:tabular-nums;font-weight:600;min-width:22px;flex:none;}
 .lp-switch{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:var(--lp-meta-fs,11px);cursor:pointer;white-space:nowrap;}
 .lp-switch:hover{background:var(--dsw-alias-bg-layer-2);background:color-mix(in srgb,var(--dsw-alias-label-primary) 10%,transparent);}
 .lp-switch[data-on="true"]{color:var(--dsw-alias-brand-primary);}
@@ -1173,7 +1132,6 @@ const CSS = `
 .lp-switch-label{font-size:var(--lp-meta-fs,11px);white-space:nowrap;}
 /* Per-area font tokens: each block of the calendar page follows its own setting. */
 .lp-tab{font-size:var(--lp-tab-fs,13px);}
-.lp-modal-title{font-size:var(--lp-title-fs,15px);}
 .lp-tree-row,.lp-row,.lp-card,.lp-plan{font-size:var(--lp-task-fs,13px);}
 .lp-type{font-size:var(--lp-type-fs,11px);}
 .lp-tag,.lp-chip{font-size:var(--lp-tag-fs,12px);}
@@ -1223,10 +1181,6 @@ const CSS = `
 .lp-page .lp-empty{display:flex;align-items:center;justify-content:center;min-height:180px;padding:24px;font-size:var(--lp-fs);}
 .lp-page .lp-section{margin:12px 0 4px;padding:0 0 6px;font-size:var(--lp-meta-fs,11px);}
 .lp-page .lp-card{padding:10px;border-radius:var(--lp-r);gap:6px;transition:border-color .12s ease;}
-.lp-page .lp-col-head{position:sticky;top:0;z-index:2;background:var(--lp-surface-bg,var(--dsw-alias-bg-base));padding:9px 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--lp-r-lg,12px);text-align:center;color:var(--dsw-alias-label-primary);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08);}
-.lp-page .lp-board{padding:var(--lp-pad);gap:12px;}
-.lp-page .lp-modal{padding:20px;gap:14px;}
-.lp-page .lp-modal-title{font-size:var(--lp-title-fs,15px);}
 .lp-page .lp-notices{top:56px;gap:8px;}
 .lp-page .lp-notice{padding:9px 11px;border-radius:var(--lp-r);}
 .lp-page .lp-menu{padding:5px;border-radius:var(--lp-r-lg);}
@@ -2128,11 +2082,36 @@ function keyActivate(handler) {
   };
 }
 
-/**
- * One dialog shell for every modal: a fixed backdrop, Esc to close, the first
- * focusable child focused on open, Tab cycling inside, and a click on the
- * backdrop closing it. Callers keep their own title and action buttons.
- */
+function DialogActions({ children }) {
+  return h('footer', { className: 'lp-modal-actions' }, ...(Array.isArray(children) ? children : [children]));
+}
+
+function dialogField(label, attributes, tag = 'input') {
+  return h('label', { className: 'lp-field' },
+    h('span', null, label),
+    h(tag, { className: 'lp-input', ...attributes }),
+  );
+}
+
+function dialogSelect(label, attributes) {
+  return h('div', { className: 'lp-field' },
+    h('span', null, label),
+    h(Dropdown, { label, ...attributes }),
+  );
+}
+
+function DialogDisclosure({ title, hint, children }) {
+  return h('details', { className: 'lp-dialog-disclosure' },
+    h('summary', null,
+      h('span', { className: 'lp-chevron', 'data-direction': 'right', 'aria-hidden': true }),
+      h('span', null, title),
+      hint ? h('span', { className: 'lp-dialog-disclosure-hint' }, hint) : null,
+    ),
+    h('div', { className: 'lp-dialog-disclosure-body' }, ...(Array.isArray(children) ? children : [children])),
+  );
+}
+
+/** Keep a trailing DialogActions outside the scrollable body. */
 function Modal(props) {
   const panelRef = React.useRef(null);
   const closeRef = React.useRef(props.onClose);
@@ -2146,7 +2125,7 @@ function Modal(props) {
     const focusables = () =>
       Array.from(
         node.querySelectorAll(
-          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]',
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, a[href], [tabindex]',
         ),
       ).filter((element) => element.getClientRects().length > 0 && element.tabIndex >= 0);
     const first = focusables()[0];
@@ -2191,6 +2170,8 @@ function Modal(props) {
     : props.children === undefined
       ? []
       : [props.children];
+  const last = children[children.length - 1];
+  const footer = last?.type === DialogActions ? last : null;
   return h(
     'div',
     {
@@ -2211,9 +2192,12 @@ function Modal(props) {
         style: props.wide ? { width: 'min(760px,100%)' } : undefined,
         onClick: (event) => event.stopPropagation(),
       },
-      // Spread the children back into argument position: an array child would
-      // make React ask for keys on dialog content that never needs any.
-      ...[props.title ? h('div', { className: 'lp-modal-title' }, props.title) : null, ...children],
+      props.title ? h('header', { className: 'lp-modal-heading' },
+        h('h2', { className: 'lp-modal-title' }, props.title),
+        props.titleMeta ? h('span', { className: 'lp-dialog-version' }, props.titleMeta) : null,
+      ) : null,
+      h('div', { className: 'lp-modal-body' }, ...(footer ? children.slice(0, -1) : children)),
+      footer,
     ),
   );
 }
@@ -2438,6 +2422,7 @@ function Dropdown(props) {
         style: { background: controlSurface(0.45), backdropFilter: 'blur(6px)' },
         'data-lp-surface': 'control',
         'aria-haspopup': 'listbox',
+        'aria-label': props.label ? [props.label, current?.label].filter(Boolean).join(' · ') : undefined,
         'aria-expanded': String(menu.open),
         'aria-controls': menu.open ? menu.menuId : undefined,
         'aria-activedescendant':
@@ -2632,11 +2617,1050 @@ async function apiRequest(method, body, retriesLeft) {
   return payload.data;
 }
 
+// ---- board-skin.js ----
+const BOARD_CSS = `
+.lp-page .lp-board-page {
+  display: flex;
+  overflow: hidden;
+  padding: 0;
+}
+
+.lp-board {
+  --lp-board-gap: 12px;
+  --lp-board-lane-width: 170px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1440px;
+  min-width: 0;
+  margin-inline: auto;
+  padding: 16px clamp(12px, 2.4vw, 24px) 12px;
+}
+
+.lp-board-toolbar,
+.lp-board-filters,
+.lp-board-hint,
+.lp-board-keys {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.lp-board-toolbar {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 0 1px 11px;
+  border-bottom: 1px solid var(--lp-workspace-line);
+}
+
+.lp-board-filters {
+  flex-wrap: wrap;
+  max-width: 100%;
+  gap: 6px;
+}
+
+.lp-board-filters .lp-dd {
+  width: min(132px, 100%);
+}
+
+.lp-page .lp-board-filters :is(.lp-dd-btn, .lp-input, .lp-btn-ghost) {
+  font-size: var(--lp-workspace-meta);
+  min-height: 29px;
+}
+
+.lp-page .lp-board-filters input[type="date"] {
+  width: min(150px, 100%);
+  min-width: 0;
+  flex: none;
+}
+
+.lp-board-hint {
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: var(--lp-workspace-meta);
+  color: var(--lp-workspace-text-muted);
+}
+
+.lp-board-keys { gap: 3px; }
+
+.lp-board-keys kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--lp-workspace-line);
+  border-radius: 4px;
+  background: var(--lp-workspace-surface);
+  font: inherit;
+  font-size: max(10px, calc(var(--lp-workspace-meta) - 1px));
+  line-height: 1.4;
+}
+
+.lp-board-scroll {
+  flex: 1;
+  min-height: 0;
+  margin-inline: -3px;
+  padding: 2px 3px 6px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scroll-padding: 46px 10px 10px;
+}
+
+.lp-board-scroll:focus-visible {
+  outline-offset: -2px;
+  border-radius: var(--lp-r-sm, 6px);
+}
+
+.lp-board-lanes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--lp-board-gap);
+  min-width: calc(4 * var(--lp-board-lane-width) + 3 * var(--lp-board-gap));
+  min-height: clamp(236px, 49vh, 380px);
+}
+
+.lp-board .lp-col {
+  --lp-board-status-color: var(--dsh-ui-icon-muted, var(--lp-workspace-text-muted));
+  --lp-board-lane-surface: color-mix(in srgb, var(--lp-workspace-muted) 62%, var(--lp-workspace-surface));
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--lp-workspace-line);
+  border-radius: var(--lp-r-lg, 12px);
+  background: var(--lp-board-lane-surface);
+  transition: border-color var(--lp-workspace-motion), background-color var(--lp-workspace-motion);
+}
+
+.lp-board .lp-col[data-column="doing"] { --lp-board-status-color: var(--lp-workspace-accent); }
+.lp-board .lp-col[data-column="blocked"] {
+  --lp-board-status-color: var(--dsh-ui-context-tool, var(--dsw-alias-state-warn-primary, var(--lp-workspace-text-muted)));
+}
+.lp-board .lp-col[data-column="done"] {
+  --lp-board-status-color: var(--dsh-ui-running-foreground, var(--dsw-alias-state-success-primary, var(--lp-workspace-text-muted)));
+}
+
+.lp-board .lp-col[data-drop="inside"] {
+  --lp-board-lane-surface: color-mix(in srgb, var(--lp-workspace-accent) 9%, var(--lp-workspace-surface));
+  border-color: var(--lp-workspace-accent);
+}
+
+.lp-board .lp-col-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--lp-workspace-line);
+  border-radius: var(--lp-r-lg, 12px) var(--lp-r-lg, 12px) 0 0;
+  background: var(--lp-board-lane-surface);
+}
+
+.lp-board .lp-col-head h2 {
+  flex: 1;
+  margin: 0;
+  font-size: max(13px, calc(var(--lp-workspace-title) - 5px));
+  font-weight: 650;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.lp-board-status,
+.lp-board-count {
+  display: grid;
+  flex: none;
+  place-items: center;
+}
+
+.lp-board-status {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--lp-r-sm, 6px);
+  color: color-mix(in srgb, var(--lp-board-status-color) 80%, var(--lp-workspace-text-muted));
+  background: color-mix(in srgb, var(--lp-board-status-color) 13%, var(--lp-board-lane-surface));
+}
+
+.lp-board-count {
+  min-width: 16px;
+  min-height: 19px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--lp-workspace-surface);
+  color: var(--lp-workspace-text-muted);
+  font-size: var(--lp-workspace-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-board-cards {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 8px;
+  padding: 8px;
+}
+
+.lp-board .lp-col-space {
+  flex: 1;
+  min-height: 34px;
+}
+
+.lp-board-empty {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-height: 62px;
+  padding: 8px;
+  border: 1px dashed color-mix(in srgb, var(--lp-board-status-color) 24%, var(--lp-workspace-line));
+  border-radius: var(--lp-r, 8px);
+  color: var(--lp-workspace-text-muted);
+  font-size: var(--lp-workspace-meta);
+  text-align: center;
+}
+
+.lp-board .lp-col[data-drop="inside"] .lp-board-empty {
+  border-color: var(--lp-workspace-accent);
+  color: var(--lp-workspace-accent);
+}
+
+.lp-board-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--lp-r-sm, 6px);
+  background: transparent;
+  color: var(--lp-workspace-text-muted);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color var(--lp-workspace-motion), color var(--lp-workspace-motion);
+}
+
+.lp-board-create:hover {
+  background: var(--lp-workspace-accent-fill);
+  color: var(--lp-workspace-accent);
+}
+
+.lp-board-create span { font-size: 16px; line-height: 1; }
+
+.lp-board .lp-card {
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  gap: 7px;
+  padding: 10px;
+  border-color: var(--lp-workspace-line);
+  background: var(--lp-workspace-surface);
+  cursor: grab;
+  transition: border-color var(--lp-workspace-motion), box-shadow var(--lp-workspace-motion), opacity var(--lp-workspace-motion);
+}
+
+.lp-board:not([data-dragging="true"]) .lp-card:hover {
+  border-color: color-mix(in srgb, var(--lp-workspace-accent) 40%, var(--lp-workspace-line));
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--lp-workspace-text-muted) 10%, transparent);
+}
+
+.lp-board .lp-card[data-done="true"] { opacity: 1; }
+.lp-board .lp-card[data-done="true"] .lp-card-title { color: var(--lp-workspace-text-muted); }
+.lp-board .lp-card[data-dragging="true"] { opacity: .5; cursor: grabbing; }
+
+.lp-board .lp-card::after {
+  position: absolute;
+  inset-inline: 0;
+  bottom: -6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--lp-workspace-accent);
+  opacity: 0;
+  content: '';
+  pointer-events: none;
+  transition: opacity var(--lp-workspace-motion);
+}
+
+.lp-board .lp-card[data-drop="before"]::after { top: -6px; bottom: auto; }
+.lp-board .lp-card[data-drop]::after { opacity: 1; }
+
+.lp-board-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+}
+
+.lp-board .lp-card-title {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: max(12px, calc(var(--lp-task-fs, 20px) - 5px));
+  font-weight: 650;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.lp-board .lp-card-prio {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lp-board-priority) 15%, var(--lp-workspace-surface));
+  color: var(--lp-workspace-text-muted);
+  font-size: max(10px, calc(var(--lp-workspace-meta) - 1px));
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-board .lp-card-prio::before {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--lp-board-priority);
+  content: '';
+}
+
+.lp-board-labels,
+.lp-board-deadline {
+  display: flex;
+  align-items: center;
+  gap: 3px 4px;
+  max-width: 100%;
+}
+
+.lp-board-labels { flex-wrap: wrap; }
+
+.lp-page .lp-board :is(.lp-board-labels .lp-meta, .lp-board-deadline) {
+  font-size: var(--lp-workspace-meta);
+}
+
+.lp-board-labels :is(.lp-tag, .lp-type, .lp-meta) {
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lp-board-labels .lp-type { font-size: max(10px, calc(var(--lp-type-fs, 20px) - 9px)); }
+.lp-board-labels .lp-tag { font-size: max(10px, calc(var(--lp-tag-fs, 20px) - 9px)); }
+
+.lp-board-deadline {
+  font-variant-numeric: tabular-nums;
+  white-space: normal;
+}
+
+.lp-board-deadline svg { flex: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp-board-lanes { animation: lp-workspace-enter var(--lp-workspace-motion) backwards; }
+}
+`;
+
+if (typeof document !== 'undefined' && !document.getElementById('life-planner-board-styles')) {
+  const sheet = document.createElement('style');
+  sheet.id = 'life-planner-board-styles';
+  sheet.textContent = BOARD_CSS;
+  document.head.appendChild(sheet);
+}
+
+// ---- dialog-skin.js ----
+const DIALOG_CSS = `
+.lp-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: clamp(10px, 2.5vw, 24px);
+  background: rgba(0, 0, 0, .44);
+}
+
+.lp-page .lp-modal {
+  --lp-dialog-width: 550px;
+  --lp-dialog-padding: clamp(12px, 2.3vw, 18px);
+  --lp-dialog-surface: color-mix(in srgb, var(--dsh-ui-surface, var(--dsw-alias-bg-layer-2)) 65%, var(--lp-modal-bg, var(--dsw-alias-bg-base)));
+  --lp-dialog-muted: var(--dsh-ui-muted, var(--dsw-alias-bg-layer-1));
+  --lp-dialog-line: var(--dsh-ui-border, var(--dsw-alias-border-l2));
+  --lp-dialog-text-muted: var(--dsh-ui-text-muted, var(--dsw-alias-label-secondary));
+  --lp-dialog-accent: var(--lp-accent, var(--dsh-ui-accent, var(--dsw-alias-brand-primary)));
+  --lp-dialog-on-accent: var(--dsh-ui-accent-foreground, var(--dsw-alias-bg-base));
+  --lp-dialog-accent-fill: color-mix(in srgb, var(--lp-dialog-accent) 12%, var(--lp-dialog-surface));
+  --lp-dialog-motion: var(--dsh-ui-motion, 180ms ease);
+  --lp-dialog-font: max(12px, calc(var(--lp-fs, 16px) - 2px));
+  --lp-dialog-meta: max(11px, calc(var(--lp-meta-fs, 16px) - 4px));
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(var(--lp-dialog-width), 100%);
+  max-height: min(88vh, 760px);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--lp-dialog-line);
+  border-radius: var(--lp-r-lg, 12px);
+  background: var(--lp-dialog-surface);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, .22);
+  font-size: var(--lp-dialog-font);
+}
+
+.lp-page .lp-item-editor { --lp-dialog-width: 530px; }
+.lp-page .lp-confirm-modal { --lp-dialog-width: 390px; }
+.lp-page .lp-mistake-preview { --lp-dialog-width: 680px; }
+.lp-page .lp-settings { --lp-dialog-width: 700px; }
+
+.lp-modal-heading,
+.lp-modal-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px 9px;
+  padding-inline: var(--lp-dialog-padding);
+}
+
+.lp-modal-heading {
+  justify-content: space-between;
+  padding-block: 11px;
+  border-bottom: 1px solid var(--lp-dialog-line);
+}
+
+.lp-modal-heading .lp-modal-title {
+  min-width: 0;
+  margin: 0;
+  font-size: max(16px, calc(var(--lp-title-fs, 24px) - 5px));
+  font-weight: 650;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.lp-dialog-version {
+  flex: none;
+  color: var(--lp-dialog-text-muted);
+  font-size: var(--lp-dialog-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-modal-body {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 12px var(--lp-dialog-padding);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.lp-modal-body > * { flex-shrink: 0; }
+
+.lp-modal-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  padding-block: 8px;
+  border-top: 1px solid var(--lp-dialog-line);
+  background: color-mix(in srgb, var(--lp-dialog-muted) 55%, var(--lp-dialog-surface));
+}
+
+.lp-modal-actions .lp-dialog-side-action { margin-inline-end: auto; }
+
+.lp-page .lp-modal :is(.lp-input, .lp-select, .lp-dd-btn, .lp-btn, .lp-btn-ghost) {
+  min-height: 30px;
+  font-size: var(--lp-dialog-font);
+  transition: background-color var(--lp-dialog-motion), border-color var(--lp-dialog-motion), box-shadow var(--lp-dialog-motion);
+}
+
+.lp-page .lp-modal :is(.lp-input, .lp-select, .lp-dd-btn) {
+  min-width: 0;
+  max-width: 100%;
+  background: var(--lp-dialog-surface) !important;
+  border-color: var(--lp-dialog-line);
+  backdrop-filter: none;
+}
+
+.lp-page .lp-modal .lp-field :is(.lp-input, .lp-select) { width: 100%; }
+
+.lp-page .lp-modal :is(.lp-input, .lp-select, .lp-dd-btn):focus-visible {
+  border-color: var(--lp-dialog-accent);
+  outline: 0;
+  box-shadow: 0 0 0 2px var(--lp-dialog-accent-fill);
+}
+
+.lp-page .lp-modal input[type="range"].lp-input {
+  min-height: 22px;
+  padding: 0;
+  accent-color: var(--lp-dialog-accent);
+}
+
+.lp-page .lp-modal .lp-input[type="color"] {
+  padding-block: 3px;
+  cursor: pointer;
+}
+
+.lp-modal textarea.lp-input {
+  height: auto;
+  resize: vertical;
+}
+
+.lp-page .lp-modal .lp-btn {
+  color: var(--lp-dialog-on-accent);
+  background: var(--lp-dialog-accent);
+  border-color: var(--lp-dialog-accent);
+}
+
+.lp-page .lp-modal .lp-btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--lp-dialog-accent) 90%, var(--dsw-alias-label-primary));
+}
+
+.lp-page .lp-modal .lp-btn-ghost:hover:not(:disabled) {
+  background: var(--lp-dialog-muted);
+}
+
+.lp-page .lp-modal :is(.lp-btn, .lp-btn-ghost) {
+  height: auto;
+  white-space: normal;
+  padding: 4px 10px;
+}
+
+.lp-modal .lp-field {
+  min-width: 0;
+  gap: 3px;
+  color: var(--lp-dialog-text-muted);
+  font-size: var(--lp-dialog-meta);
+}
+
+.lp-modal .lp-field > :is(label, span) {
+  font-size: var(--lp-dialog-meta);
+  overflow-wrap: anywhere;
+}
+
+.lp-page .lp-modal :is(.lp-meta, .lp-pop-list) {
+  margin: 0;
+  color: var(--lp-dialog-text-muted);
+  font-size: var(--lp-dialog-meta);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.lp-modal .lp-pre-block {
+  display: grid;
+  gap: 4px;
+}
+
+.lp-modal .lp-pre-body {
+  padding: 8px 10px;
+  border: 1px solid var(--lp-dialog-line);
+  border-radius: var(--lp-r, 8px);
+  background: var(--lp-dialog-muted);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+.lp-modal :is(.lp-err, .lp-feedback) { margin: 0; }
+
+.lp-modal .lp-dialog-grid,
+.lp-modal .lp-row2,
+.lp-settings .lp-setting-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(182px, 100%), 1fr));
+  gap: 8px 10px;
+  align-items: start;
+  min-width: 0;
+}
+
+.lp-dialog-stack,
+.lp-dialog-options,
+.lp-dialog-disclosure-body {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+
+.lp-dialog-options { gap: 6px; }
+
+.lp-dialog-inline,
+.lp-dialog-check,
+.lp-modal .lp-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lp-modal .lp-toolbar { padding: 0; border: 0; }
+.lp-modal .lp-toolbar > .lp-input:not([type="range"]),
+.lp-dialog-inline > .lp-input { flex: 1 1 min(120px, 100%); width: auto; }
+.lp-modal .lp-toolbar > input[type="range"] { flex: 1 1 120px; width: auto; }
+.lp-dialog-check input { margin: 0; }
+
+.lp-dialog-disclosure {
+  min-width: 0;
+  border: 1px solid var(--lp-dialog-line);
+  border-radius: var(--lp-r, 8px);
+  background: var(--lp-dialog-surface);
+}
+
+.lp-dialog-disclosure > summary {
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
+  min-height: 32px;
+  padding: 5px 9px;
+  gap: 8px;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--lp-dialog-muted) 48%, var(--lp-dialog-surface));
+  cursor: pointer;
+  list-style: none;
+  font-weight: 550;
+}
+
+.lp-dialog-disclosure > summary:hover { background: var(--lp-dialog-muted); }
+.lp-dialog-disclosure > summary::-webkit-details-marker { display: none; }
+.lp-dialog-disclosure > summary .lp-chevron {
+  color: var(--lp-dialog-text-muted);
+  margin-inline: 1px 2px;
+  transition: transform var(--lp-dialog-motion);
+}
+.lp-dialog-disclosure[open] > summary .lp-chevron { transform: rotate(45deg); }
+
+.lp-dialog-disclosure-hint {
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--lp-dialog-text-muted);
+  font-size: var(--lp-dialog-meta);
+  font-weight: 400;
+}
+
+.lp-dialog-disclosure-body {
+  padding: 9px;
+  border-top: 1px solid var(--lp-dialog-line);
+}
+
+.lp-page .lp-settings > .lp-modal-body {
+  padding: 0;
+  overflow: hidden;
+}
+
+.lp-settings-layout,
+.lp-settings-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.lp-settings-nav {
+  display: flex;
+  flex: none;
+  gap: 4px;
+  padding: 6px var(--lp-dialog-padding);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--lp-dialog-line);
+  background: var(--lp-dialog-surface);
+}
+
+.lp-settings-nav-button {
+  flex: none;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--lp-r-sm, 6px);
+  background: transparent;
+  color: var(--lp-dialog-text-muted);
+  font: inherit;
+  font-size: var(--lp-dialog-meta);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.lp-settings-nav-button:hover { background: var(--lp-dialog-muted); }
+.lp-settings-nav-button[aria-current="page"] {
+  background: var(--lp-dialog-accent-fill);
+  border-color: color-mix(in srgb, var(--lp-dialog-accent) 28%, var(--lp-dialog-line));
+  color: var(--dsw-alias-label-primary);
+}
+
+.lp-settings-body {
+  max-height: min(62vh, 590px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  gap: 7px;
+  padding: 12px var(--lp-dialog-padding);
+}
+
+.lp-settings-body > * { flex-shrink: 0; }
+
+.lp-settings-sections,
+.lp-settings-group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.lp-settings-collections {
+  grid-template-columns: repeat(auto-fit, minmax(min(252px, 100%), 1fr));
+  align-items: start;
+}
+
+.lp-settings-group {
+  padding: 10px;
+  border: 1px solid var(--lp-dialog-line);
+  border-radius: var(--lp-r, 8px);
+}
+
+.lp-settings-heading {
+  margin: 0;
+  font-size: var(--lp-dialog-font);
+  font-weight: 650;
+}
+
+.lp-settings-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.lp-settings-switch > div { min-width: 0; }
+.lp-settings-switch .lp-toggle { flex: none; }
+
+.lp-settings-switch strong { font-weight: 550; }
+
+.lp-settings-classification {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.lp-settings-classification > .lp-dialog-disclosure { grid-column: 1 / -1; }
+
+.lp-settings-status {
+  display: inline-block;
+  padding: 3px 6px;
+  border-radius: var(--lp-r-sm, 6px);
+  background: var(--lp-dialog-muted);
+  color: var(--lp-dialog-text-muted);
+  font-size: var(--lp-dialog-meta);
+}
+
+@keyframes lp-dialog-fade { from { opacity: .65; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp-modal,
+  .lp-dialog-disclosure[open] > .lp-dialog-disclosure-body {
+    animation: lp-dialog-fade var(--lp-dialog-motion);
+  }
+}
+`;
+
+if (typeof document !== 'undefined' && !document.getElementById('life-planner-dialog-styles')) {
+  const sheet = document.createElement('style');
+  sheet.id = 'life-planner-dialog-styles';
+  sheet.textContent = DIALOG_CSS;
+  document.head.appendChild(sheet);
+}
+
+// ---- tree-skin.js ----
+const TREE_CSS = `
+.lp-page .lp-tree-page {
+  padding: 0;
+  overscroll-behavior: contain;
+}
+
+.lp-tree-workspace {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1180px;
+  margin-inline: auto;
+  padding: 18px clamp(12px, 2.4vw, 24px) 28px;
+}
+
+.lp-tree-empty {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  max-width: 460px;
+  margin: clamp(12px, 6vh, 52px) auto 0;
+  padding: clamp(18px, 5vw, 30px) 16px;
+  text-align: center;
+}
+
+.lp-tree-empty h2 {
+  margin: 4px 0 0;
+  font-size: var(--lp-workspace-title);
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.lp-tree-empty p {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--lp-workspace-text-muted);
+  font-size: var(--lp-workspace-body);
+  text-wrap: pretty;
+}
+
+.lp-page .lp-tree-empty .lp-btn {
+  gap: 5px;
+  height: 31px;
+  margin-top: 6px;
+  font-size: var(--lp-workspace-meta);
+}
+
+.lp-tree-toolbar,
+.lp-tree-status-filters,
+.lp-tree-toolbar-actions,
+.lp-tree-fold-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.lp-tree-toolbar {
+  gap: 8px 10px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--lp-workspace-line);
+  margin-bottom: 12px;
+}
+
+.lp-page .lp-tree-toolbar .lp-search {
+  flex: 1 1 160px;
+  min-width: min(160px, 100%);
+  min-height: 30px;
+  padding: 4px 9px;
+  border-radius: var(--lp-r, 8px);
+  font-size: var(--lp-workspace-meta);
+  background: var(--lp-workspace-surface);
+}
+
+.lp-tree-status-filters {
+  gap: 2px;
+  max-width: 100%;
+  padding: 2px;
+  border-radius: var(--lp-r, 8px);
+  background: var(--lp-workspace-muted);
+}
+
+.lp-page .lp-tree-status-filters .lp-chip {
+  height: 25px;
+  padding-inline: 7px;
+  color: var(--lp-workspace-text-muted);
+  border: 1px solid transparent;
+  border-radius: var(--lp-r-sm, 6px);
+  font-size: var(--lp-workspace-meta);
+  white-space: nowrap;
+}
+
+.lp-page .lp-tree-status-filters .lp-chip[data-active="true"] {
+  color: var(--dsw-alias-label-primary);
+  border-color: var(--lp-workspace-line);
+  background: var(--lp-workspace-surface);
+}
+
+.lp-tree-toolbar-actions .lp-dd { width: min(128px, 100%); }
+
+.lp-page .lp-tree-toolbar-actions :is(.lp-btn-ghost, .lp-dd-btn) {
+  min-height: 30px;
+  padding-inline: 8px;
+  font-size: var(--lp-workspace-meta);
+}
+
+.lp-tree-content {
+  min-height: 200px;
+  padding-bottom: 20px;
+}
+
+.lp-tree-content .lp-group {
+  margin: 0 0 9px;
+}
+
+.lp-tree-content .lp-group-head {
+  min-height: 36px;
+  padding: 3px 8px;
+  box-sizing: border-box;
+  border-color: var(--lp-workspace-line);
+  border-radius: var(--lp-r-lg, 12px) var(--lp-r-lg, 12px) 0 0;
+  background: color-mix(in srgb, var(--lp-workspace-muted) 72%, transparent);
+}
+
+.lp-tree-content .lp-group-head:last-child {
+  border-bottom: 0;
+  border-radius: inherit;
+}
+
+.lp-tree-group-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 2px;
+  background: transparent;
+  color: inherit;
+  border: 0;
+  border-radius: var(--lp-r-sm, 6px);
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lp-tree-group-toggle:hover { color: var(--dsw-alias-label-primary); }
+
+.lp-tree-group-label {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--dsw-alias-label-primary);
+  font-size: var(--lp-workspace-body);
+  font-weight: 650;
+}
+
+.lp-tree-group-count {
+  flex: none;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--lp-workspace-surface);
+  color: var(--lp-workspace-text-muted);
+  text-align: center;
+  font-size: var(--lp-workspace-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-tree-content .lp-group-add {
+  flex: none;
+  border-color: transparent;
+}
+
+.lp-tree-content .lp-group-add:hover {
+  background: var(--lp-workspace-accent-fill);
+  opacity: 1;
+}
+
+.lp-tree-group-body { padding: 4px; }
+.lp-tree-content .lp-tree-flat-row { margin: 2px 4px; }
+.lp-tree-flat-row > .lp-title { flex: 1; }
+
+.lp-tree-content .lp-children {
+  margin-left: 15px;
+  padding-left: 3px;
+  border-color: var(--lp-workspace-line);
+}
+
+.lp-page .lp-tree-workspace .lp-row {
+  min-width: 0;
+  min-height: 31px;
+  padding: 5px 6px;
+  gap: 6px;
+}
+
+.lp-tree-row-leading {
+  display: grid;
+  flex: none;
+  grid-template-columns: 14px 3px 14px 15px;
+  place-items: center;
+  gap: 4px;
+}
+
+.lp-tree-row-leading input { margin: 0; }
+.lp-tree-row-leading .lp-prio { align-self: center; }
+
+.lp-tree-row-content {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px 9px;
+  min-width: 0;
+}
+
+.lp-tree-row-name {
+  display: grid;
+  flex: 1 1 136px;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lp-page .lp-tree-workspace .lp-row .lp-title {
+  font-size: max(12px, calc(var(--lp-task-fs, 20px) - 5px));
+}
+
+.lp-tree-row-name .lp-inline {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.lp-tree-row-details,
+.lp-tree-row-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 5px;
+  min-width: 0;
+}
+
+.lp-tree-row-details:empty,
+.lp-tree-row-tags:empty {
+  display: none;
+}
+
+.lp-page .lp-tree-workspace .lp-row :is(.lp-meta, .lp-badge, .lp-progress) {
+  font-size: var(--lp-workspace-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-tree-row-tags :is(.lp-type, .lp-tag, .lp-meta) {
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lp-tree-row-tags .lp-type { font-size: max(10px, calc(var(--lp-type-fs, 20px) - 9px)); }
+.lp-tree-row-tags .lp-tag { font-size: max(10px, calc(var(--lp-tag-fs, 20px) - 9px)); }
+
+.lp-tree-entry > .lp-actions { opacity: .65; }
+
+.lp-tree-entry:is(:hover, :focus-within, [data-selected="true"]) > .lp-actions {
+  opacity: 1;
+}
+
+.lp-tree-no-match {
+  min-height: 82px;
+  padding: 10px;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp-tree-empty { animation: lp-workspace-enter var(--lp-workspace-motion) backwards; }
+}
+`;
+
+if (typeof document !== 'undefined' && !document.getElementById('life-planner-tree-styles')) {
+  const sheet = document.createElement('style');
+  sheet.id = 'life-planner-tree-styles';
+  sheet.textContent = TREE_CSS;
+  document.head.appendChild(sheet);
+}
+
 // ---- workspace-skin.js ----
 const WORKSPACE_CSS = `
-/* Planning calendar and today's study overview share the host palette and rhythm. */
+/* The planning and study surfaces share the host palette and rhythm. */
 .lp-workspace-head,
 .lp-calendar-layout,
+.lp-board,
+.lp-tree-workspace,
 .lp-study-overview {
   --lp-workspace-accent: var(--lp-accent, var(--dsh-ui-accent, var(--dsw-alias-brand-primary)));
   --lp-workspace-accent-fill: color-mix(in srgb, var(--lp-workspace-accent) 13%, var(--dsh-ui-surface, var(--dsw-alias-bg-layer-2)));
@@ -3556,6 +4580,29 @@ function ArchiveView(props) {
 }
 
 // ---- views/board.js ----
+const BOARD_ICON_PATHS = {
+  todo: 'M5 4h14v16H5z M8 9h8 M8 13h6',
+  doing: 'M12 7v5l3 2 M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Z',
+  blocked: 'M4 12a8 8 0 1 1 16 0 8 8 0 0 1-16 0Z M8.5 15.5l7-7',
+  done: 'M4 12a8 8 0 1 1 16 0 8 8 0 0 1-16 0Z M8.5 12l2.3 2.3 4.6-4.6',
+  time: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Z M12 7v5l3.5 2',
+};
+
+function BoardIcon({ name }) {
+  return h('svg', {
+    viewBox: '0 0 24 24',
+    width: 14,
+    height: 14,
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true,
+    focusable: 'false',
+  }, h('path', { d: BOARD_ICON_PATHS[name] }));
+}
+
 function BoardView(props) {
   const t = props.t;
   const byId = new Map(props.items.map((item) => [item.id, item]));
@@ -3563,6 +4610,7 @@ function BoardView(props) {
   const [filterValue, setFilterValue] = React.useState('');
   const [beforeDate, setBeforeDate] = React.useState('');
   const dragging = React.useRef(null);
+  const [draggedId, setDraggedId] = React.useState('');
   const [dropTarget, setDropTarget] = React.useState('');
   const canMove = (item, from, to) => {
     if (from === to) return true;
@@ -3571,6 +4619,7 @@ function BoardView(props) {
   };
   const endDrag = () => {
     dragging.current = null;
+    setDraggedId('');
     setDropTarget('');
   };
   const drop = (event, column, anchorId, after) => {
@@ -3583,12 +4632,12 @@ function BoardView(props) {
       props.onMove({ id: source.item.id, column, anchorId, after });
     }
   };
-  const dragOver = (event, column, key) => {
+  const dragOver = (event, column, key, anchorId) => {
     const source = dragging.current;
     if (!source) return;
     event.preventDefault();
     event.stopPropagation();
-    const allowed = canMove(source.item, source.column, column);
+    const allowed = source.item.id !== anchorId && canMove(source.item, source.column, column);
     event.dataTransfer.dropEffect = allowed ? 'move' : 'none';
     setDropTarget(allowed ? key : '');
   };
@@ -3682,127 +4731,152 @@ function BoardView(props) {
     const target = columns[position + (event.key === 'ArrowRight' ? 1 : -1)];
     if (target && canMove(item, column, target.key)) props.onMove({ id: item.id, column: target.key });
   };
+  const dateFilter = filterDim === 'due' && filterValue === 'before';
+  const filterActive = Boolean(filterValue && (!dateFilter || beforeDate));
+
+  const renderCard = (item, column, index) => {
+    const priority = item.priority;
+    const deadline = item.dueAt ? toLocalInput(item.dueAt).replace('T', ' ') : '';
+    const overdue = isOverdue(item);
+    return h(
+      'div',
+      {
+        key: item.id,
+        className: 'lp-card',
+        tabIndex: 0,
+        role: 'button',
+        draggable: true,
+        'data-item-id': item.id,
+        'aria-keyshortcuts': 'Alt+ArrowUp Alt+ArrowDown Alt+ArrowLeft Alt+ArrowRight',
+        'data-drop': dropTarget === item.id + ':after' ? 'after'
+          : dropTarget === item.id + ':before' ? 'before' : undefined,
+        'data-done': String(item.derived.done),
+        'data-dragging': draggedId === item.id ? 'true' : undefined,
+        onClick: () => props.onEdit(item),
+        onKeyDown: (event) => onCardKey(item, column, index, event),
+        onDragStart: (event) => {
+          dragging.current = { item, column };
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('application/x-life-planner-board-task', item.id);
+          setDraggedId(item.id);
+        },
+        onDragEnd: endDrag,
+        onDragOver: (event) => dragOver(event, column, item.id + (afterMiddle(event) ? ':after' : ':before'), item.id),
+        onDrop: (event) => drop(event, column, item.id, afterMiddle(event)),
+      },
+      h('div', { className: 'lp-board-card-head' },
+        h('div', { className: 'lp-card-title', title: item.title }, item.title),
+        priority != null ? h('span', {
+          className: 'lp-card-prio',
+          title: `${t('priorityLabel')} ${priority}`,
+          style: { '--lp-board-priority': toneOf(priority).color },
+        }, `P${priority}`) : null,
+      ),
+      item.taskType || item.tags?.length || item.location ? h('div', { className: 'lp-board-labels' },
+        item.taskType
+          ? h(TypeChip, { type: item.taskType, fallback: t('typeNone'), colorOverrides: props.colorOverrides })
+          : null,
+        h(TagChips, { item, colorOverrides: props.colorOverrides }),
+      ) : null,
+      deadline ? h('time', {
+        className: 'lp-meta lp-board-deadline',
+        dateTime: item.dueAt,
+        'data-overdue': String(overdue),
+        title: `${t(overdue ? 'dueOverdue' : 'dueLabel')} ${deadline}`,
+      }, h(BoardIcon, { name: 'time' }), deadline) : null,
+    );
+  };
+
   return h(
     'div',
-    { className: 'lp-board' },
+    { className: 'lp-board', 'data-dragging': draggedId ? 'true' : undefined },
     h(
       'div',
-      { className: 'lp-filters', style: { gridColumn: '1 / -1' } },
-      h(Dropdown, {
-        value: filterDim,
-        onChange: (next) => {
-          setFilterDim(next);
-          setFilterValue('');
-        },
-        options: [
-          { value: '', label: t('filterNone') },
-          { value: 'tag', label: t('filterTag') },
-          { value: 'type', label: t('filterType') },
-          { value: 'priority', label: t('filterPriority') },
-          { value: 'due', label: t('filterDue') },
-        ],
-      }),
-      filterDim
-        ? h(Dropdown, {
-            value: filterValue,
-            onChange: setFilterValue,
-            placeholder: t('filterValue'),
-            options: valueOptions,
-          })
-        : null,
-      filterDim === 'due' && filterValue === 'before'
-        ? h('input', {
-            className: 'lp-input',
-            type: 'date',
-            style: { width: 160, flex: 'none' },
-            value: beforeDate,
-            onChange: (event) => setBeforeDate(event.target.value),
-          })
-        : null,
-      filterValue
-        ? h(
-            'button',
-            {
-              className: 'lp-btn-ghost',
-              onClick: () => {
-                setFilterDim('');
-                setFilterValue('');
-              },
-            },
-            t('filterClear'),
-          )
-        : null,
-      h('span', { className: 'lp-meta' }, t('boardDragHint')),
-    ),
-    columns.map((column) =>
-      h(
-        'div',
-        {
-          key: column.key,
-          className: 'lp-col',
-          'data-column': column.key,
-          'data-drop': dropTarget === column.key ? 'inside' : undefined,
-          onDragOver: (event) => dragOver(event, column.key, column.key),
-          onDragLeave: (event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) setDropTarget('');
+      { className: 'lp-board-toolbar' },
+      h('div', { className: 'lp-board-filters' },
+        h(Dropdown, {
+          value: filterDim,
+          onChange: (next) => {
+            setFilterDim(next);
+            setFilterValue('');
           },
-          onDrop: (event) => drop(event, column.key),
-        },
-        h('div', { className: 'lp-col-head' }, `${column.label} · ${buckets[column.key].length}`),
-        buckets[column.key].map((item, index) =>
-          h(
-            'div',
-            {
-              key: item.id,
-              className: 'lp-card',
-              tabIndex: 0,
-              role: 'button',
-              draggable: true,
-              'data-item-id': item.id,
-              'aria-keyshortcuts': 'Alt+ArrowUp Alt+ArrowDown Alt+ArrowLeft Alt+ArrowRight',
-              'data-drop': dropTarget === item.id + ':after' ? 'after' : dropTarget === item.id + ':before' ? 'before' : undefined,
-              'data-done': String(item.derived.done),
-              style: { borderLeft: `3px solid ${toneOf(item.priority).color}` },
-              onClick: () => props.onEdit(item),
-              onKeyDown: (event) => onCardKey(item, column.key, index, event),
-              onDragStart: (event) => {
-                dragging.current = { item, column: column.key };
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('application/x-life-planner-board-task', item.id);
-              },
-              onDragEnd: endDrag,
-              onDragOver: (event) => dragOver(event, column.key, item.id + (afterMiddle(event) ? ':after' : ':before')),
-              onDrop: (event) => drop(event, column.key, item.id, afterMiddle(event)),
-            },
-            h(TypeChip, {
-              type: item.taskType,
-              fallback: t('typeNone'),
-              colorOverrides: props.colorOverrides,
-            }),
-            h('div', { className: 'lp-card-title', title: item.title }, item.title),
-            h(TagChips, { item, colorOverrides: props.colorOverrides }),
-            h(
-              'div',
-              { className: 'lp-card-meta' },
-              item.priority !== undefined && item.priority !== null
-                ? h(
-                    'span',
-                    { className: 'lp-card-prio', style: { color: toneOf(item.priority).color } },
-                    `P${item.priority}`,
-                  )
-                : h('span', { className: 'lp-card-prio' }, '—'),
-              item.dueAt
-                ? h(
-                    'span',
-                    { className: 'lp-meta', 'data-overdue': String(isOverdue(item)) },
-                    toLocalInput(item.dueAt).replace('T', ' '),
-                  )
-                : null,
-            ),
-          ),
-        ),
-        h('div', { className: 'lp-col-space', 'aria-hidden': true }),
+          options: [
+            { value: '', label: t('filterNone') },
+            { value: 'tag', label: t('filterTag') },
+            { value: 'type', label: t('filterType') },
+            { value: 'priority', label: t('filterPriority') },
+            { value: 'due', label: t('filterDue') },
+          ],
+        }),
+        filterDim ? h(Dropdown, {
+          value: filterValue,
+          onChange: setFilterValue,
+          placeholder: t('filterValue'),
+          options: valueOptions,
+        }) : null,
+        dateFilter ? h('input', {
+          className: 'lp-input',
+          type: 'date',
+          'aria-label': t('dueBefore'),
+          value: beforeDate,
+          onChange: (event) => setBeforeDate(event.target.value),
+        }) : null,
+        filterValue ? h('button', {
+          className: 'lp-btn-ghost',
+          type: 'button',
+          onClick: () => {
+            setFilterDim('');
+            setFilterValue('');
+          },
+        }, t('filterClear')) : null,
       ),
+      h('div', { className: 'lp-board-hint', title: t('boardDragHint') },
+        h('span', null, t('boardDragAction')),
+        h('span', { className: 'lp-board-keys' },
+          h('kbd', null, 'Alt'), h('span', { 'aria-hidden': true }, '+'), h('kbd', null, t('boardArrowKeys')),
+        ),
+      ),
+    ),
+    h('div', { className: 'lp-board-scroll', role: 'region', tabIndex: 0, 'aria-label': t('tabBoard') },
+      h('div', { className: 'lp-board-lanes' }, columns.map((column) => {
+        const cards = buckets[column.key];
+        const isDropColumn = dropTarget === column.key;
+        let empty = t(filterActive ? 'boardNoMatches' : 'boardEmpty');
+        if (isDropColumn) empty = t('boardDropHere');
+        else if (!filterActive && !draggedId && column.key === 'todo' && props.onCreate) {
+          empty = h('button', {
+            className: 'lp-board-create',
+            type: 'button',
+            onClick: props.onCreate,
+          }, h('span', { 'aria-hidden': true }, '+'), t('newTask'));
+        }
+        return h(
+          'section',
+          {
+            key: column.key,
+            className: 'lp-col',
+            'aria-label': column.label,
+            'data-column': column.key,
+            'data-drop': isDropColumn ? 'inside' : undefined,
+            onDragOver: (event) => dragOver(event, column.key, column.key),
+            onDragLeave: (event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setDropTarget('');
+            },
+            onDrop: (event) => drop(event, column.key),
+          },
+          h('header', { className: 'lp-col-head' },
+            h('span', { className: 'lp-board-status' }, h(BoardIcon, { name: column.key })),
+            h('h2', null, column.label),
+            h('span', { className: 'lp-board-count' }, cards.length),
+          ),
+          h('div', { className: 'lp-board-cards' },
+            cards.length
+              ? cards.map((item, index) => renderCard(item, column.key, index))
+              : h('div', { className: 'lp-board-empty' }, empty),
+            h('div', { className: 'lp-col-space', 'aria-hidden': true }),
+          ),
+        );
+      })),
     ),
   );
 }
@@ -4398,9 +5472,16 @@ function TreeView(props) {
   if (items.length === 0) {
     return h(
       'div',
-      { className: 'lp-empty' },
-      h('div', null, t('emptyTree')),
-      h('button', { className: 'lp-btn', style: { marginTop: 12 }, onClick: () => props.onNew() }, `+ ${t('newItem')}`),
+      { className: 'lp-tree-workspace' },
+      h('section', { className: 'lp-workspace-card lp-tree-empty' },
+        h('span', { className: 'lp-empty-symbol' }, h(SidebarIcon, { variant: 'planning', size: 20 })),
+        h('h2', null, t('emptyTree')),
+        h('p', null, t('emptyTreeHint')),
+        h('button', { className: 'lp-btn lp-workspace-primary', type: 'button', onClick: () => props.onNew() },
+          h('span', { className: 'lp-workspace-plus', 'aria-hidden': true }, '+'),
+          t('newTask'),
+        ),
+      ),
     );
   }
 
@@ -4450,7 +5531,7 @@ function TreeView(props) {
       .map(([key, list]) =>
         h(
           'div',
-          { key, className: 'lp-group' },
+          { key, className: 'lp-group lp-workspace-card' },
           h(
             'div',
             { className: 'lp-group-head' },
@@ -4458,14 +5539,15 @@ function TreeView(props) {
               className: 'lp-group-dot',
               style: { background: colorOfName(key, props.colorOverrides) },
             }),
-            h('span', null, `${key} · ${list.length}`),
+            h('h2', { className: 'lp-tree-group-label' }, key),
+            h('span', { className: 'lp-tree-group-count' }, list.length),
           ),
           list.map((item) =>
             h(
               'div',
               {
                 key: item.id,
-                className: 'lp-row',
+                className: 'lp-row lp-tree-flat-row',
                 tabIndex: 0,
                 role: 'button',
                 'data-done': String(item.derived.done),
@@ -4639,25 +5721,24 @@ function TreeView(props) {
         const open = filtering || !collapsed.has(groupId);
         return h(
           'div',
-          { key: groupId, className: 'lp-group' },
+          { key: groupId, className: 'lp-group lp-workspace-card' },
           h(
-            'div',
-            {
-              className: 'lp-group-head lp-group-toggle',
-              'data-open': String(open),
-              onClick: () => {
-                const next = new Set(collapsed);
-                if (next.has(groupId)) next.delete(groupId);
-                else next.add(groupId);
-                setCollapsed(next);
-              },
+            'header',
+            { className: 'lp-group-head' },
+            h('button', {
+              className: 'lp-tree-group-toggle',
+              type: 'button',
+              'aria-expanded': open,
+              onClick: () => toggle(groupId),
             },
-            h('span', { className: 'lp-caret', 'data-open': String(open) }, '▾'),
-            h('span', {
-              className: 'lp-group-dot',
-              style: { background: colorOfName(label, props.colorOverrides) },
-            }),
-            h('span', null, `${label} · ${list.length}`),
+              h('span', { className: 'lp-caret', 'data-open': String(open), 'aria-hidden': true }, '▾'),
+              h('span', {
+                className: 'lp-group-dot',
+                style: { background: colorOfName(label, props.colorOverrides) },
+              }),
+              h('span', { className: 'lp-tree-group-label' }, label),
+              h('span', { className: 'lp-tree-group-count' }, list.length),
+            ),
             // Creating here pre-fills the category; the editor still lets you change it.
             h(
               'button',
@@ -4665,6 +5746,7 @@ function TreeView(props) {
                 className: 'lp-iconbtn lp-group-add',
                 type: 'button',
                 title: t('newItem'),
+                'aria-label': `${t('newTask')} · ${label}`,
                 onClick: (event) => {
                   event.stopPropagation();
                   if (typeof props.onNew === 'function') props.onNew({ taskType: type });
@@ -4673,7 +5755,7 @@ function TreeView(props) {
               '+',
             ),
           ),
-          open ? h('div', { className: 'lp-children' }, list.map((item) => renderNode(item))) : null,
+          open ? h('div', { className: 'lp-tree-group-body' }, list.map((item) => renderNode(item))) : null,
         );
       });
     const createRow = creating && creating.parentId === null ? renderCreateRow(null) : null;
@@ -4702,7 +5784,7 @@ function TreeView(props) {
       h(
         'div',
         {
-          className: 'lp-row',
+          className: 'lp-row lp-tree-entry',
           tabIndex: 0,
           role: 'button',
           'data-done': String(item.derived.done),
@@ -4711,7 +5793,9 @@ function TreeView(props) {
           'data-item-id': item.id,
           draggable: true,
           onClick: () => setSelectedId(item.id),
-          onKeyDown: keyActivate(() => setSelectedId(item.id)),
+          onKeyDown: (event) => {
+            if (event.target === event.currentTarget) keyActivate(() => setSelectedId(item.id))(event);
+          },
           'data-dragging': String(draggingId === item.id),
           onDragStart: (event) => {
             event.dataTransfer.effectAllowed = 'move';
@@ -4750,97 +5834,96 @@ function TreeView(props) {
           },
           onDrop: (event) => dropOn(event, item),
         },
-        kids.length > 0
-          ? h(
-              'button',
-              {
+        h('div', { className: 'lp-tree-row-leading' },
+          kids.length > 0
+            ? h('button', {
                 className: 'lp-caret',
+                type: 'button',
+                'aria-expanded': expanded,
+                'aria-label': item.title,
                 onClick: (event) => {
                   event.stopPropagation();
                   toggle(item.id);
                 },
-                'aria-label': item.title,
-              },
-              expanded ? '▾' : '▸',
-            )
-          : h('span', { className: 'lp-caret', 'data-empty': 'true' }, '▸'),
-        item.kind === 'task'
-          ? h('span', {
-              className: 'lp-prio',
-              style: { background: toneOf(item.priority).color },
-              title: `P${item.priority ?? 5}`,
-            })
-          : null,
-        item.kind === 'task'
-          ? h('input', {
-              type: 'checkbox',
-              checked: Boolean(item.derived.done),
-              disabled: Boolean(item.derived.studyManaged),
-              title: item.derived.studyManaged ? t('studyStatusManaged') : undefined,
-              onClick: (event) => event.stopPropagation(),
-              onChange: (event) => props.onToggle(item, event.target.checked, event),
-              'aria-label': item.title,
-            })
-          : h('span', { style: { width: 13, flex: 'none' } }),
-        h('span', { className: 'lp-ico', 'data-kind': item.kind, style: item.taskType ? { color: colorOfName(item.taskType, props.colorOverrides) } : undefined }, KIND_GLYPH[item.kind] || '○'),
-        item.recurrence && item.recurrence.freq
-          ? h('span', { className: 'lp-meta', title: t('freqLabel') }, '⟳')
-          : null,
-        h(TypeChip, {
-          type: item.taskType,
-          fallback: t('typeNone'),
-          colorOverrides: props.colorOverrides,
-        }),
-        renaming && renaming.id === item.id
-          ? h('input', {
-              className: 'lp-inline',
-              autoFocus: true,
-              value: renaming.value,
-              onChange: (event) => setRenaming({ id: item.id, value: event.target.value }),
-              onKeyDown: (event) => {
-                if (event.key === 'Enter') event.currentTarget.blur();
-                if (event.key === 'Escape') {
-                  cancelled.current = true;
-                  setRenaming(null);
-                }
-              },
-              onBlur: commitRename,
-            })
-          : h(
-              'span',
-              {
-                className: 'lp-title',
-                title: item.title,
-                onClick: (event) => {
-                  event.stopPropagation();
-                  setSelectedId(item.id);
-                },
-                onDoubleClick: (event) => {
-                  event.stopPropagation();
-                  setRenaming({ id: item.id, value: item.title });
-                },
-              },
-              item.title,
+              }, expanded ? '▾' : '▸')
+            : h('span', { className: 'lp-caret', 'data-empty': 'true', 'aria-hidden': true }),
+          item.kind === 'task' ? h('span', {
+            className: 'lp-prio',
+            style: { background: toneOf(item.priority).color },
+            title: `P${item.priority ?? 5}`,
+          }) : h('span', { 'aria-hidden': true }),
+          item.kind === 'task' ? h('input', {
+            type: 'checkbox',
+            checked: Boolean(item.derived.done),
+            disabled: Boolean(item.derived.studyManaged),
+            title: item.derived.studyManaged ? t('studyStatusManaged') : undefined,
+            onClick: (event) => event.stopPropagation(),
+            onChange: (event) => props.onToggle(item, event.target.checked, event),
+            'aria-label': item.title,
+          }) : h('span', { 'aria-hidden': true }),
+          h('span', {
+            className: 'lp-ico',
+            'data-kind': item.kind,
+            style: item.taskType ? { color: colorOfName(item.taskType, props.colorOverrides) } : undefined,
+          }, KIND_GLYPH[item.kind] || '○'),
+        ),
+        h('div', { className: 'lp-tree-row-content' },
+          h('div', { className: 'lp-tree-row-name', onDoubleClick: () => props.onEdit(item) },
+            renaming?.id === item.id
+              ? h('input', {
+                  className: 'lp-inline',
+                  autoFocus: true,
+                  value: renaming.value,
+                  'aria-label': item.title,
+                  onDoubleClick: (event) => event.stopPropagation(),
+                  onChange: (event) => setRenaming({ id: item.id, value: event.target.value }),
+                  onKeyDown: (event) => {
+                    if (event.key === 'Enter') event.currentTarget.blur();
+                    if (event.key === 'Escape') {
+                      cancelled.current = true;
+                      setRenaming(null);
+                    }
+                  },
+                  onBlur: commitRename,
+                })
+              : h('span', {
+                  className: 'lp-title',
+                  title: item.title,
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    setSelectedId(item.id);
+                  },
+                  onDoubleClick: (event) => {
+                    event.stopPropagation();
+                    setRenaming({ id: item.id, value: item.title });
+                  },
+                }, item.title),
+            h('div', { className: 'lp-tree-row-tags' },
+              item.recurrence?.freq ? h('span', { className: 'lp-meta', title: t('freqLabel') }, '⟳') : null,
+              item.taskType ? h(TypeChip, {
+                type: item.taskType,
+                fallback: t('typeNone'),
+                colorOverrides: props.colorOverrides,
+              }) : null,
+              h(TagChips, { item, colorOverrides: props.colorOverrides }),
             ),
-        h(TagChips, { item, colorOverrides: props.colorOverrides }),
-        h('span', {
-          className: 'lp-fill',
-          onDoubleClick: (event) => {
-            event.stopPropagation();
-            props.onEdit(item);
-          },
-        }),
-        progress && progress.total > 0
-          ? h('span', { className: 'lp-progress' }, `${progress.done}/${progress.total}`)
-          : null,
-        blockers.length > 0
-          ? h(
-              'span',
-              { className: 'lp-badge', title: blockers.map((dep) => dep.title).join('、') },
-              t('blockedBy').replace('{n}', String(blockers.length)),
-            )
-          : item.derived.blocked ? h('span', { className: 'lp-badge' }, t('blocked')) : null,
-        item.dueAt ? h('span', { className: 'lp-meta', 'data-overdue': String(isOverdue(item)) }, toLocalInput(item.dueAt).replace('T', ' ')) : null,
+          ),
+          h('div', { className: 'lp-tree-row-details' },
+            progress && progress.total > 0
+              ? h('span', { className: 'lp-progress' }, `${progress.done}/${progress.total}`)
+              : null,
+            blockers.length > 0
+              ? h('span', { className: 'lp-badge', title: blockers.map((dep) => dep.title).join('、') },
+                  t('blockedBy').replace('{n}', String(blockers.length)),
+                )
+              : item.derived.blocked ? h('span', { className: 'lp-badge' }, t('blocked')) : null,
+            item.dueAt ? h('time', {
+              className: 'lp-meta',
+              dateTime: item.dueAt,
+              'data-overdue': String(isOverdue(item)),
+            }, toLocalInput(item.dueAt).replace('T', ' ')) : null,
+          ),
+        ),
         h(
           'span',
           { className: 'lp-actions' },
@@ -4848,7 +5931,9 @@ function TreeView(props) {
             'button',
             {
               className: 'lp-mini',
+              type: 'button',
               title: t('newChild'),
+              'aria-label': t('newChild'),
               onClick: (event) => {
                 event.stopPropagation();
                 if (collapsed.has(item.id)) {
@@ -4866,6 +5951,7 @@ function TreeView(props) {
             'button',
             {
               className: 'lp-mini',
+              type: 'button',
               title: t('edit'),
               'aria-haspopup': 'menu',
               'aria-expanded': rowMenu.open && menuFor === item.id,
@@ -4903,27 +5989,33 @@ function TreeView(props) {
 
   return h(
     'div',
-    null,
+    { className: 'lp-tree-workspace' },
     h(
       'div',
-      { className: 'lp-toolbar' },
-      h('button', { className: 'lp-btn-ghost', onClick: () => props.onNew() }, `+ ${t('newItem')}`),
-      filters.map((value) =>
-        h(
-          'button',
-          {
-            key: value,
-            className: 'lp-chip',
-            'data-active': String(filter === value),
-            onClick: () => setFilter(value),
-          },
-          t(`filter_${value}`),
-        ),
-      ),
-      h('div', { style: { flex: 1 } }),
+      { className: 'lp-tree-toolbar' },
+      h('input', {
+        className: 'lp-search',
+        type: 'search',
+        placeholder: t('search'),
+        'aria-label': t('search'),
+        value: query,
+        onChange: (event) => setQuery(event.target.value),
+      }),
       h(
         'div',
-        { style: { width: 132 } },
+        { className: 'lp-tree-status-filters', role: 'group', 'aria-label': t('treeStatusFilters') },
+        filters.map((value) =>
+          h('button', {
+            key: value,
+            className: 'lp-chip',
+            type: 'button',
+            'data-active': String(filter === value),
+            'aria-pressed': filter === value,
+            onClick: () => setFilter(value),
+          }, t(`filter_${value}`)),
+        ),
+      ),
+      h('div', { className: 'lp-tree-toolbar-actions' },
         h(Dropdown, {
           value: groupBy,
           onChange: setGroupBy,
@@ -4933,28 +6025,25 @@ function TreeView(props) {
             { value: 'type', label: t('groupType') },
           ],
         }),
+        h('div', { className: 'lp-tree-fold-actions' },
+          h('button', {
+            className: 'lp-btn-ghost',
+            type: 'button',
+            onClick: () => setCollapsed(new Set()),
+          }, t('expandAll')),
+          h('button', {
+            className: 'lp-btn-ghost',
+            type: 'button',
+            onClick: () =>
+              setCollapsed(new Set(items.filter((item) => (map.get(item.id) || []).length > 0).map((item) => item.id))),
+          }, t('collapseAll')),
+        ),
       ),
-      h('button', { className: 'lp-btn-ghost', onClick: () => setCollapsed(new Set()) }, t('expandAll')),
-      h(
-        'button',
-        {
-          className: 'lp-btn-ghost',
-          onClick: () =>
-            setCollapsed(new Set(items.filter((item) => (map.get(item.id) || []).length > 0).map((item) => item.id))),
-        },
-        t('collapseAll'),
-      ),
-      h('input', {
-        className: 'lp-search',
-        placeholder: t('search'),
-        value: query,
-        onChange: (event) => setQuery(event.target.value),
-      }),
     ),
     h(
       'div',
       {
-        style: { padding: '8px 12px 28px', minHeight: 200 },
+        className: 'lp-tree-content',
         onDragOver: (event) => {
           if (!dragRef.current) return;
           event.preventDefault();
@@ -4971,7 +6060,7 @@ function TreeView(props) {
         },
       },
       groupBy === 'hierarchy' ? renderHierarchy() : renderGroups(),
-      visible.size === 0 ? h('div', { className: 'lp-empty' }, t('noMatch')) : null,
+      visible.size === 0 ? h('div', { className: 'lp-workspace-card lp-workspace-empty lp-tree-no-match' }, t('noMatch')) : null,
     ),
   );
 }
@@ -4986,9 +6075,7 @@ function ItemEditor(props) {
   const studyTask = Boolean(item.derived?.studyTask);
 
   const [title, setTitle] = React.useState(item.title || '');
-  const [kind, setKind] = React.useState(item.kind || 'task');
-  // One node type: the kind selector is gone, the value only feeds legacy calls.
-  void setKind;
+  const kind = item.kind || 'task';
   const [taskType, setTaskType] = React.useState(item.taskType || '');
   const [parentId, setParentId] = React.useState(item.parentId || '');
   const [due, setDue] = React.useState(toLocalInput(item.dueAt));
@@ -5069,158 +6156,115 @@ function ItemEditor(props) {
       .finally(() => setBusy(false));
   };
 
+  const input = (key, attributes, tag) => dialogField(t(key), attributes, tag);
+  const select = (key, attributes) => dialogSelect(t(key), attributes);
+
   return h(
     Modal,
-    { title: isNew ? t('newItem') : t('edit'), onClose: props.onClose },
-    error ? h('div', { className: 'lp-err' }, error) : null,
-    h('div', { className: 'lp-form-section' }, t('sectionBasic')),
-      h(
-        'div',
-        { className: 'lp-field' },
-        h('label', null, t('titleLabel')),
-        h('input', { className: 'lp-input', value: title, onChange: (event) => setTitle(event.target.value) }),
-      ),
-      h('div', { className: 'lp-form-section' }, t('sectionClass')),
-      h(
-        'div',
-        { className: 'lp-field' },
-        h('label', null, t('parentLabel')),
-        h(Dropdown, {
-          value: parentId,
-          onChange: setParentId,
-          placeholder: t('rootParent'),
-          options: [
-            { value: '', label: t('rootParent') },
-            ...parentOptions.map((entry) => ({ value: entry.id, label: entry.title })),
-          ],
-        }),
-      ),
-      h('div', { className: 'lp-form-section' }, t('sectionTime')),
-      h(
-        'div',
-        { className: 'lp-row2' },
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('startLabel')),
+    { className: 'lp-item-editor', title: t(isNew ? 'newTask' : 'editTaskDialog'), onClose: props.onClose },
+    error ? h('div', { className: 'lp-err', role: 'alert' }, error) : null,
+    input('titleLabel', {
+      value: title,
+      'aria-required': true,
+      onChange: (event) => setTitle(event.target.value),
+    }),
+    h('div', { className: 'lp-dialog-grid' },
+      input('dueLabel', {
+        type: 'datetime-local', value: due, disabled: studyTask,
+        onChange: (event) => setDue(event.target.value),
+      }),
+      kind === 'task' ? select('priorityLabel', {
+        value: priority,
+        onChange: setPriority,
+        options: Array.from({ length: 10 }, (_, value) => ({ value, label: String(value) })),
+      }) : null,
+    ),
+    h('div', { className: 'lp-dialog-grid' },
+      select('typeLabel', {
+        value: taskType,
+        onChange: setTaskType,
+        options: [
+          { value: '', label: t('typeNone') },
+          ...Array.from(new Set([...(props.taskTypes || []), item.taskType].filter(Boolean)))
+            .map((name) => ({ value: name, label: name })),
+        ],
+      }),
+      parentOptions.length || parentId ? select('parentLabel', {
+        value: parentId,
+        onChange: setParentId,
+        placeholder: t('rootParent'),
+        options: [
+          { value: '', label: t('rootParent') },
+          ...parentOptions.map((entry) => ({ value: entry.id, label: entry.title })),
+        ],
+      }) : null,
+    ),
+    !isNew && kind === 'task' && !studyManaged
+      ? h('label', { className: 'lp-dialog-check' },
           h('input', {
-            className: 'lp-input',
-            type: 'datetime-local',
-            value: start,
-            disabled: studyTask,
+            type: 'checkbox',
+            checked: done,
+            onChange: (event) => {
+              const next = event.target.checked;
+              setDone(next);
+              props.onToggle(item, next, event);
+            },
+          }),
+          t('doneLabel'),
+        )
+      : studyManaged ? h('p', { className: 'lp-meta' }, t('studyStatusManaged')) : null,
+    h('div', { className: 'lp-dialog-options' },
+      h(DialogDisclosure, {
+        title: t('sectionTime'),
+        hint: start || location || freq ? t('dialogHasDetails') : undefined,
+      },
+        h('div', { className: 'lp-dialog-grid' },
+          input('startLabel', {
+            type: 'datetime-local', value: start, disabled: studyTask,
             onChange: (event) => setStart(event.target.value),
           }),
-        ),
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('dueLabel')),
-          h('input', {
-            className: 'lp-input',
-            type: 'datetime-local',
-            value: due,
-            disabled: studyTask,
-            onChange: (event) => setDue(event.target.value),
-          }),
-        ),
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('locationLabel')),
-          h('input', {
-            className: 'lp-input',
-            value: location,
-            placeholder: t('locationHint'),
+          input('locationLabel', {
+            value: location, placeholder: t('locationHint'),
             onChange: (event) => setLocation(event.target.value),
           }),
         ),
-        kind === 'task'
-          ? h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('priorityLabel')),
-              h(Dropdown, {
-                value: priority,
-                onChange: setPriority,
-                options: Array.from({ length: 10 }, (_, value) => ({ value, label: String(value) })),
-              }),
-            )
-          : null,
+        kind === 'task' && !studyTask ? select('freqLabel', {
+          value: freq,
+          onChange: setFreq,
+          options: [
+            { value: '', label: t('freqNone') },
+            { value: 'daily', label: t('freqDaily') },
+            { value: 'weekly', label: t('freqWeekly') },
+            { value: 'monthly', label: t('freqMonthly') },
+          ],
+        }) : null,
       ),
-      kind === 'task' && !studyTask
-        ? h(
-            'div',
-            { className: 'lp-field' },
-            h('label', null, t('freqLabel')),
-            h(Dropdown, {
-              value: freq,
-              onChange: setFreq,
-              options: [
-                { value: '', label: t('freqNone') },
-                { value: 'daily', label: t('freqDaily') },
-                { value: 'weekly', label: t('freqWeekly') },
-                { value: 'monthly', label: t('freqMonthly') },
-              ],
-            }),
-          )
-        : null,
-      h('div', { className: 'lp-form-section' }, t('sectionExtra')),
-      h(
-        'div',
-        { className: 'lp-field' },
-        h('label', null, t('noteLabel')),
-        h('textarea', { className: 'lp-input', rows: 3, value: note, onChange: (event) => setNote(event.target.value) }),
-      ),
-      h(
-        'div',
-        { className: 'lp-row2' },
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('typeLabel')),
-          h(Dropdown, {
-            value: taskType,
-            onChange: setTaskType,
-            placeholder: t('typeNone'),
-            options: [
-              { value: '', label: t('typeNone') },
-              ...Array.from(
-                new Set([...(props.taskTypes || []), item.taskType].filter(Boolean)),
-              ).map((name) => ({ value: name, label: name })),
-            ],
-          }),
-        ),
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('tagsLabel')),
-          h(
-            'div',
-            { className: 'lp-taglist' },
-            tagChoices.length === 0
-              ? h('span', { className: 'lp-meta' }, t('tagsEmpty'))
-              : tagChoices.map((tag) =>
-                  h(
-                    'button',
-                    {
-                      key: tag,
-                      type: 'button',
-                      className: 'lp-chip',
-                      'data-active': String(tags.includes(tag)),
-                      style: { color: colorOfName(tag, props.colorOverrides) },
-                      onClick: () => toggleTag(tag),
-                    },
-                    tag,
-                  ),
-                ),
-          ),
-          h(
-            'div',
-            { style: { display: 'flex', gap: 6, marginTop: 4 } },
+      h(DialogDisclosure, {
+        title: t('taskNotesAndTags'),
+        hint: note.trim() || tags.length ? t('dialogHasDetails') : undefined,
+      },
+        input('noteLabel', {
+          rows: 3, value: note,
+          onChange: (event) => setNote(event.target.value),
+        }, 'textarea'),
+        h('div', { className: 'lp-field' },
+          h('span', null, t('tagsLabel')),
+          tagChoices.length ? h('div', { className: 'lp-taglist' }, tagChoices.map((tag) =>
+            h('button', {
+              key: tag,
+              type: 'button',
+              className: 'lp-chip',
+              'data-active': String(tags.includes(tag)),
+              'aria-pressed': tags.includes(tag),
+              style: { color: colorOfName(tag, props.colorOverrides) },
+              onClick: () => toggleTag(tag),
+            }, tag))) : null,
+          h('div', { className: 'lp-dialog-inline' },
             h('input', {
               className: 'lp-input',
               value: tagDraft,
               placeholder: t('tagsNewHint'),
+              'aria-label': t('tagsNewHint'),
               onChange: (event) => setTagDraft(event.target.value),
               onKeyDown: (event) => {
                 if (event.key === 'Enter') {
@@ -5233,69 +6277,34 @@ function ItemEditor(props) {
           ),
         ),
       ),
-      !isNew && kind === 'task' && !studyManaged
-        ? h(
-            'label',
-            { className: 'lp-field', style: { flexDirection: 'row', alignItems: 'center', gap: 8 } },
-            h('input', {
-              type: 'checkbox',
-              checked: done,
-              onChange: (event) => {
-                const next = event.target.checked;
-                setDone(next);
-                props.onToggle(item, next, event);
-              },
-            }),
-            t('doneLabel'),
-          )
-        : studyManaged ? h('p', { className: 'lp-meta' }, t('studyStatusManaged')) : null,
-      kind === 'task'
-        ? h(
-            'div',
-            { className: 'lp-field' },
-            h('label', null, `${t('depsLabel')} · ${t('depsHint')}`),                dependencyOptions.length === 0
-              ? h('div', { className: 'lp-meta' }, t('noDeps'))
-              : h(
-                  'div',
-                  { className: 'lp-deps' },
-                  dependencyOptions.map((entry) =>
-                    h(
-                      'label',
-                      { key: entry.id },
-                      h('input', {
-                        type: 'checkbox',
-                        checked: deps.has(entry.id),
-                        onChange: () => toggleDep(entry.id),
-                      }),
-                      entry.title,
-                    ),
-                  ),
-                ),
-          )
-        : null,
-      h(
-        'div',
-        { className: 'lp-modal-actions' },
-        !isNew
-          ? h(
-              'button',
-              {
-                className: 'lp-btn-ghost',
-                disabled: busy,
-                onClick: () => {
-                  setBusy(true);
-                  api('item.archive', { id: item.id })
-                    .then(() => props.onSaved())
-                    .catch((err) => setError(err.message))
-                    .finally(() => setBusy(false));
-                },
-              },
-              t('archive'),
-            )
-          : null,
-        h('button', { className: 'lp-btn-ghost', onClick: props.onClose, disabled: busy }, t('cancel')),
-        h('button', { className: 'lp-btn', onClick: save, disabled: busy || !title.trim() }, t('save')),
-      ),
+      kind === 'task' && (dependencyOptions.length || deps.size) ? h(DialogDisclosure, {
+        title: t('depsLabel'),
+        hint: deps.size ? t('itemsCount').replace('{n}', String(deps.size)) : undefined,
+      },
+        h('p', { className: 'lp-meta' }, t('depsHint')),
+        dependencyOptions.length ? h('div', { className: 'lp-deps' }, dependencyOptions.map((entry) =>
+          h('label', { key: entry.id },
+            h('input', { type: 'checkbox', checked: deps.has(entry.id), onChange: () => toggleDep(entry.id) }),
+            entry.title,
+          ))) : h('p', { className: 'lp-meta' }, t('noDeps')),
+      ) : null,
+    ),
+    h(DialogActions, null,
+      !isNew ? h('button', {
+        className: 'lp-btn-ghost lp-dialog-side-action',
+        type: 'button',
+        disabled: busy,
+        onClick: () => {
+          setBusy(true);
+          api('item.archive', { id: item.id })
+            .then(() => props.onSaved())
+            .catch((err) => setError(err.message))
+            .finally(() => setBusy(false));
+        },
+      }, t('archive')) : null,
+      h('button', { className: 'lp-btn-ghost', type: 'button', onClick: props.onClose, disabled: busy }, t('cancel')),
+      h('button', { className: 'lp-btn', type: 'button', onClick: save, disabled: busy || !title.trim() }, t('save')),
+    ),
   );
 }
 
@@ -5422,7 +6431,6 @@ function SettingsModal(props) {
     h(
       'div',
       { className: 'lp-field' },
-      h('label', null, `${t('tagColor')} · ${name}`),
       h(
         'div',
         { className: 'lp-swatch-panel' },
@@ -5432,6 +6440,8 @@ function SettingsModal(props) {
             type: 'button',
             className: 'lp-swatch',
             'data-active': String((colorOverrides[name] || colorOfName(name, colorOverrides)) === color),
+            'aria-pressed': (colorOverrides[name] || colorOfName(name, colorOverrides)) === color,
+            'aria-label': color,
             style: { background: color },
             onClick: () => setColor(name, color),
           }),
@@ -5716,9 +6726,9 @@ function SettingsModal(props) {
 
   const numberInput = (key, label, value, onChange) =>
     h(
-      'div',
+      'label',
       { className: 'lp-field' },
-      h('label', null, label),
+      h('span', null, label),
       h('input', {
         className: 'lp-input',
         type: 'number',
@@ -5732,11 +6742,12 @@ function SettingsModal(props) {
     const mask = layer.mask || {};
     const inputRef = area === 'study' ? bgStudyRef : bgPlanningRef;
     const setLayer = (patch) => setBackgroundLayer(area, patch);
+    const title = t(area === 'study' ? 'fBgStudy' : 'fBgPlanning');
     return h(
-      'div',
-      { className: 'lp-field' },
-      h('label', null, area === 'study' ? t('fBgStudy') : t('fBgPlanning')),
+      DialogDisclosure,
+      { title },
       h(Dropdown, {
+        label: title,
         value: layer.mode || 'none',
         onChange: (value) => setLayer({ mode: value }),
         options: [
@@ -5867,7 +6878,8 @@ function SettingsModal(props) {
 
 
   const group = (title, ...children) => h('section', { className: 'lp-settings-group' },
-    h('h3', { className: 'lp-form-section' }, t(title)), ...children);
+    h('h3', { className: 'lp-settings-heading' }, t(title)), ...children);
+  const advanced = (title, ...children) => h(DialogDisclosure, { title: t(title) }, ...children);
   const switchRow = (label, hint, value, onChange) => h('div', { className: 'lp-settings-switch' },
     h('div', null, h('strong', null, t(label)), hint ? h('div', { className: 'lp-meta' }, t(hint)) : null),
     h(Switch, { label: t(label), value, onChange }));
@@ -5882,15 +6894,15 @@ function SettingsModal(props) {
         }),
         h('button', { className: 'lp-btn', type: 'submit', disabled: !draft.trim() }, t(addLabel))),
       active ? h('div', { className: 'lp-settings-classification' },
-        h(Dropdown, { value: active, onChange: onSelect, options: list.map((name) => ({ value: name, label: name })) }),
+        h(Dropdown, { label: t(title), value: active, onChange: onSelect, options: list.map((name) => ({ value: name, label: name })) }),
         h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => onRemove(active) }, t('delete')),
-        colorSwatches(active))
+        h(DialogDisclosure, { title: t('tagColor') }, colorSwatches(active)))
       : h('div', { className: 'lp-meta' }, t(empty)),
       hint ? h('div', { className: 'lp-meta' }, t(hint)) : null,
     );
   };
 
-  const tagsPage = () => h('div', { className: 'lp-settings-sections' },
+  const tagsPage = () => h('div', { className: 'lp-settings-sections lp-settings-collections' },
     classification({
       title: 'sectionTags', hint: 'taskTypeAutoHint', list: parseList(typesText), draft: tagDraft, onDraft: setTagDraft,
       onAdd: addTag, placeholder: 'tagNamePlaceholder', addLabel: 'addTag', selected: selectedTag, onSelect: setSelectedTag,
@@ -5936,7 +6948,7 @@ function SettingsModal(props) {
           h('button', { type: 'button', className: 'lp-btn-ghost', onClick: refreshNow, disabled: refreshingRegion || regionDraftChanged }, t('calendarRefreshNow')))),
       group('studyTipTitle',
         switchRow('tipDeepSeek', 'settingsStudyAdviceHint', form.dailyAdvice !== false, (next) => set('dailyAdvice', next))),
-      group('sectionData',
+      advanced('sectionData',
         h(
           'div',
           { className: 'lp-toolbar' },
@@ -5970,7 +6982,7 @@ function SettingsModal(props) {
           h('span', { className: 'lp-settings-status' }, t('notifyState').replace('{s}', t('notifyPermission_' + permission))),
         ),
       ),
-      group('settingsNotifyWindows',
+      advanced('settingsNotifyWindows',
         h('div', { className: 'lp-setting-grid' },
           textField('weekdayWindows', t('fWeekdayWindows')),
           textField('weekendWindows', t('fWeekendWindows')),
@@ -5978,12 +6990,12 @@ function SettingsModal(props) {
           numberField('nonUrgentQuotaPerWindow', t('fQuota')),
           numberField('maxRemindersPerWindow', t('fMaxPerWindow')),
           numberField('maxDeferHours', t('fMaxDefer')))),
-      group('settingsNotifyLead',
+      advanced('settingsNotifyLead',
         h('div', { className: 'lp-setting-grid' },
           numberField('leadTaskDays', t('fLeadTaskDays')),
           numberField('leadProjectDays', t('fLeadProjectDays')),
           numberField('longTermReminderHours', t('fLongTermHours')))),
-      group('sectionTask', h('div', { className: 'lp-setting-grid' },
+      advanced('sectionTask', h('div', { className: 'lp-setting-grid' },
         numberField('archiveAfterDays', t('fArchiveDays')),
         numberField('deleteAfterDays', t('fDeleteDays')))),
     );
@@ -5998,20 +7010,24 @@ function SettingsModal(props) {
         { className: 'lp-field' },
         h('label', null, t('fSkinPreset')),
         h(Dropdown, {
+          label: t('fSkinPreset'),
           value: skinChoice,
           onChange: chooseSkin,
           options: listSkinOptions(),
         }),
+      ),
+      advanced('skinManage',
         h(
           'div',
-          { className: 'lp-toolbar', style: { marginTop: 6 } },
+          { className: 'lp-toolbar' },
           h('input', {
             className: 'lp-input',
             value: skinName,
+            'aria-label': t('skinNamePlaceholder'),
             placeholder: t('skinNamePlaceholder'),
             onChange: (event) => setSkinName(event.target.value),
           }),
-          h('button', { className: 'lp-btn', type: 'button', onClick: saveCurrentSkin }, t('skinSaveAs')),
+          h('button', { className: 'lp-btn', type: 'button', disabled: !skinName.trim(), onClick: saveCurrentSkin }, t('skinSaveAs')),
           skinChoice.indexOf('user:') === 0
             ? h('button', { className: 'lp-btn-ghost', type: 'button', onClick: removeCurrentSkin }, t('skinDelete'))
             : null,
@@ -6062,7 +7078,7 @@ function SettingsModal(props) {
         ),
       )),
 
-      group('sectionFont',
+      advanced('sectionFont',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -6076,14 +7092,14 @@ function SettingsModal(props) {
         numberInput('base', t('fFontBase'), appearance.font.base, setFont),
       ),
       h('div', { className: 'lp-meta' }, t('fFontHint'))),
-      group('sectionSize',
+      advanced('sectionSize',
       h(
         'div',
         { className: 'lp-setting-grid' },
         numberInput('calendarHeight', t('fCalHeight'), appearance.size.calendarHeight, setSize),
       ),
       h('div', { className: 'lp-meta' }, t('fCalHeightHint'))),
-      group('sectionMistake',
+      advanced('sectionMistake',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -6098,7 +7114,7 @@ function SettingsModal(props) {
         numberInput('mistakeReason', t('fMistakeReasonFs'), appearance.font.mistakeReason, setFont),
       ),
       h('div', { className: 'lp-meta' }, t('fMistakeHint'))),
-      group('sectionAccent',
+      advanced('sectionAccent',
       h(
         'div',
         { className: 'lp-row2' },
@@ -6125,7 +7141,7 @@ function SettingsModal(props) {
           }),
         ),
       )),
-      group('sectionBackground',
+      advanced('sectionBackground',
       h(
         'div',
         { className: 'lp-field' },
@@ -6164,7 +7180,8 @@ function SettingsModal(props) {
   return h(
     Modal,
     {
-      title: `${t('settings')} · v0.9.40`,
+      title: t('settings'),
+      titleMeta: 'v0.9.40',
       className: 'lp-settings',
       onClose: props.onClose,
     },
@@ -6190,8 +7207,8 @@ function SettingsModal(props) {
         page === 'tags' ? tagsPage() : page === 'general' ? generalPage() : page === 'notify' ? notifyPage() : appearancePage()),
     ),
       h(
-        'div',
-        { className: 'lp-modal-actions' },
+        DialogActions,
+        null,
         h('button', { className: 'lp-btn-ghost', onClick: props.onClose, disabled: busy }, t('cancel')),
         h('button', { className: 'lp-btn', onClick: save, disabled: busy }, t('save')),
       ),
@@ -6617,6 +7634,7 @@ function Panel(props) {
     setNotices((current) => current.filter((entry) => entry.id !== note.id));
   };
 
+  const openNewTask = () => setEditor({ kind: 'task', title: '' });
   const quickAdd = (event) => {        event.preventDefault();
     const title = draft.trim();
     if (!title) return;
@@ -6674,7 +7692,7 @@ function Panel(props) {
         }, t(label))),
       ),
       h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setSettingsOpen('tags') }, t('settings')),
-      h('button', { className: 'lp-btn-ghost lp-workspace-primary', type: 'button', onClick: () => setEditor({ kind: 'task', title: '' }) },
+      h('button', { className: 'lp-btn-ghost lp-workspace-primary', type: 'button', onClick: openNewTask },
         h('span', { className: 'lp-workspace-plus', 'aria-hidden': true }, '+'), t('newItem'),
       ),
     ),
@@ -6701,7 +7719,7 @@ function Panel(props) {
     tab === 'tree'
       ? h(
           'div',
-          { className: 'lp-body', style: { padding: 0 } },
+          { className: 'lp-body lp-tree-page' },
           h(TreeView, {
             t,
             items,
@@ -6749,8 +7767,13 @@ function Panel(props) {
     tab === 'board'
       ? h(
           'div',
-          { className: 'lp-body', style: { padding: 0 } },
-          h(BoardView, { t, items, colorOverrides, onEdit: (item) => setEditor(item), onMove: moveBoardItem }),
+          { className: 'lp-body lp-board-page' },
+          h(BoardView, {
+            t, items, colorOverrides,
+            onCreate: openNewTask,
+            onEdit: (item) => setEditor(item),
+            onMove: moveBoardItem,
+          }),
         )
       : null,
     tab === 'plan'
@@ -6854,8 +7877,8 @@ function Panel(props) {
             confirmCard.lines.map((line, index) => h('div', { key: index }, line)),
           ),
           h(
-            'div',
-            { className: 'lp-pop-actions' },
+            DialogActions,
+            null,
             h('button', { className: 'lp-btn-ghost', onClick: () => setConfirmCard(null) }, t('cancel')),
             h(
               'button',
@@ -7292,34 +8315,23 @@ function MistakeTab(props) {
       ? h(
           Modal,
           { title: t('mistakeEdit'), onClose: () => setEditing(null) },
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('mistakeQuestion')),
+            dialogField(t('mistakeQuestion'), {
+              rows: 4,
+              value: form.question,
+              onChange: (event) => setForm({ ...form, question: event.target.value }),
+            }, 'textarea'),
+            dialogField(t('mistakeAnswer'), {
+              rows: 3,
+              value: form.answer,
+              onChange: (event) => setForm({ ...form, answer: event.target.value }),
+            }, 'textarea'),
+            h(DialogDisclosure, {
+              title: t('mistakeReason'),
+              hint: form.reason ? t('dialogHasDetails') : undefined,
+            },
               h('textarea', {
                 className: 'lp-input',
-                rows: 4,
-                value: form.question,
-                onChange: (event) => setForm({ ...form, question: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('mistakeAnswer')),
-              h('textarea', {
-                className: 'lp-input',
-                rows: 3,
-                value: form.answer,
-                onChange: (event) => setForm({ ...form, answer: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('mistakeReason')),
-              h('textarea', {
-                className: 'lp-input',
+                'aria-label': t('mistakeReason'),
                 rows: 3,
                 value: form.reason,
                 onChange: (event) => setForm({ ...form, reason: event.target.value }),
@@ -7329,8 +8341,8 @@ function MistakeTab(props) {
               ? h('div', { className: 'lp-meta' }, `${t('mistakeSource')}: ${editing.taskTitle}`)
               : null,
             h(
-              'div',
-              { className: 'lp-modal-actions' },
+              DialogActions,
+              null,
               h('button', { className: 'lp-btn-ghost', onClick: () => setEditing(null) }, t('cancel')),
               h('button', { className: 'lp-btn', onClick: saveEdit }, t('save')),
             ),
@@ -7369,8 +8381,8 @@ function MistakeTab(props) {
             sourceList(preview, 'lp-pre-body lp-mistake-sources', t('mistakeMaterialSource')),
             h('div', { className: 'lp-meta' }, preview.createdAt ? dayKey(new Date(preview.createdAt)) : ''),
             h(
-              'div',
-              { className: 'lp-modal-actions' },
+              DialogActions,
+              null,
               h('button', { className: 'lp-btn-ghost', onClick: () => explain(preview) }, t('mistakeExplain')),
               h(
                 'button',
@@ -7934,213 +8946,138 @@ function StudyPlanTab(props) {
           },
         })))) : null,
     scheduling ? h(Modal, { title: t('studySetStart') + ' · ' + scheduling.title, onClose: () => setScheduling(null) },
-      h('form', { onSubmit: saveSchedule },
+      h('form', { id: 'lp-study-schedule-form', className: 'lp-dialog-stack', onSubmit: saveSchedule },
         h('label', { className: 'lp-field' }, t('studyStartOptional'), h('input', {
           className: 'lp-input', type: 'datetime-local', value: startAt,
           onChange: (event) => setStartAt(event.target.value),
         })),
         h('p', { className: 'lp-meta' }, t('studyStartHint')),
         scheduleError ? h('p', { className: 'lp-err', role: 'alert' }, scheduleError) : null,
-        h('div', { className: 'lp-modal-actions' },
-          h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setScheduling(null) }, t('cancel')),
-          h('button', { className: 'lp-btn', type: 'submit', disabled: savingSchedule }, t('save'))))) : null,
-    editingTask
-      ? h(
-          Modal,
-          { title: `${t('studyTaskEdit')} · ${editingTask.title}`, onClose: () => setEditingTask(null) },
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskTitle')),
-              h('input', {
-                className: 'lp-input',
-                value: taskForm.title,
-                onChange: (event) => setTaskForm({ ...taskForm, title: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskPath')),
-              h('input', {
-                className: 'lp-input',
-                value: taskForm.workspacePath,
-                onChange: (event) => setTaskForm({ ...taskForm, workspacePath: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskTemplate')),
-              h(Dropdown, {
-                value: taskForm.template,
-                onChange: (value) => setTaskForm({ ...taskForm, template: value }),
-                options: TEMPLATE_OPTIONS,
-              }),
-            ),
-
-            h('div', { className: 'lp-field' },
-              h('label', null, t('studyGrading')),
-              h(Dropdown, {
-                value: taskForm.grading,
-                onChange: (grading) => setTaskForm({ ...taskForm, grading }),
-                options: ['strict', 'neutral', 'lenient'].map((value) => ({ value, label: t('studyGrading_' + value) })),
-              }),
-            ),
-
-            h('div', { className: 'lp-field' },
-              h('label', null, t('studySubjects')),
-              h(Dropdown, {
-                value: taskForm.subjectId,
-                onChange: (subjectId) => setTaskForm({ ...taskForm, subjectId }),
-                options: [{ value: '', label: t('studyNoSubjectLink') },
-                  ...data.subjects.map((subject) => ({ value: subject.id, label: subject.title }))],
-              }),
-            ),
-            h(ShelfPicker, {
-              t,
-              items: props.shelf,
-              selected: taskShelf,
-              onChange: setTaskShelf,
-            }),
-            h(
-              'div',
-              { className: 'lp-modal-actions' },
-              h(
-                'button',
-                {
-                  className: 'lp-btn-ghost',
-                  onClick: () => {
-                    const id = editingTask.id;
-                    if (!window.confirm(t('studyTaskDeleteConfirm'))) return;
-                    api('studytask.delete', { id })
-                      .then(() => {
-                        setEditingTask(null);
-                        return reloadTasks(true);
-                      })
-                      .catch((err) => props.onError(err.message));
-                  },
-                },
-                t('delete'),
-              ),
-              h('button', { className: 'lp-btn-ghost', onClick: () => setEditingTask(null) }, t('cancel')),
-              h('button', { className: 'lp-btn', onClick: saveTask }, t('save')),
-            ),
-        )
-      : null,
-    showNew
-      ? h(
-          Modal,
-          { title: t('studyTaskNew'), onClose: () => setShowNew(false) },
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskTitle')),
-              h('input', {
-                className: 'lp-input',
-                value: newTitle,
-                onChange: (event) => setNewTitle(event.target.value),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskPath')),
-              h('input', {
-                className: 'lp-input',
-                value: newPath,
-                onChange: (event) => setNewPath(event.target.value),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskTemplate')),
-              h(Dropdown, {
-                value: newTemplate,
-                onChange: setNewTemplate,
-                options: TEMPLATE_OPTIONS,
-              }),
-            ),
-            h(ShelfPicker, {
-              t,
-              items: props.shelf,
-              selected: newShelf,
-              onChange: setNewShelf,
-            }),
-            h(
-              'div',
-              { className: 'lp-modal-actions' },
-              h('button', { className: 'lp-btn-ghost', onClick: () => setShowNew(false) }, t('cancel')),
-              h('button', { className: 'lp-btn', onClick: createTask }, t('studyTaskAdd')),
-            ),
-        )
-      : null,
-    subjectEditing
-      ? h(
-          Modal,
-          { title: t('studySubjectEdit'), onClose: () => setSubjectEditing(null) },
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studySubjectTitle')),
-              h('input', {
-                className: 'lp-input',
-                value: subjectForm.title,
-                onChange: (event) => setSubjectForm({ ...subjectForm, title: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyExamDate')),
-              h('input', {
-                className: 'lp-input',
-                value: subjectForm.examDate,
-                placeholder: t('studyExamDateHint'),
-                onChange: (event) => setSubjectForm({ ...subjectForm, examDate: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyNote')),
-              h('input', {
-                className: 'lp-input',
-                value: subjectForm.note,
-                onChange: (event) => setSubjectForm({ ...subjectForm, note: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-modal-actions' },
-              h('button', { className: 'lp-btn-ghost', onClick: () => setSubjectEditing(null) }, t('cancel')),
-              h(
-                'button',
-                {
-                  className: 'lp-btn',
-                  onClick: () => {
-                    const id = subjectEditing.id;
-                    api('subject.update', {
-                      id,
-                      patch: {
-                        title: subjectForm.title.trim(),
-                        examDate: subjectForm.examDate.trim(),
-                        note: subjectForm.note,
-                      },
-                    })
-                      .then(() => {
-                        setSubjectEditing(null);
-                        return props.onReload();
-                      })
-                      .catch((err) => props.onError(err.message));
-                  },
-                },
-                t('save'),
-              ),
-            ),
-        )
-      : null,
+      ),
+      h(DialogActions, null,
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setScheduling(null) }, t('cancel')),
+        h('button', { className: 'lp-btn', type: 'submit', form: 'lp-study-schedule-form', disabled: savingSchedule }, t('save')),
+      ),
+    ) : null,
+    editingTask ? h(
+      Modal,
+      { title: `${t('studyTaskEdit')} · ${editingTask.title}`, onClose: () => setEditingTask(null) },
+      dialogField(t('studyTaskTitle'), {
+        value: taskForm.title,
+        onChange: (event) => setTaskForm({ ...taskForm, title: event.target.value }),
+      }),
+      dialogField(t('studyTaskPath'), {
+        value: taskForm.workspacePath,
+        onChange: (event) => setTaskForm({ ...taskForm, workspacePath: event.target.value }),
+      }),
+      h('div', { className: 'lp-dialog-grid' },
+        dialogSelect(t('studyTaskTemplate'), {
+          value: taskForm.template,
+          onChange: (value) => setTaskForm({ ...taskForm, template: value }),
+          options: TEMPLATE_OPTIONS,
+        }),
+        dialogSelect(t('studyGrading'), {
+          value: taskForm.grading,
+          onChange: (grading) => setTaskForm({ ...taskForm, grading }),
+          options: ['strict', 'neutral', 'lenient'].map((value) => ({ value, label: t('studyGrading_' + value) })),
+        }),
+      ),
+      h(DialogDisclosure, { title: t('studyTaskLinks') },
+        dialogSelect(t('studySubjects'), {
+          value: taskForm.subjectId,
+          onChange: (subjectId) => setTaskForm({ ...taskForm, subjectId }),
+          options: [
+            { value: '', label: t('studyNoSubjectLink') },
+            ...data.subjects.map((subject) => ({ value: subject.id, label: subject.title })),
+          ],
+        }),
+        h(ShelfPicker, { t, items: props.shelf, selected: taskShelf, onChange: setTaskShelf }),
+      ),
+      h(DialogActions, null,
+        h('button', {
+          className: 'lp-btn-ghost lp-dialog-side-action',
+          type: 'button',
+          onClick: () => {
+            const id = editingTask.id;
+            if (!window.confirm(t('studyTaskDeleteConfirm'))) return;
+            api('studytask.delete', { id })
+              .then(() => {
+                setEditingTask(null);
+                return reloadTasks(true);
+              })
+              .catch((err) => props.onError(err.message));
+          },
+        }, t('delete')),
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setEditingTask(null) }, t('cancel')),
+        h('button', { className: 'lp-btn', type: 'button', onClick: saveTask }, t('save')),
+      ),
+    ) : null,
+    showNew ? h(
+      Modal,
+      { title: t('studyTaskNew'), onClose: () => setShowNew(false) },
+      dialogField(t('studyTaskTitle'), {
+        value: newTitle,
+        onChange: (event) => setNewTitle(event.target.value),
+      }),
+      dialogField(t('studyTaskPath'), {
+        value: newPath,
+        onChange: (event) => setNewPath(event.target.value),
+      }),
+      dialogSelect(t('studyTaskTemplate'), {
+        value: newTemplate,
+        onChange: setNewTemplate,
+        options: TEMPLATE_OPTIONS,
+      }),
+      h(DialogDisclosure, { title: t('studyTaskShelf') },
+        h(ShelfPicker, { t, items: props.shelf, selected: newShelf, onChange: setNewShelf }),
+      ),
+      h(DialogActions, null,
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setShowNew(false) }, t('cancel')),
+        h('button', { className: 'lp-btn', type: 'button', onClick: createTask }, t('studyTaskAdd')),
+      ),
+    ) : null,
+    subjectEditing ? h(
+      Modal,
+      { title: t('studySubjectEdit'), onClose: () => setSubjectEditing(null) },
+      h('div', { className: 'lp-dialog-grid' },
+        dialogField(t('studySubjectTitle'), {
+          value: subjectForm.title,
+          onChange: (event) => setSubjectForm({ ...subjectForm, title: event.target.value }),
+        }),
+        dialogField(t('studyExamDate'), {
+          value: subjectForm.examDate,
+          placeholder: t('studyExamDateHint'),
+          onChange: (event) => setSubjectForm({ ...subjectForm, examDate: event.target.value }),
+        }),
+      ),
+      dialogField(t('studyNote'), {
+        rows: 2,
+        value: subjectForm.note,
+        onChange: (event) => setSubjectForm({ ...subjectForm, note: event.target.value }),
+      }, 'textarea'),
+      h(DialogActions, null,
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setSubjectEditing(null) }, t('cancel')),
+        h('button', {
+          className: 'lp-btn',
+          type: 'button',
+          onClick: () => {
+            api('subject.update', {
+              id: subjectEditing.id,
+              patch: {
+                title: subjectForm.title.trim(),
+                examDate: subjectForm.examDate.trim(),
+                note: subjectForm.note,
+              },
+            })
+              .then(() => {
+                setSubjectEditing(null);
+                return props.onReload();
+              })
+              .catch((err) => props.onError(err.message));
+          },
+        }, t('save')),
+      ),
+    ) : null,
   );
 }
 
@@ -8303,52 +9240,34 @@ function ShelfTab(props) {
       ? h(
           Modal,
           { title: t('shelfEdit'), onClose: () => setEditing(null) },
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('shelfName')),
-              h('input', {
-                className: 'lp-input',
-                value: form.title,
-                onChange: (event) => setForm({ ...form, title: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('shelfPath')),
-              h('input', {
-                className: 'lp-input',
-                value: form.path,
-                onChange: (event) => setForm({ ...form, path: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('shelfTags')),
-              h('input', {
-                className: 'lp-input',
+            dialogField(t('shelfName'), {
+              value: form.title,
+              onChange: (event) => setForm({ ...form, title: event.target.value }),
+            }),
+            dialogField(t('shelfPath'), {
+              value: form.path,
+              onChange: (event) => setForm({ ...form, path: event.target.value }),
+            }),
+            h(DialogDisclosure, {
+              title: t('shelfExtraDetails'),
+              hint: form.tags || form.note ? t('dialogHasDetails') : undefined,
+            },
+              dialogField(t('shelfTags'), {
                 value: form.tags,
                 onChange: (event) => setForm({ ...form, tags: event.target.value }),
               }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('shelfNote')),
-              h('input', {
-                className: 'lp-input',
+              dialogField(t('shelfNote'), {
+                rows: 2,
                 value: form.note,
                 onChange: (event) => setForm({ ...form, note: event.target.value }),
-              }),
+              }, 'textarea'),
             ),
             h('div', { className: 'lp-meta' }, editing.manual ? t('shelfLocked') : t('shelfAutoHint')),
             h(
-              'div',
-              { className: 'lp-modal-actions' },
+              DialogActions,
+              null,
               editing.manual
-                ? h('button', { className: 'lp-btn-ghost', onClick: unlockEditor }, t('shelfUnlock'))
+                ? h('button', { className: 'lp-btn-ghost lp-dialog-side-action', onClick: unlockEditor }, t('shelfUnlock'))
                 : null,
               h('button', { className: 'lp-btn-ghost', onClick: () => setEditing(null) }, t('cancel')),
               h('button', { className: 'lp-btn', onClick: saveEditor }, t('save')),

@@ -156,52 +156,34 @@ function ShelfTab(props) {
       ? h(
           Modal,
           { title: t('shelfEdit'), onClose: () => setEditing(null) },
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('shelfName')),
-              h('input', {
-                className: 'lp-input',
-                value: form.title,
-                onChange: (event) => setForm({ ...form, title: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('shelfPath')),
-              h('input', {
-                className: 'lp-input',
-                value: form.path,
-                onChange: (event) => setForm({ ...form, path: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('shelfTags')),
-              h('input', {
-                className: 'lp-input',
+            dialogField(t('shelfName'), {
+              value: form.title,
+              onChange: (event) => setForm({ ...form, title: event.target.value }),
+            }),
+            dialogField(t('shelfPath'), {
+              value: form.path,
+              onChange: (event) => setForm({ ...form, path: event.target.value }),
+            }),
+            h(DialogDisclosure, {
+              title: t('shelfExtraDetails'),
+              hint: form.tags || form.note ? t('dialogHasDetails') : undefined,
+            },
+              dialogField(t('shelfTags'), {
                 value: form.tags,
                 onChange: (event) => setForm({ ...form, tags: event.target.value }),
               }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('shelfNote')),
-              h('input', {
-                className: 'lp-input',
+              dialogField(t('shelfNote'), {
+                rows: 2,
                 value: form.note,
                 onChange: (event) => setForm({ ...form, note: event.target.value }),
-              }),
+              }, 'textarea'),
             ),
             h('div', { className: 'lp-meta' }, editing.manual ? t('shelfLocked') : t('shelfAutoHint')),
             h(
-              'div',
-              { className: 'lp-modal-actions' },
+              DialogActions,
+              null,
               editing.manual
-                ? h('button', { className: 'lp-btn-ghost', onClick: unlockEditor }, t('shelfUnlock'))
+                ? h('button', { className: 'lp-btn-ghost lp-dialog-side-action', onClick: unlockEditor }, t('shelfUnlock'))
                 : null,
               h('button', { className: 'lp-btn-ghost', onClick: () => setEditing(null) }, t('cancel')),
               h('button', { className: 'lp-btn', onClick: saveEditor }, t('save')),

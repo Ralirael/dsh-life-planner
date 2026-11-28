@@ -1,7 +1,9 @@
 const WORKSPACE_CSS = `
-/* Planning calendar and today's study overview share the host palette and rhythm. */
+/* The planning and study surfaces share the host palette and rhythm. */
 .lp-workspace-head,
 .lp-calendar-layout,
+.lp-board,
+.lp-tree-workspace,
 .lp-study-overview {
   --lp-workspace-accent: var(--lp-accent, var(--dsh-ui-accent, var(--dsw-alias-brand-primary)));
   --lp-workspace-accent-fill: color-mix(in srgb, var(--lp-workspace-accent) 13%, var(--dsh-ui-surface, var(--dsw-alias-bg-layer-2)));
