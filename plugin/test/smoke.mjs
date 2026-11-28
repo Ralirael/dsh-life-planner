@@ -107,6 +107,7 @@ assert(read.bodyMarkdown.includes('每天学英语'), 'plan document reads back'
 
 // --- route layer -----------------------------------------------------------
 assert(routes.length === 1 && routes[0].path === '/life-planner/api', 'one API prefix route registered')
+assert(routes[0].auth === 'required', 'new hosts authenticate planning requests before dispatch')
 assert(
   injected[0] === 'webServer,connection',
   'route registration rides injected services instead of reading them at apply time',
@@ -147,9 +148,9 @@ function makeRes() {
   return res
 }
 
-async function request(method, path, body) {
+async function request(method, path, body, peer) {
   const res = makeRes()
-  await routes[0].handler(makeReq(method, path, body), res)
+  await routes[0].handler(makeReq(method, path, body), res, peer)
   let json = null
   try {
     json = res.body ? JSON.parse(res.body) : null
@@ -163,6 +164,25 @@ async function request(method, path, body) {
 const snapshot = await request('GET', '/life-planner/api/snapshot')
 assert(snapshot.status === 200 && snapshot.json.ok, 'GET snapshot answers OK')
 assert(snapshot.json.data.items.length === 2, 'snapshot lists both tasks')
+
+const snapshotPath = '/life-planner/api/snapshot'
+const legacyGuard = fakeConnection.requestRejection
+const owner = { principal: { kind: 'owner' } }
+const guest = { principal: { kind: 'guest' } }
+try {
+  assert((await request('GET', snapshotPath, undefined, guest)).status === 403,
+    'a guest never falls through to an accepting legacy guard')
+  fakeConnection.requestRejection = () => 403
+  assert((await request('GET', snapshotPath)).status === 403, 'a rejecting older host still denies the request')
+  assert((await request('GET', snapshotPath, undefined, owner)).status === 200,
+    'new host owner identity takes precedence over the legacy guard')
+  delete fakeConnection.requestRejection
+  assert((await request('GET', snapshotPath, undefined, owner)).status === 200,
+    'new host requests do not need the removed guard')
+  assert((await request('GET', snapshotPath)).status === 403, 'requests with no usable identity are refused')
+} finally {
+  fakeConnection.requestRejection = legacyGuard
+}
 
 const toggled = await request('POST', '/life-planner/api/session.toggle', { sessionId: 'session-b', enabled: true })
 assert(toggled.json.data.enabled === true, 'route turns the per-session switch on')
@@ -904,8 +924,18 @@ const bgPng =
 const bgSet = await request('POST', '/life-planner/api/background.set', { area: 'planning', dataUrl: bgPng })
 assert(String(bgSet.json.data.path).includes('backgrounds'), 'the image is stored in the backgrounds folder')
 const bgInfo = await request('GET', '/life-planner/api/background.info')
-assert(Boolean(bgInfo.json.data.planning), 'background info exposes the planning image')
+assert(Boolean(bgInfo.json.data?.planning), `background info exposes the planning image: ${bgInfo.json.error || bgInfo.status}`)
 assert(Boolean(bgInfo.json.data.default), 'background info exposes the bundled default image')
+const legacyAsset = bgInfo.json.data.assets.planning
+assert(legacyAsset?.includes('asset=') && (await request('GET', legacyAsset)).status === 200,
+  'existing background files get an immutable reference for the default preset')
+const uploaded = (await request('POST', '/life-planner/api/background.set', {
+  area: 'planning', forPreset: true, dataUrl: 'data:image/png;base64,' + Buffer.from('skin sample').toString('base64'),
+})).json.data.url
+assert(uploaded !== legacyAsset && /immutable/.test((await request('GET', uploaded)).headers['cache-control']),
+  'a preset upload has its own immutable image reference')
+assert((await request('GET', '/life-planner/api/background?asset=..%2Fdata.db')).status === 404,
+  'a background reference cannot address other files')
 const bgDefault = await request('GET', '/life-planner/api/background?area=default&v=1')
 assert(bgDefault.status === 200, 'the bundled default background is served')
 const bgVersioned = await request('GET', '/life-planner/api/background?area=planning&v=1')
@@ -917,6 +947,8 @@ assert(bgBadArea.status === 400, 'an unknown background area is rejected')
 await request('POST', '/life-planner/api/background.clear', { area: 'planning' })
 const bgAfter = await request('GET', '/life-planner/api/background.info')
 assert(bgAfter.json.data.planning === null, 'clearing removes the stored background')
+assert((await request('GET', legacyAsset)).status === 200 && (await request('GET', uploaded)).status === 200,
+  'changing legacy files cannot break background references already saved by a skin')
 
 // --- weekly study time targets ---------------------------------------------
 // --- appearance lives on the host -------------------------------------------
@@ -928,6 +960,40 @@ await request('POST', '/life-planner/api/ui.save', {
 const uiSaved = await request('GET', '/life-planner/api/ui')
 assert(uiSaved.json.data.appearance.font.base === 15, 'the stored appearance comes back')
 assert(uiSaved.json.data.appearance.background.planning.mode === 'color', 'the background mode is stored too')
+const defaultLayers = { planning: { mode: 'image', imageUrl: legacyAsset } }
+const clawdLayers = { planning: { mode: 'image', imageUrl: uploaded }, study: { mode: 'none' } }
+await request('POST', '/life-planner/api/ui.save', { skinBackgrounds: { 'builtin:default': defaultLayers } })
+await request('POST', '/life-planner/api/ui.save', {
+  activeSkin: 'clawd', skinChoice: 'builtin:clawd', skinBackgrounds: { 'builtin:clawd': clawdLayers },
+})
+const styled = (await request('GET', '/life-planner/api/ui')).json.data
+assert(styled.activeSkin === 'clawd' && styled.appearance.font.base === 15 &&
+  styled.appearance.background.planning.color === '#101010', 'the active skin is saved separately from the existing appearance')
+assert(styled.skinChoice === 'builtin:clawd' &&
+  styled.skinBackgrounds['builtin:default'].planning.imageUrl === legacyAsset &&
+  styled.skinBackgrounds['builtin:clawd'].planning.imageUrl === uploaded,
+  'changing Clawd keeps the background assigned to the Default preset')
+assert((await request('POST', '/life-planner/api/ui.save', { activeSkin: {} })).status === 400,
+  'an invalid skin id is refused')
+await request('POST', '/life-planner/api/ui.save', { activeSkin: 'default' })
+assert((await request('GET', '/life-planner/api/ui')).json.data.activeSkin === 'default',
+  'switching back to the default skin persists too')
+const clawdProfile = { skin: 'clawd', appearance: { font: { base: 18 }, surface: 0.42, background: clawdLayers } }
+const defaultProfile = { skin: 'default', appearance: { font: { base: 16 }, surface: 0.15, background: defaultLayers } }
+await request('POST', '/life-planner/api/ui.save', { skinProfiles: { 'builtin:default': defaultProfile } })
+await request('POST', '/life-planner/api/ui.save', {
+  activeSkin: 'clawd', skinChoice: 'user:Copy', skinProfiles: { 'builtin:clawd': clawdProfile, 'user:Copy': clawdProfile },
+})
+const savedProfiles = (await request('GET', '/life-planner/api/ui')).json.data
+assert(savedProfiles.skinChoice === 'user:Copy' && savedProfiles.skinProfiles['user:Copy'].appearance.surface === 0.42 &&
+  savedProfiles.skinProfiles['builtin:default'].appearance.font.base === 16, 'each complete profile persists alongside the active choice')
+assert((await request('POST', '/life-planner/api/ui.save', {
+  skinChoice: 'builtin:default', skinProfiles: { 'builtin:clawd': null },
+})).status === 400, 'a built-in preset cannot be deleted')
+assert((await request('GET', '/life-planner/api/ui')).json.data.skinChoice === 'user:Copy',
+  'a rejected profile change leaves the active choice intact')
+await request('POST', '/life-planner/api/ui.save', { skinChoice: 'builtin:clawd', skinProfiles: { 'user:Copy': null } })
+assert((await request('GET', '/life-planner/api/ui')).json.data.skinProfiles['user:Copy'] === null, 'custom skin removal persists')
 
 const weekFirst = await request('GET', '/life-planner/api/study-time')
 assert(weekFirst.json.data.days.length === 7, 'a week always has seven days')

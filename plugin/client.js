@@ -160,6 +160,8 @@ const DICTS = {
     studyMinuteUnit: ' 分钟',
     studyDone: '已完成',
     studyTodayPlan: '今日计划',
+    studyTodayTasks: '今日学习任务',
+    studyTodayCompleted: '{n}/{total} 已完成',
     studyNoTodayPlan: '今天还没有安排',
     studyFinish: '完成',
     studyMistakeReview: '错题复习',
@@ -313,6 +315,8 @@ const DICTS = {
     tabNotify: '通知设置',
     tabAppearance: '外观与皮肤',
     sectionSkin: '皮肤预设',
+    skinDefault: '默认',
+    skinClawd: 'Clawd 风格',
     sectionFont: '文字大小',
     fFontTab: '页签（日历 / 工作树 / 看板 / 归档）',
     fFontTitle: '标题与月份',
@@ -323,7 +327,7 @@ const DICTS = {
     fFontMeta: '辅助文字（时间、地点、提示）',
     fFontBase: '其它文本（基础字号）',
     fFontHint: '按日历页从上到下的顺序排列；单位统一为像素，改动即时生效。输入框跟随所在区块，图标不随字号缩放',
-    sectionSize: '尺寸',
+    sectionSize: '布局与间距',
     sectionMistake: '错题集',
     fMistakeCols: '每行显示几张（0 = 自动铺满）',
     fMistakeHeight: '卡片高度（0 = 自适应；超出截断）',
@@ -333,8 +337,30 @@ const DICTS = {
     fMistakeHint: '卡片横向铺满页面；高度不足时答案与错因按行截断并显示省略号，双击卡片可查看全文',
     sectionAccent: '分区主题色',
     sectionBackground: '背景图',
+    skinAppearanceOwner: '当前编辑「{name}」。外观改动即时预览并自动保存。',
+    skinOverwrite: '覆盖现有的同名自定义皮肤？',
+    skinDeleteConfirm: '移除自定义皮肤「{name}」？',
+    settingsPreview: '查看页面效果',
+    settingsReturn: '返回设置',
+    layoutCalendar: '日历与当天清单',
+    layoutStudyToday: '今日学习布局',
+    layoutStudyPlan: '学习规划布局',
+    layoutSpacing: '页面间距',
+    layoutFontFamily: '字体风格',
+    layout_auto: '宽屏并排',
+    layout_stacked: '始终上下排列',
+    layout_compact: '紧凑',
+    layout_standard: '标准',
+    layout_roomy: '宽松',
+    layout_system: '系统字体',
+    layout_serif: '衬线字体',
+    settingsNumberRange: '请输入 {min} 到 {max} 之间的整数。',
+    settingsRetentionOrder: '自动删除天数须大于或等于自动归档天数。',
+    settingsQuotaOrder: '每时段的非紧急提醒数须小于或等于总提醒数。',
+    settingsLeadHint: '父任务使用单独的提前天数，三天内到期的任务按短期规则提醒。长期提醒间隔设为 0 可关闭长期提醒。',
+    tagLibraryColor: '标签颜色',
     fSurface: '面板透明度',
-    fSurfaceHint: '有背景图时，日历与卡片等面板的透明程度；默认 15%',
+    fSurfaceHint: '使用图片或纯色背景时，控制日历和卡片的透明程度。',
     tagNamePlaceholder: '输入类别名称',
     addTag: '添加类别',
     existingTags: '已有类别',
@@ -362,7 +388,7 @@ const DICTS = {
     fMaskStrength: '蒙版浓度',
     sideLeft: '左', sideRight: '右', sideTop: '上', sideBottom: '下',
     fCalHeight: '日历高度（像素）',
-    fCalHeightHint: '0 = 自动填满可用空间；任务行高与标签高度会按字号自动适配',
+    fCalHeightHint: '高度设为 0 时自动适配窗口。手动可设 320–1600 像素，按窗口可用空间显示。',
     fAccentPlanning: '规划分区主题色',
     fAccentStudy: '学习分区主题色',
     fBgPlanning: '规划页背景',
@@ -371,7 +397,7 @@ const DICTS = {
     fBgOpen: '打开背景文件夹',
     fBgClear: '移除背景',
     fBgOpacity: '图片透明度',
-    bgSyncAsk: '要把这张背景同时用到学习页吗？',
+    bgSyncAsk: '也把这张背景用于当前皮肤的学习页吗？',
     bgLoadFailed: '背景已保存，但图片读取失败（可尝试重启 DSH）',
     on: '开',
     off: '关',
@@ -387,7 +413,7 @@ const DICTS = {
     tagLibAdd: '添加标签',
     tagLibExisting: '已有标签',
     tagLibEmpty: '还没有标签，先在上方输入名称',
-    taskTypeAutoHint: '类别名取自任务树最顶层节点的标题（在「学习」下就是学习），这里只维护类别名与颜色',
+    taskTypeAutoHint: '这里维护任务编辑器中的类别选项和颜色。工作树的分组标题随最上层任务变化。',
     startLabel: '开始时间',
     locationLabel: '地点',
     locationHint: '如 图书馆三楼',
@@ -425,7 +451,7 @@ const DICTS = {
     fWeekdayWindows: '工作日提醒时段（如 10:00-13:00,19:00-02:00）',
     fWeekendWindows: '周末提醒时段',
     fLeadTaskDays: '任务提前天数',
-    fLeadProjectDays: '项目提前天数',
+    fLeadProjectDays: '父任务提前天数',
     fGapMinutes: '两条提醒最小间隔（分钟）',
     fQuota: '每个时段非紧急提醒上限',
     fMaxDefer: '顺延上限（小时）',
@@ -594,6 +620,8 @@ const DICTS = {
     studyMinuteUnit: ' min',
     studyDone: 'done',
     studyTodayPlan: "Today's plan",
+    studyTodayTasks: "Today's study tasks",
+    studyTodayCompleted: '{n}/{total} completed',
     studyNoTodayPlan: 'Nothing planned for today',
     studyFinish: 'Finish',
     studyMistakeReview: 'Mistake review',
@@ -747,6 +775,8 @@ const DICTS = {
     tabNotify: 'Notifications',
     tabAppearance: 'Appearance & skin',
     sectionSkin: 'Skin presets',
+    skinDefault: 'Default',
+    skinClawd: 'Clawd style',
     sectionFont: 'Font sizes',
     fFontTab: 'Tabs (calendar / tree / board / archive)',
     fFontTitle: 'Titles and month',
@@ -757,7 +787,7 @@ const DICTS = {
     fFontMeta: 'Supporting text (time, place, hints)',
     fFontBase: 'Everything else (base size)',
     fFontHint: 'Ordered like the calendar page from top to bottom; every value is in pixels and applies at once. Inputs follow their block and icons do not scale',
-    sectionSize: 'Sizes',
+    sectionSize: 'Layout & spacing',
     sectionMistake: 'Mistake cards',
     fMistakeCols: 'Cards per row (0 = fill the width)',
     fMistakeHeight: 'Card height (0 = fit content; overflow is clipped)',
@@ -767,8 +797,30 @@ const DICTS = {
     fMistakeHint: 'Cards fill the page width; when the height is too small the answer and reason are clamped with an ellipsis. Double-click a card for the full text.',
     sectionAccent: 'Area colours',
     sectionBackground: 'Background image',
+    skinAppearanceOwner: 'Editing “{name}”. Appearance changes preview live and save automatically.',
+    skinOverwrite: 'Replace the custom skin with this name?',
+    skinDeleteConfirm: 'Remove the custom skin “{name}”?',
+    settingsPreview: 'Preview page',
+    settingsReturn: 'Return to settings',
+    layoutCalendar: 'Calendar and daily list',
+    layoutStudyToday: 'Today’s study layout',
+    layoutStudyPlan: 'Study planner layout',
+    layoutSpacing: 'Page spacing',
+    layoutFontFamily: 'Font style',
+    layout_auto: 'Side by side on wide screens',
+    layout_stacked: 'Always stacked',
+    layout_compact: 'Compact',
+    layout_standard: 'Standard',
+    layout_roomy: 'Roomy',
+    layout_system: 'System font',
+    layout_serif: 'Serif font',
+    settingsNumberRange: 'Enter a whole number between {min} and {max}.',
+    settingsRetentionOrder: 'The deletion threshold must be at least the archive threshold.',
+    settingsQuotaOrder: 'The non-urgent quota must fit within the total per-window limit.',
+    settingsLeadHint: 'Parent tasks have their own lead time. Short-term rules apply within three days. Set the long-term interval to 0 to turn it off.',
+    tagLibraryColor: 'Tag color',
     fSurface: 'Panel transparency',
-    fSurfaceHint: 'How see-through panels such as the calendar and cards are over a background; 15% by default',
+    fSurfaceHint: 'Controls calendar and card transparency over an image or solid color.',
     tagNamePlaceholder: 'Category name',
     addTag: 'Add category',
     existingTags: 'Existing categories',
@@ -796,7 +848,7 @@ const DICTS = {
     fMaskStrength: 'Mask strength',
     sideLeft: 'Left', sideRight: 'Right', sideTop: 'Top', sideBottom: 'Bottom',
     fCalHeight: 'Calendar height (px)',
-    fCalHeightHint: '0 = fill the available space; task row and tag heights follow the font sizes',
+    fCalHeightHint: 'Set 0 to fit the window, or enter 320–1600 pixels. The window limits the displayed height.',
     fAccentPlanning: 'Planning accent',
     fAccentStudy: 'Study accent',
     fBgPlanning: 'Planning background',
@@ -805,7 +857,7 @@ const DICTS = {
     fBgOpen: 'Open background folder',
     fBgClear: 'Remove background',
     fBgOpacity: 'Image opacity',
-    bgSyncAsk: 'Use this background on the study page too?',
+    bgSyncAsk: 'Also use this background on the study page for this skin?',
     bgLoadFailed: 'Background saved, but the image could not be read (a DSH restart may help)',
     on: 'On',
     off: 'Off',
@@ -859,7 +911,7 @@ const DICTS = {
     fWeekdayWindows: 'Weekday reminder windows (e.g. 10:00-13:00,19:00-02:00)',
     fWeekendWindows: 'Weekend reminder windows',
     fLeadTaskDays: 'Task lead time (days)',
-    fLeadProjectDays: 'Project lead time (days)',
+    fLeadProjectDays: 'Parent task lead time (days)',
     fGapMinutes: 'Gap between reminders (minutes)',
     fQuota: 'Non-urgent reminders per window',
     fMaxDefer: 'Deferral ceiling (hours)',
@@ -955,7 +1007,7 @@ const CSS = `
 .lp-board .lp-card[data-drop="before"],.lp-study-subject-head[data-drop="before"]{box-shadow:0 -3px var(--lp-accent,var(--dsw-alias-brand-primary));}
 .lp-board .lp-card[data-drop="after"],.lp-study-subject-head[data-drop="after"]{box-shadow:0 3px var(--lp-accent,var(--dsw-alias-brand-primary));}
 .lp-study-planner,.lp-card.lp-study-section{display:grid;gap:12px;}
-.lp-study-planner-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:12px;align-items:start;}
+.lp-study-planner-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--lp-layout-gap,12px);align-items:stretch;}
 .lp-study-section{align-content:start;padding:12px;min-width:0;}
 .lp-study-section-head,.lp-study-subject-head,.lp-study-link{display:flex;gap:8px;align-items:center;min-width:0;}
 .lp-study-section-head h3{font-size:var(--lp-title-fs,15px);margin:0;}
@@ -976,6 +1028,12 @@ const CSS = `
 .lp-study-link{justify-content:space-between;}
 .lp-study-link>.lp-input[type=date]{flex:0 1 160px;}
 .lp-study-section summary{cursor:pointer;}
+.lp-today-study-progress{margin-bottom:14px;}
+.lp-today-study-head{gap:8px;flex-wrap:wrap;}
+.lp-today-study-task{flex-wrap:wrap;}
+.lp-today-study-task .lp-title{min-width:min(100%, 130px);}
+.lp-today-study-targets{display:flex;flex-wrap:wrap;gap:4px 10px;font-variant-numeric:tabular-nums;}
+.lp-today-study-done{color:var(--dsw-alias-state-success-primary,var(--dsw-alias-label-primary));}
 .lp-cal-side{min-width:0;}
 .lp-cal-side>.lp-btn-ghost,.lp-cal-side>.lp-iconbtn{flex:none;}
 .lp-day-title{flex-wrap:wrap;}
@@ -1030,7 +1088,7 @@ const CSS = `
 .lp-study .lp-tree-row:hover{background:color-mix(in srgb,var(--dsw-alias-label-primary) 7%,transparent);border-color:transparent;}
 .lp-study-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:8px;}
 /* Mistakes must never be clipped or push the panel sideways. */
-.lp-mistake-grid{grid-template-columns:repeat(var(--lp-mistake-cols,auto-fill),minmax(260px,1fr));}
+.lp-mistake-grid{--lp-mistake-gap:var(--lp-layout-gap,12px);gap:var(--lp-mistake-gap);grid-template-columns:repeat(auto-fit,minmax(max(min(260px,100%),calc((100% + var(--lp-mistake-gap))/var(--lp-mistake-cols,6) - var(--lp-mistake-gap))),1fr));}
 .lp-mistake-grid .lp-card{min-width:0;max-width:100%;height:var(--lp-mistake-h,auto);overflow:hidden;}
 .lp-mistake-grid .lp-card-title{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.45;font-size:var(--lp-mistake-title-fs,15px);}
 .lp-mistake-grid .lp-card-meta{white-space:normal;overflow-wrap:anywhere;}
@@ -1038,12 +1096,10 @@ const CSS = `
    fixes the card height, otherwise the full text stays visible. */
 .lp-mistake-grid .lp-mistake-answer{font-size:var(--lp-mistake-answer-fs,13px);white-space:normal;overflow-wrap:anywhere;}
 .lp-mistake-grid .lp-mistake-reason{font-size:var(--lp-mistake-reason-fs,12px);white-space:normal;overflow-wrap:anywhere;}
-.lp-mistake-grid[data-fixed="true"] .lp-mistake-title,
-.lp-mistake-grid[data-fixed="true"] .lp-mistake-answer,
-.lp-mistake-grid[data-fixed="true"] .lp-mistake-reason{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;}
-.lp-mistake-grid[data-fixed="true"] .lp-mistake-title{-webkit-line-clamp:2;}
-.lp-mistake-grid[data-fixed="true"] .lp-mistake-answer{-webkit-line-clamp:3;}
-.lp-mistake-grid[data-fixed="true"] .lp-mistake-reason{-webkit-line-clamp:4;}
+html[data-lp-mistake-fixed="true"] .lp-mistake-grid :is(.lp-mistake-title,.lp-mistake-answer,.lp-mistake-reason){display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;}
+html[data-lp-mistake-fixed="true"] .lp-mistake-grid .lp-mistake-title{-webkit-line-clamp:2;}
+html[data-lp-mistake-fixed="true"] .lp-mistake-grid .lp-mistake-answer{-webkit-line-clamp:3;}
+html[data-lp-mistake-fixed="true"] .lp-mistake-grid .lp-mistake-reason{-webkit-line-clamp:4;}
 .lp-body .lp-toolbar .lp-input{min-width:0;}
 .lp-mistake-preview{width:min(760px,100%);max-height:80vh;overflow:auto;}
 .lp-mistake-preview .lp-pre-block{margin-top:10px;}
@@ -1275,6 +1331,60 @@ const CSS = `
 .lp-page .lp-tab[data-active="true"]{background:color-mix(in srgb,var(--lp-accent,var(--dsw-alias-brand-primary)) 18%,transparent);color:var(--dsw-alias-label-primary);border-color:var(--lp-accent,var(--dsw-alias-brand-primary));} 
 .lp-page .lp-row[data-done="true"] .lp-ico,.lp-page .lp-tree-row[data-done="true"] .lp-ico{color:var(--dsw-alias-state-success-primary);}
 .lp-page .lp-row[data-done="true"] .lp-prio{opacity:.35;}
+.lp-page{font-family:var(--lp-font-family,inherit);}
+.lp-page .lp-head{padding-inline:var(--lp-content-pad,16px);}
+.lp-page .lp-body{padding:var(--lp-content-pad,16px);}
+.lp-page .lp-week-day{font-size:var(--lp-cal-fs,13px);}
+.lp-page .lp-btn{color:var(--lp-accent-ink,var(--dsw-alias-bg-base));}
+.lp-page .lp-cell-title{line-height:1.25;}
+.lp-cal-scroll[data-layout="split"]{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(270px,1fr);gap:var(--lp-layout-gap,12px);align-items:start;align-content:start;padding:var(--lp-content-pad,16px);box-sizing:border-box;}
+.lp-cal-scroll[data-layout="split"] .lp-cal-sticky{position:relative;top:auto;margin:0;min-width:0;}
+.lp-cal-scroll[data-layout="split"] .lp-cal-title{order:-1;margin-inline-end:auto;}
+.lp-cal-scroll[data-layout="split"] .lp-cal-bar{flex-wrap:wrap;row-gap:4px;}
+.lp-cal-scroll[data-layout="split"] .lp-cal-side{flex:0 0 auto;}
+.lp-cal-scroll[data-layout="split"] .lp-day{min-width:0;padding:var(--lp-content-pad,16px);border:1px solid var(--lp-clawd-outline,var(--dsw-alias-border-l2));border-radius:var(--lp-r-lg);background:var(--lp-clawd-card,var(--lp-surface-bg));}
+.lp-cal-scroll[data-layout="split"] .lp-day-title{flex-wrap:wrap;}
+.lp-cal-scroll[data-layout="split"] .lp-cal-lunar{flex-basis:100%;}
+.lp-cal-scroll[data-layout="split"] .lp-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;}
+.lp-cal-scroll[data-layout="split"] .lp-add .lp-input{min-width:0;}
+.lp-cal-scroll[data-layout="split"] .lp-empty,
+.lp-page .lp-study-today-primary .lp-empty{min-height:104px;padding:16px;border-radius:var(--lp-r);background:color-mix(in srgb,var(--dsw-alias-label-primary) 4%,transparent);}
+.lp-page .lp-study-today{container-type:inline-size;display:grid;align-content:start;gap:var(--lp-layout-gap,12px);}
+.lp-study-today-head{display:flex;justify-content:space-between;align-items:center;gap:var(--lp-layout-gap,12px);}
+.lp-study-today-head h2{margin:0;font-size:var(--lp-title-fs,24px);}
+.lp-study-today-head small{margin-inline-start:.4em;color:var(--dsw-alias-label-secondary);font-size:var(--lp-meta-fs,14px);font-weight:400;}
+.lp-study-today-grid,.lp-study-today-review{display:grid;min-width:0;gap:var(--lp-layout-gap,12px);}
+.lp-study-today-grid{grid-template-columns:minmax(0,1fr);align-items:stretch;}
+@container (min-width: 740px){
+  .lp-study-today-grid{grid-template-columns:var(--lp-study-today-cols,minmax(0,1fr));}
+}
+.lp-page .lp-study-today .lp-card,.lp-page .lp-study-planner .lp-card{padding:var(--lp-layout-gap,12px);border-radius:var(--lp-r-lg);}
+.lp-page .lp-study-today .lp-card-title,.lp-study-today-card-title strong,.lp-study-advice strong{font-size:var(--lp-title-fs,15px);}
+.lp-study-today-card-title{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.lp-study-advice summary{cursor:pointer;}
+.lp-study-advice summary .lp-meta{margin-inline-start:.8em;}
+.lp-advice-excerpt{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-secondary);font-size:var(--lp-meta-fs,14px);}
+.lp-study-advice[open] .lp-advice-excerpt{display:none;}
+.lp-advice-copy{margin-block-start:8px;white-space:pre-wrap;overflow-wrap:anywhere;}
+.lp-page .lp-study-planner{container-type:inline-size;gap:var(--lp-layout-gap,12px);align-content:start;}
+@container (min-width: 700px){
+  .lp-study-planner-grid{grid-template-columns:var(--lp-study-plan-cols,repeat(2,minmax(0,1fr)));}
+}
+.lp-page .lp-study-planner .lp-empty{min-height:96px;margin:0;}
+.lp-study-section-head{min-height:var(--lp-row);flex-wrap:wrap;}
+.lp-study-section-head h3{overflow-wrap:anywhere;}
+.lp-study-section-count{display:inline-grid;place-items:center;min-width:1.9em;padding:2px 5px;border-radius:var(--lp-r-sm);background:color-mix(in srgb,var(--lp-accent,var(--dsw-alias-brand-primary)) 9%,transparent);color:var(--dsw-alias-label-secondary);font:500 var(--lp-meta-fs,13px)/1.5 system-ui,sans-serif;font-variant-numeric:tabular-nums;}
+.lp-study-lane-meta{min-height:1lh;}
+.lp-study-lane-spacer{display:none;}
+@container (min-width: 700px){
+  .lp-study-lane-spacer{display:var(--lp-study-plan-spacer,block);}
+}
+.lp-settings-color{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;}
+.lp-settings-color .lp-input{width:100%;min-width:0;padding:4px;height:34px;}
+.lp-settings-preview{position:absolute;z-index:39;inset:auto 20px 20px auto;padding:6px;border-radius:var(--lp-r);background:var(--lp-modal-bg,var(--dsw-alias-bg-base));box-shadow:0 4px 18px #0003;}
+.lp-settings-background+.lp-settings-background{border-top:1px solid var(--dsw-alias-border-l2);padding-top:12px;}
+.lp-settings-group .lp-field>span:first-child{display:block;min-height:1lh;}
+.lp-settings-group .lp-field>.lp-input,.lp-settings-group .lp-field>.lp-select{min-width:0;width:100%;}
 @media (prefers-reduced-motion: reduce){.lp-page *{transition:none !important;}}
 `;
 
@@ -1288,12 +1398,16 @@ if (typeof document !== 'undefined' && !document.getElementById('life-planner-st
 }
 
 // ---- skins.js ----
-// Skin layer: presets only override tokens, never layout code.
-// Add a preset here and it becomes selectable in settings.
+// Skins use their own stylesheet. The saved appearance stays independent.
 const LP_SKIN_STORAGE = 'lpSkin';
+const LP_SKIN_CHOICE = 'lpSkinChoice.v1';
+let selectedSkin;
+let selectedSkinChoice;
+let skinPreferenceChanged = false;
 
 const SKINS = {
   default: { label: '默认' },
+  clawd: { label: 'Clawd' },
   compact: {
     label: '紧凑',
     values: {
@@ -1326,18 +1440,112 @@ const SKINS = {
   },
 };
 
+const CLAWD_CSS = `
+html[data-lp-skin="clawd"] .lp-page {
+  --lp-clawd-base-accent: #a35039;
+  --lp-clawd-surface: #fff3e8;
+  --lp-clawd-accent: var(--lp-accent, var(--lp-clawd-base-accent));
+  --lp-clawd-on-accent: var(--lp-accent-ink, #fff9f3);
+  --lp-clawd-outline: color-mix(in srgb, var(--lp-clawd-accent) 22%, var(--dsw-alias-border-l2));
+  --lp-clawd-tint: color-mix(in srgb, var(--lp-clawd-accent) 13%, transparent);
+  --lp-surface-base: color-mix(in srgb, var(--lp-clawd-surface) 22%, var(--dsw-alias-bg-base));
+  --lp-clawd-card: var(--lp-surface-bg, var(--lp-surface-base));
+  --lp-preset-page-bg: color-mix(in srgb, var(--lp-clawd-surface) 28%, var(--dsw-alias-bg-base));
+  --dsw-alias-brand-primary: var(--lp-clawd-accent);
+  --lp-r: 9px;
+  --lp-r-lg: 13px;
+}
+html[data-lp-skin="clawd"] .lp-page[data-scheme="dark"] {
+  --lp-clawd-base-accent: #f29b78;
+  --lp-clawd-surface: #342620;
+  --lp-clawd-on-accent: var(--lp-accent-ink, #2b1812);
+}
+html[data-lp-skin="clawd"] .lp-page .lp-head {
+  border-color: var(--lp-clawd-outline);
+  background: color-mix(in srgb, var(--lp-clawd-surface) 84%, transparent);
+  gap: 8px;
+  padding-block: 8px;
+}
+html[data-lp-skin="clawd"] .lp-page .lp-head .lp-tab {
+  min-height: 31px;
+  padding-inline: 11px;
+}
+html[data-lp-skin="clawd"] .lp-page .lp-grid {
+  gap: 4px;
+  padding: 0 10px 10px;
+}
+html[data-lp-skin="clawd"] .lp-page .lp-cell {
+  border: 1px solid var(--lp-clawd-outline);
+  border-radius: var(--lp-r);
+}
+html[data-lp-skin="clawd"] .lp-page .lp-cell[data-weekend="true"]:not([data-selected="true"]) {
+  background: color-mix(in srgb, var(--lp-clawd-surface) 56%, transparent);
+}
+html[data-lp-skin="clawd"] .lp-page .lp-cell[data-dim="true"] {
+  border-color: color-mix(in srgb, var(--lp-clawd-outline) 55%, transparent);
+}
+html[data-lp-skin="clawd"] .lp-page .lp-tab[data-active="true"],
+html[data-lp-skin="clawd"] .lp-page .lp-settings-nav-button[aria-current="page"],
+html[data-lp-skin="clawd"] .lp-page .lp-cell[data-selected="true"],
+html[data-lp-skin="clawd"] .lp-page .lp-weekcell[data-selected="true"] {
+  background: var(--lp-clawd-tint);
+  border-color: var(--lp-clawd-outline);
+}
+html[data-lp-skin="clawd"] .lp-page :is(.lp-cal-sticky, .lp-card, .lp-col-head, .lp-weather-details > div, .lp-settings-group) {
+  border-color: var(--lp-clawd-outline);
+  background: var(--lp-clawd-card);
+}
+html[data-lp-skin="clawd"] .lp-page[data-scheme="light"] .lp-backdrop:has(> .lp-settings) {
+  background: rgba(24, 17, 13, 0.36);
+}
+html[data-lp-skin="clawd"] .lp-page :is(.lp-cal-bar, .lp-group-head, .lp-settings-nav) {
+  border-color: var(--lp-clawd-outline);
+}
+html[data-lp-skin="clawd"] .lp-page .lp-cell[data-today="true"] {
+  box-shadow: inset 0 0 0 1px var(--lp-clawd-accent);
+}
+html[data-lp-skin="clawd"] .lp-page .lp-cell[data-today="true"] .lp-num {
+  padding-inline: .34em;
+  border-radius: 6px;
+  background: var(--lp-clawd-accent);
+  color: var(--lp-clawd-on-accent);
+}
+html[data-lp-skin="clawd"] .lp-page .lp-btn {
+  color: var(--lp-clawd-on-accent);
+  background: var(--lp-clawd-accent);
+  border-color: var(--lp-clawd-accent);
+}
+`;
+
 function currentSkin() {
+  if (selectedSkin) return selectedSkin;
   try {
     const name = localStorage.getItem(LP_SKIN_STORAGE) || 'default';
-    return SKINS[name] ? name : 'default';
+    return Object.hasOwn(SKINS, name) ? name : 'default';
   } catch {
     return 'default';
   }
 }
 
+function currentSkinChoice() {
+  if (selectedSkinChoice) return selectedSkinChoice;
+  try {
+    const choice = localStorage.getItem(LP_SKIN_CHOICE);
+    if (choice?.startsWith('user:') && choice.length > 5) return choice;
+    if (choice?.startsWith('builtin:') && Object.hasOwn(SKINS, choice.slice(8))) return choice;
+  } catch {}
+  return `builtin:${currentSkin()}`;
+}
+
+function rememberSkinChoice(choice) {
+  selectedSkinChoice = choice;
+  try { localStorage.setItem(LP_SKIN_CHOICE, choice); } catch {}
+}
+
 function applySkin(name) {
-  if (typeof document === 'undefined') return name;
-  const skin = SKINS[name] || SKINS.default;
+  selectedSkin = Object.hasOwn(SKINS, name) ? name : 'default';
+  if (typeof document === 'undefined') return selectedSkin;
+  const skin = SKINS[selectedSkin];
   // Tokens live on `.lp-page`, so the override sheet must target it as well;
   // setting them on <html> would be shadowed by the page's own declarations.
   let sheet = document.getElementById('life-planner-skin');
@@ -1349,20 +1557,40 @@ function applySkin(name) {
   const body = Object.entries(skin.values || {})
     .map(([key, value]) => `${key}:${value};`)
     .join('');
-  sheet.textContent = body ? `.lp-page{${body}}` : '';
-  document.documentElement.dataset.lpSkin = name;
+  sheet.textContent = selectedSkin === 'clawd' ? CLAWD_CSS : body ? `.lp-page{${body}}` : '';
+  document.documentElement.dataset.lpSkin = selectedSkin;
   try {
-    localStorage.setItem(LP_SKIN_STORAGE, name);
+    localStorage.setItem(LP_SKIN_STORAGE, selectedSkin);
   } catch {
     // Storage may be unavailable; the skin still applies for this session.
   }
-  return name;
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('lp-skin-change'));
+  return selectedSkin;
+}
+
+function restoreHostSkin(name, choice) {
+  if (skinPreferenceChanged || !Object.hasOwn(SKINS, name)) return;
+  const builtin = `builtin:${name}`;
+  const saved = typeof choice === 'string' && choice.startsWith('user:') && Object.hasOwn(userSkins(), choice.slice(5));
+  const selected = saved ? choice : builtin;
+  rememberSkinChoice(selected);
+  applySkin(profileForSkin(selected).skin);
+}
+
+function saveActiveSkin() {
+  skinPreferenceChanged = true;
+  const activeSkin = currentSkin();
+  const skinChoice = currentSkinChoice();
+  return flushAppearanceSave({ activeSkin, skinChoice });
 }
 
 // ---- appearance.js ----
 // Appearance model: fonts, sizes, per-area accents, backgrounds and skins.
-// Everything here is presentation state, so it never reaches the host database.
 const APPEARANCE_KEY = 'lpAppearance.v1';
+const SKIN_BACKGROUNDS_KEY = 'lpSkinBackgrounds.v1';
+const SKIN_PROFILES_KEY = 'lpSkinProfiles.v2';
+const DEFAULT_SKIN_CHOICE = 'builtin:default';
+const APPEARANCE_AREAS = ['planning', 'study'];
 
 // The artwork ships with the plugin, so every install starts with a background.
 const BUILTIN_BACKGROUND_URL = '/life-planner/api/background?area=default&v=1'
@@ -1385,6 +1613,7 @@ const APPEARANCE_DEFAULTS = {
   },
   // Mistake cards: 0 columns = as many as fit; 0 height = grow with the text.
   size: { calendarHeight: 580, mistakeColumns: 2, mistakeHeight: 0 },
+  layout: { calendar: 'stacked', studyToday: 'stacked', studyPlan: 'auto', spacing: 'standard', fontFamily: 'system' },
   accent: { planning: '', study: '' },
   // How see-through the panels over a background image are: 0.15 = 15%.
   surface: 0.15,
@@ -1411,80 +1640,215 @@ const APPEARANCE_DEFAULTS = {
 // The shell changes port on every launch, so localStorage is only a paint
 // cache: the durable copy of appearance and skins lives in the host database.
 let HOST_UI = null;
+let legacyBackgroundAssets = {};
+let localSkinProfiles = {};
+let changedSkinProfiles = {};
 
 function setHostUi(ui) {
   HOST_UI = ui && typeof ui === 'object' ? ui : null;
 }
 
-function hostAppearance() {
-  return HOST_UI && HOST_UI.appearance && typeof HOST_UI.appearance === 'object' ? HOST_UI.appearance : null;
+function setLegacyBackgroundAssets(assets) {
+  legacyBackgroundAssets = assets || {};
 }
 
 let hostSaveTimer = null;
+let hostAppearanceSave = Promise.resolve();
 
 function scheduleHostSave() {
-  if (typeof api !== 'function') return;
-  if (hostSaveTimer) clearTimeout(hostSaveTimer);
+  clearTimeout(hostSaveTimer);
   hostSaveTimer = setTimeout(() => {
-    hostSaveTimer = null;
-    try {
-      api('ui.save', { appearance: loadAppearance(), skins: userSkins() }).catch(() => {});
-    } catch {
-      // The host copy is best effort; the local cache still holds the state.
+    flushAppearanceSave().catch(() => {});
+  }, 240);
+}
+
+function flushAppearanceSave(selection) {
+  clearTimeout(hostSaveTimer);
+  hostSaveTimer = null;
+  hostAppearanceSave = hostAppearanceSave.catch(() => {}).then(async () => {
+    const profiles = changedSkinProfiles;
+    const hasProfiles = Object.keys(profiles).length > 0;
+    if (!selection && !hasProfiles) return;
+    await api('ui.save', { ...selection, ...(hasProfiles ? { skinProfiles: profiles } : {}) });
+    if (HOST_UI && hasProfiles) HOST_UI.skinProfiles = { ...HOST_UI.skinProfiles, ...profiles };
+    for (const [choice, profile] of Object.entries(profiles)) {
+      if (changedSkinProfiles[choice] !== profile) continue;
+      const next = { ...changedSkinProfiles };
+      delete next[choice];
+      changedSkinProfiles = next;
     }
-  }, 400);
+  });
+  return hostAppearanceSave;
 }
 
 function cloneAppearance(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function loadAppearance() {
-  // The built-in defaults above are the baseline; the host copy overlays them.
-  const merged = cloneAppearance(APPEARANCE_DEFAULTS);
-  // The host copy is the durable one, so it lands before the local cache.
-  const host = hostAppearance();
-  if (host) {
-    for (const section of Object.keys(merged)) {
-      if (host[section] === undefined) continue;
-      merged[section] =
-        typeof merged[section] === 'object' && merged[section] !== null
-          ? { ...merged[section], ...host[section] }
-          : host[section];
-    }
-  }
+function cachedAppearanceValue(key) {
   try {
-    const raw = localStorage.getItem(APPEARANCE_KEY);
-    if (!raw) return merged;
-    const saved = JSON.parse(raw);
-    for (const section of Object.keys(merged)) {
-      if (saved[section] === undefined) continue;
-      if (typeof merged[section] === 'object' && merged[section] !== null) {
-        merged[section] = { ...merged[section], ...saved[section] };
-      } else {
-        merged[section] = saved[section];
+    const value = JSON.parse(localStorage.getItem(key) || '{}');
+    if (value && typeof value === 'object' && !Array.isArray(value)) return value;
+  } catch {
+    // A corrupt cache must not prevent the host copy from loading.
+  }
+  return {};
+}
+
+function skinProfiles() {
+  return { ...cachedAppearanceValue(SKIN_PROFILES_KEY), ...HOST_UI?.skinProfiles, ...localSkinProfiles };
+}
+
+function legacyImageArea(value) {
+  if (!value) return '';
+  try {
+    const url = new URL(value, 'http://dsh.internal/');
+    const area = url.searchParams.get('area');
+    if (url.pathname === '/life-planner/api/background' && APPEARANCE_AREAS.includes(area)) return area;
+  } catch {}
+  return '';
+}
+
+const APPEARANCE_LIMITS = {
+  calendarHeight: [0, 1600], mistakeColumns: [0, 6], mistakeHeight: [0, 1200],
+};
+const APPEARANCE_LAYOUTS = {
+  calendar: ['auto', 'stacked'], studyToday: ['auto', 'stacked'], studyPlan: ['auto', 'stacked'],
+  spacing: ['compact', 'standard', 'roomy'], fontFamily: ['system', 'serif'],
+};
+
+function skinDefaults(skin) {
+  const appearance = cloneAppearance(APPEARANCE_DEFAULTS);
+  if (skin === 'clawd') {
+    appearance.layout = { ...appearance.layout, calendar: 'auto', studyToday: 'auto', fontFamily: 'serif' };
+    appearance.font = { ...appearance.font, base: 15, tab: 16, calendar: 15, task: 16, type: 14, tag: 14, meta: 14 };
+    for (const layer of Object.values(appearance.background)) Object.assign(layer, { mode: 'none', imageUrl: '' });
+  } else if (skin === 'compact' || skin === 'large') {
+    appearance.layout.spacing = skin === 'compact' ? 'compact' : 'roomy';
+  }
+  return appearance;
+}
+
+function appearanceNumber(value, min, max, fallback) {
+  const number = typeof value === 'number' || (typeof value === 'string' && value.trim()) ? Number(value) : NaN;
+  return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
+}
+
+function skinImageUrl(value) {
+  if (typeof value !== 'string') return '';
+  const local = /^\/life-planner\/api\/background\?(?:area=(?:planning|study|default)(?:&v=\d+)?|asset=[a-f0-9]{64}\.(?:png|jpe?g|gif|webp))$/;
+  return local.test(value) ? value : '';
+}
+
+function normalizeAppearance(raw, defaults) {
+  const appearance = cloneAppearance(defaults);
+  const validColor = (value) => typeof value === 'string' && /^#[a-f0-9]{6}$/i.test(value);
+  for (const key of Object.keys(appearance.font)) {
+    appearance.font[key] = Math.round(appearanceNumber(raw?.font?.[key], 8, 64, appearance.font[key]));
+  }
+  for (const [key, [min, max]] of Object.entries(APPEARANCE_LIMITS)) {
+    appearance.size[key] = Math.round(appearanceNumber(raw?.size?.[key], min, max, appearance.size[key]));
+  }
+  if (appearance.size.calendarHeight > 0) appearance.size.calendarHeight = Math.max(320, appearance.size.calendarHeight);
+  for (const [key, options] of Object.entries(APPEARANCE_LAYOUTS)) {
+    if (options.includes(raw?.layout?.[key])) appearance.layout[key] = raw.layout[key];
+  }
+  appearance.surface = appearanceNumber(raw?.surface, 0, 0.9, appearance.surface);
+  for (const area of APPEARANCE_AREAS) {
+    const layer = appearance.background[area];
+    const incoming = raw?.background?.[area] || {};
+    if (['image', 'none', 'color'].includes(incoming.mode)) layer.mode = incoming.mode;
+    else if (incoming.imageUrl) layer.mode = 'image';
+    if (Object.hasOwn(incoming, 'imageUrl')) layer.imageUrl = skinImageUrl(incoming.imageUrl);
+    if (validColor(incoming.color)) layer.color = incoming.color;
+    layer.opacity = appearanceNumber(incoming.opacity, 0, 0.9, layer.opacity);
+    const mask = incoming.mask || {};
+    if (typeof mask.on === 'boolean') layer.mask.on = mask.on;
+    if (['left', 'right', 'top', 'bottom'].includes(mask.side)) layer.mask.side = mask.side;
+    layer.mask.width = appearanceNumber(mask.width, 5, 90, layer.mask.width);
+    layer.mask.strength = appearanceNumber(mask.strength, 0.05, 0.9, layer.mask.strength);
+    const oldArea = legacyImageArea(layer.imageUrl);
+    if (oldArea && legacyBackgroundAssets[oldArea]) layer.imageUrl = legacyBackgroundAssets[oldArea];
+    if (raw?.accent?.[area] === '' || validColor(raw?.accent?.[area])) appearance.accent[area] = raw.accent[area];
+  }
+  return appearance;
+}
+
+function profileForSkin(choice) {
+  const profiles = skinProfiles();
+  const saved = Object.hasOwn(profiles, choice) ? profiles[choice] : null;
+  const named = choice.startsWith('user:') ? legacyUserSkins()[choice.slice(5)] : null;
+  const skin = saved?.skin || named?.skin || (choice.startsWith('builtin:') ? choice.slice(8) : 'default');
+  const base = Object.hasOwn(SKINS, skin) ? skin : 'default';
+  const defaults = skinDefaults(base);
+  if (saved?.appearance) return { skin: base, appearance: normalizeAppearance(saved.appearance, defaults) };
+  const legacy = { ...cachedAppearanceValue(APPEARANCE_KEY), ...HOST_UI?.appearance };
+  const legacyBackgrounds = { ...cachedAppearanceValue(SKIN_BACKGROUNDS_KEY), ...HOST_UI?.skinBackgrounds };
+  const owned = legacyBackgrounds[choice];
+  const activeNamed = named && HOST_UI?.skinChoice === choice;
+  const raw = activeNamed
+    ? { ...named.appearance, ...legacy, background: named.appearance?.background }
+    : named?.appearance || (choice === DEFAULT_SKIN_CHOICE
+      ? legacy : HOST_UI?.activeSkin === base && !HOST_UI?.skinChoice?.startsWith('user:') ? { ...legacy, background: undefined } : {});
+  const appearance = normalizeAppearance({ ...raw, background: owned || raw.background }, defaults);
+  if (!owned && choice === DEFAULT_SKIN_CHOICE) {
+    for (const area of APPEARANCE_AREAS) {
+      const layer = appearance.background[area];
+      if (layer.mode === 'image' && (!layer.imageUrl || layer.imageUrl === BUILTIN_BACKGROUND_URL) && legacyBackgroundAssets[area]) {
+        layer.imageUrl = legacyBackgroundAssets[area];
       }
     }
-  } catch {
-    // A corrupt value falls back to defaults rather than breaking the page.
   }
-  // Older saves only had an image, so their mode is inferred from the file.
-  for (const area of ['planning', 'study']) {
-    const layer = merged.background[area] || {};
-    merged.background[area] = { ...APPEARANCE_DEFAULTS.background[area], ...layer };
-    const next = merged.background[area];
-    if (!next.mode || next.mode === 'none') next.mode = next.imageUrl ? 'image' : 'none';
-    next.mask = { ...APPEARANCE_DEFAULTS.background[area].mask, ...(layer.mask || {}) };
-  }
-  return merged;
+  return { skin: base, appearance };
+}
+
+function loadAppearance() {
+  return profileForSkin(currentSkinChoice()).appearance;
+}
+
+function saveSkinProfile(choice, profile) {
+  localSkinProfiles = { ...localSkinProfiles, [choice]: profile };
+  changedSkinProfiles = { ...changedSkinProfiles, [choice]: profile };
+  try { localStorage.setItem(SKIN_PROFILES_KEY, JSON.stringify(skinProfiles())); } catch {}
+  scheduleHostSave();
 }
 
 function saveAppearance(value) {
-  try {
-    localStorage.setItem(APPEARANCE_KEY, JSON.stringify(value));
-  } catch (error) {
-    console.error('[life-planner] could not persist appearance', error);
+  saveSkinProfile(currentSkinChoice(), { skin: currentSkin(), appearance: value });
+}
+
+function migrateSkinProfiles() {
+  if (!HOST_UI) return;
+  const stored = HOST_UI.skinProfiles || {};
+  for (const [choice, profile] of Object.entries(cachedAppearanceValue(SKIN_PROFILES_KEY))) {
+    if (!Object.hasOwn(stored, choice) && !Object.hasOwn(localSkinProfiles, choice)) saveSkinProfile(choice, profile);
   }
+  if (!HOST_UI.appearance && !HOST_UI.skinBackgrounds && !Object.values(legacyBackgroundAssets).some(Boolean)) return;
+  const profiles = skinProfiles();
+  for (const skin of new Set(['default', 'clawd', currentSkin()])) {
+    const choice = 'builtin:' + skin;
+    if (!Object.hasOwn(profiles, choice)) saveSkinProfile(choice, profileForSkin(choice));
+  }
+  const active = HOST_UI?.skinChoice;
+  if (active?.startsWith('user:') && Object.hasOwn(legacyUserSkins(), active.slice(5)) && !Object.hasOwn(profiles, active)) {
+    saveSkinProfile(active, profileForSkin(active));
+  }
+}
+
+function updateSkinBackground(choice, layers) {
+  const active = choice === currentSkinChoice();
+  const profile = active ? { skin: currentSkin(), appearance: currentAppearance() } : profileForSkin(choice);
+  const background = { ...profile.appearance.background };
+  for (const [area, patch] of Object.entries(layers)) background[area] = { ...background[area], ...patch };
+  const next = normalizeAppearance({ ...profile.appearance, background }, skinDefaults(profile.skin));
+  if (active) {
+    applyAppearance(next);
+    return next;
+  }
+  if (!choice.startsWith('user:') || Object.hasOwn(userSkins(), choice.slice(5))) {
+    saveSkinProfile(choice, { skin: profile.skin, appearance: next });
+  }
+  return null;
 }
 
 /**
@@ -1511,23 +1875,15 @@ function maskGradient(mask) {
 const BACKGROUND_BLOBS = { planning: '', study: '' };
 // The URL a blob belongs to, so a reload never fetches the same image twice.
 const BACKGROUND_SOURCES = { planning: '', study: '' };
-const BACKGROUND_PENDING = {};
+const BACKGROUND_PENDING = Object.create(null);
 
 async function hydrateBackgrounds(appearance, onlyAreas) {
   const areas = Array.isArray(onlyAreas) && onlyAreas.length > 0 ? onlyAreas : ['planning', 'study'];
   const tasks = areas.map(async (area) => {
     const layer = appearance && appearance.background && appearance.background[area];
     const url = layer && layer.imageUrl;
-    if (!url) return { area, ok: true, skipped: true };
+    if (!url || layer.mode !== 'image') return { area, ok: true, skipped: true };
     if (BACKGROUND_SOURCES[area] === url && BACKGROUND_BLOBS[area]) return { area, ok: true, cached: true };
-    if (BACKGROUND_PENDING[url]) {
-      try {
-        await BACKGROUND_PENDING[url];
-        return { area, ok: true, cached: true };
-      } catch {
-        return { area, ok: false };
-      }
-    }
     const absolute = (() => {
       try {
         const base = (typeof document !== 'undefined' && document.baseURI) || 'http://dsh.internal/'
@@ -1536,15 +1892,18 @@ async function hydrateBackgrounds(appearance, onlyAreas) {
         return url
       }
     })()
-    const pending = fetch(absolute).then(async (response) => {
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const blob = await response.blob();
-      if (!blob || blob.size === 0) throw new Error('empty image');
-      return blob;
-    });
-    BACKGROUND_PENDING[url] = pending;
+    if (!BACKGROUND_PENDING[url]) {
+      BACKGROUND_PENDING[url] = fetch(absolute).then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const blob = await response.blob();
+        if (!blob || blob.size === 0) throw new Error('empty image');
+        return blob;
+      }).finally(() => { delete BACKGROUND_PENDING[url]; });
+    }
     try {
-      const blob = await pending;
+      const blob = await BACKGROUND_PENDING[url];
+      if (currentAppearance().background[area]?.imageUrl !== url) return { area, ok: true, skipped: true };
+      if (BACKGROUND_SOURCES[area] === url && BACKGROUND_BLOBS[area]) return { area, ok: true, cached: true };
       if (BACKGROUND_BLOBS[area]) URL.revokeObjectURL(BACKGROUND_BLOBS[area]);
       BACKGROUND_BLOBS[area] = URL.createObjectURL(blob);
       BACKGROUND_SOURCES[area] = url;
@@ -1552,12 +1911,14 @@ async function hydrateBackgrounds(appearance, onlyAreas) {
     } catch (error) {
       console.error('[life-planner] background could not be loaded', area, error);
       return { area, ok: false };
-    } finally {
-      delete BACKGROUND_PENDING[url];
     }
   });
   const results = await Promise.all(tasks);
-  applyAppearance(appearance);
+  const current = CURRENT_APPEARANCE;
+  if (current && results.some(({ area, ok, cached, skipped }) => ok && !cached && !skipped &&
+    current.background[area].mode === 'image' && current.background[area].imageUrl === BACKGROUND_SOURCES[area])) {
+    applyAppearance(current, { persist: false });
+  }
   return {
     loaded: results.filter((entry) => entry.ok && !entry.skipped).map((entry) => entry.area),
     failed: results.filter((entry) => !entry.ok).map((entry) => entry.area),
@@ -1607,28 +1968,24 @@ function nudgePaint() {
  * avoids depending on a stylesheet rule being present and winning the cascade.
  */
 function controlSurface(alpha = 0.45) {
-  try {
-    const probe = document.createElement('span');
-    probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;display:block';
-    probe.style.backgroundColor = 'var(--dsw-alias-bg-base)';
-    document.body.appendChild(probe);
-    const colour = getComputedStyle(probe).backgroundColor;
-    probe.remove();
-    const match = /^rgba?\(([^)]+)\)$/.exec(colour || '');
-    if (!match) return `rgba(24, 26, 32, ${alpha})`;
-    const parts = match[1].split(',').map((part) => part.trim())
-    const [r, g, b] = parts
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`
-  } catch {
-    return `rgba(24, 26, 32, ${alpha})`
-  }
+  return 'color-mix(in srgb, var(--dsw-alias-bg-base) ' + Math.round(alpha * 100) + '%, transparent)';
 }
 
-function applyAppearance(value) {
+function accentInk(color) {
+  const [r, g, b] = color.slice(1).match(/../g).map((pair) => {
+    const channel = parseInt(pair, 16) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return r * 0.2126 + g * 0.7152 + b * 0.0722 > 0.179 ? '#171717' : '#ffffff';
+}
+
+function applyAppearance(value, { persist = true } = {}) {
   if (typeof document === 'undefined') return;
-  const appearance = value || loadAppearance();
+  const appearance = persist
+    ? normalizeAppearance(value || loadAppearance(), skinDefaults(currentSkin()))
+    : value || loadAppearance();
   CURRENT_APPEARANCE = appearance;
-  const { font, size, accent, background } = appearance;
+  const { font, size, accent, background, layout } = appearance;
   const sheetId = 'life-planner-appearance';
   let sheet = document.getElementById(sheetId);
   if (!sheet) {
@@ -1641,10 +1998,17 @@ function applyAppearance(value) {
     document.head.appendChild(sheet);
   }
   const mix = (percent) => `color-mix(in srgb, var(--dsw-alias-bg-base) ${percent}%, transparent)`;
+  const surfaceBase = 'var(--lp-surface-base, var(--dsw-alias-bg-base))';
+  const spacing = { compact: [12, 8, 11], standard: [16, 12, 17], roomy: [22, 16, 23] }[layout.spacing];
+  const fontFamily = layout.fontFamily === 'serif'
+    ? 'Georgia, "Songti SC", "Noto Serif CJK SC", "SimSun", serif' : 'inherit';
   const css = [];
   const px = (value, fallback) => `${Number(value) || fallback}px`;
   css.push(
-    `.lp-page{--lp-fs:${px(font.base, 13)};` +
+    `.lp-page{--lp-fs:${px(font.base, 13)};--lp-font-family:${fontFamily};` +
+      `--lp-content-pad:${spacing[0]}px;--lp-layout-gap:${spacing[1]}px;` +
+      (layout.studyPlan === 'stacked' ? '--lp-study-plan-cols:minmax(0,1fr);--lp-study-plan-spacer:none;' : '') +
+      (layout.studyToday === 'auto' ? '--lp-study-today-cols:minmax(0,1.65fr) minmax(0,1fr);' : '') +
       // Two steps around the base keep every size a plain pixel value.
       `--lp-fs-sm:${Math.max(10, (Number(font.base) || 13) - 1)}px;` +
       `--lp-fs-xs:${Math.max(9, (Number(font.base) || 13) - 2)}px;` +
@@ -1656,34 +2020,39 @@ function applyAppearance(value) {
       `--lp-mistake-title-fs:${px(font.mistakeTitle, 15)};` +
       `--lp-mistake-answer-fs:${px(font.mistakeAnswer, 13)};` +
       `--lp-mistake-reason-fs:${px(font.mistakeReason, 12)};` +
-      `--lp-mistake-cols:${Number(size.mistakeColumns) > 0 ? Math.min(6, Math.round(Number(size.mistakeColumns))) : 'auto-fill'};` +
+      (size.mistakeColumns > 0 ? `--lp-mistake-cols:${size.mistakeColumns};` : '') +
       `--lp-mistake-h:${Number(size.mistakeHeight) > 0 ? `${Math.round(Number(size.mistakeHeight))}px` : 'auto'};` +
       // Row and tag heights follow their text instead of being hand-tuned.
-      `--lp-row:${Math.round((Number(font.task) || 13) + 17)}px;` +
+      `--lp-row:${Math.round((Number(font.task) || 13) + spacing[2])}px;` +
       `--lp-tag-h:${Math.round((Number(font.tag) || 12) + 10)}px;` +
       `--lp-cal-h:${Number(size.calendarHeight) > 0 ? `${Number(size.calendarHeight)}px` : '420px'};}`,
   );
-  if (accent.planning) css.push(`.lp-page:not(.lp-study){--lp-accent:${accent.planning};}`);
-  if (accent.study) css.push(`.lp-page.lp-study{--lp-accent:${accent.study};}`);
+  for (const area of APPEARANCE_AREAS) {
+    if (!accent[area]) continue;
+    const selector = area === 'study' ? '.lp-page.lp-study' : '.lp-page:not(.lp-study)';
+    css.push(`${selector}{--lp-accent:${accent[area]};--lp-accent-ink:${accentInk(accent[area])};--dsw-alias-brand-primary:${accent[area]};}`);
+  }
   for (const area of ['planning', 'study']) {
     const layer = background[area] || {};
     const mask = layer.mask || { on: false };
     const selector = area === 'study' ? '.lp-page.lp-study' : '.lp-page:not(.lp-study)';
-    const source = layer.mode === 'image' ? BACKGROUND_BLOBS[area] || layer.imageUrl : '';
+    const source = layer.mode === 'image'
+      ? (BACKGROUND_SOURCES[area] === layer.imageUrl && BACKGROUND_BLOBS[area]) || layer.imageUrl : '';
     const solid = layer.mode === 'color' && layer.color ? layer.color : '';
+    const keep = Math.round((1 - appearance.surface) * 100);
+    const surface = `color-mix(in srgb, ${surfaceBase} ${keep}%, transparent)`;
     if (!source) {
       // A solid fill still paints, so only the image layers are cleared.
       css.push(
         `${selector}{--lp-bg-image:none;--lp-bg-overlay:none;--lp-bg-fade:none;` +
-          `--lp-bg-color:${solid || 'var(--dsw-alias-bg-base)'};` +
-          `--lp-surface-bg:${solid ? mix(0) : 'var(--dsw-alias-bg-base)'};` +
+          `--lp-bg-color:${solid || 'var(--lp-preset-page-bg, var(--dsw-alias-bg-base))'};` +
+          `--lp-surface-bg:${solid ? surface : surfaceBase};` +
           `--lp-control-bg:var(--dsw-alias-bg-layer-1);` +
           `--lp-modal-bg:var(--dsw-alias-bg-base);}`,
       );
       continue;
     }
     // Panels over a background go translucent so the image stays visible.
-    const keep = Math.round((1 - Math.min(0.9, Math.max(0, Number(value.surface ?? 0.15)))) * 100);
     // Controls sit on top of panels and are small, so they need a much lighter
     // fill: 45% of the base colour reads as translucent, 85% looks solid.
     const keepControl = 45;
@@ -1693,7 +2062,7 @@ function applyAppearance(value) {
     const overlay = `linear-gradient(${tint}, ${tint})`;
     const fade = maskGradient(mask);
     css.push(
-      `${selector}{--lp-surface-bg:color-mix(in srgb, var(--dsw-alias-bg-base) ${keep}%, transparent);` +
+      `${selector}{--lp-surface-bg:${surface};` +
         `--lp-control-bg:color-mix(in srgb, var(--dsw-alias-bg-base) ${keepControl}%, transparent);` +
         // Dialogs stay almost opaque so the page behind cannot distract reading or input.
         `--lp-modal-bg:color-mix(in srgb, var(--dsw-alias-bg-base) 97%, transparent);` +
@@ -1702,8 +2071,10 @@ function applyAppearance(value) {
   }
   sheet.textContent = css.join('\n');
   document.documentElement.dataset.lpAccent = accent.planning || accent.study ? 'custom' : 'default';
-  saveAppearance(appearance);
-  scheduleHostSave();
+  document.documentElement.dataset.lpMistakeFixed = String(size.mistakeHeight > 0);
+  if (persist) {
+    saveAppearance(appearance);
+  }
   nudgePaint();
   // Layout that depends on a size (the calendar) re-measures on change.
   for (const listener of APPEARANCE_LISTENERS) {
@@ -1724,111 +2095,163 @@ function skinLabel(name) {
 // The skin dropdown lists the built-in token skins plus whatever the user saved.
 // A saved skin is a full snapshot: appearance (fonts, sizes, background) + skin.
 const USER_SKINS_KEY = 'lpUserSkins.v1';
-// One-time clean-up requested by the user: keep only the default skin.
-const USER_SKINS_RESET_KEY = 'lpUserSkins.reset.v2';
 
-function userSkins() {
-  try {
-    const host = HOST_UI && HOST_UI.skins && typeof HOST_UI.skins === 'object' ? HOST_UI.skins : {};
-    if (!localStorage.getItem(USER_SKINS_RESET_KEY)) {
-      localStorage.removeItem(USER_SKINS_KEY);
-      localStorage.setItem(USER_SKINS_RESET_KEY, '1');
-      return host;
-    }
-    const local = JSON.parse(localStorage.getItem(USER_SKINS_KEY) || '{}');
-    return { ...host, ...(local && typeof local === 'object' ? local : {}) };
-  } catch {
-    return {};
-  }
+function legacyUserSkins() {
+  return { ...cachedAppearanceValue(USER_SKINS_KEY), ...HOST_UI?.skins };
 }
 
-function listSkinOptions() {
-  // Only the default skin is built in; everything else is user-saved.
-  const options = [{ value: 'builtin:default', label: skinLabel('default') || '默认' }];
+function userSkins() {
+  const skins = legacyUserSkins();
+  for (const [choice, profile] of Object.entries(skinProfiles())) {
+    if (!choice.startsWith('user:')) continue;
+    const name = choice.slice(5);
+    if (profile === null) delete skins[name];
+    else Object.defineProperty(skins, name, { value: profile, configurable: true, enumerable: true });
+  }
+  return skins;
+}
+
+function listSkinOptions(t) {
+  const options = [
+    { value: 'builtin:default', label: t('skinDefault') },
+    { value: 'builtin:clawd', label: t('skinClawd') },
+  ];
+  if (!['default', 'clawd'].includes(currentSkin())) {
+    options.push({ value: `builtin:${currentSkin()}`, label: skinLabel(currentSkin()) });
+  }
   for (const name of Object.keys(userSkins())) options.push({ value: `user:${name}`, label: name });
   return options;
 }
 
-function saveUserSkin(name) {
-  const clean = String(name || '').trim().slice(0, 24);
-  if (!clean) throw new Error('empty skin name');
-  const skins = userSkins();
-  skins[clean] = { appearance: loadAppearance(), skin: currentSkin() };
-  localStorage.setItem(USER_SKINS_KEY, JSON.stringify(skins));
-  scheduleHostSave();
+function saveUserSkin(name, profile = { skin: currentSkin(), appearance: currentAppearance() }) {
+  const clean = Array.from(String(name || '').trim()).slice(0, 24).join('');
+  if (!clean || /[\u0000-\u001f]/.test(clean)) throw new Error('invalid skin name');
+  saveSkinProfile(`user:${clean}`, { skin: profile.skin, appearance: cloneAppearance(profile.appearance) });
   return clean;
 }
 
 function deleteUserSkin(name) {
-  // The default skin is built in and must stay selectable.
-  if (String(name) === 'default') return false;
-  const skins = userSkins();
-  if (!skins[name]) return false;
-  delete skins[name];
-  localStorage.setItem(USER_SKINS_KEY, JSON.stringify(skins));
-  scheduleHostSave();
+  if (!Object.hasOwn(userSkins(), name)) return false;
+  saveSkinProfile(`user:${name}`, null);
   return true;
 }
 
 function applySkinChoice(value) {
-  const [kind, name] = String(value || '').split(':');
-  if (kind === 'user') {
-    const entry = userSkins()[name];
-    if (!entry) return loadAppearance();
-    applySkin(entry.skin || 'default');
-    const merged = cloneAppearance(APPEARANCE_DEFAULTS);
-    for (const section of Object.keys(merged)) {
-      if (entry.appearance && entry.appearance[section] !== undefined) {
-        merged[section] = { ...merged[section], ...entry.appearance[section] };
-      }
-    }
-    applyAppearance(merged);
-    return merged;
+  if (value.startsWith('user:') && !Object.hasOwn(userSkins(), value.slice(5))) return currentAppearance();
+  const profile = profileForSkin(value);
+  rememberSkinChoice(value);
+  applySkin(profile.skin);
+  applyAppearance(profile.appearance, { persist: false });
+  return profile.appearance;
+}
+
+function readImageData(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function exportAppearance(name) {
+  const skin = currentSkin();
+  const appearance = cloneAppearance(currentAppearance());
+  const urls = new Set(Object.values(appearance.background).map((layer) => layer.imageUrl).filter(
+    (url) => url && url !== BUILTIN_BACKGROUND_URL,
+  ));
+  const assets = {};
+  for (const url of urls) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    assets[url] = await readImageData(await response.blob());
   }
-  applySkin(name || 'default');
-  return loadAppearance();
+  return JSON.stringify({ version: 2, name, skin, appearance, assets }, null, 2);
 }
 
-
-function exportAppearance() {
-  return JSON.stringify({ version: 1, appearance: loadAppearance() }, null, 2);
-}
-
-function importAppearance(text) {
+async function importAppearance(text, fallbackName, legacySkin) {
   const parsed = JSON.parse(text);
-  const incoming = parsed && parsed.appearance ? parsed.appearance : parsed;
-  if (!incoming || typeof incoming !== 'object') throw new Error('invalid appearance file');
-  const merged = cloneAppearance(APPEARANCE_DEFAULTS);
-  for (const section of Object.keys(merged)) {
-    if (incoming[section] === undefined) continue;
-    merged[section] = { ...merged[section], ...incoming[section] };
+  const incoming = parsed?.appearance || parsed;
+  if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming) ||
+    !Object.keys(APPEARANCE_DEFAULTS).some((section) => Object.hasOwn(incoming, section))) {
+    throw new Error('invalid appearance file');
   }
-  applyAppearance(merged);
-  return merged;
+  const skin = parsed.version === 2 && Object.hasOwn(SKINS, parsed.skin) ? parsed.skin : legacySkin;
+  const appearance = normalizeAppearance(incoming, skinDefaults(skin));
+  if (parsed.version === 2) {
+    const images = new Map();
+    for (const area of APPEARANCE_AREAS) {
+      const layer = appearance.background[area];
+      const oldUrl = skinImageUrl(incoming.background?.[area]?.imageUrl);
+      if (!oldUrl || oldUrl === BUILTIN_BACKGROUND_URL) continue;
+      const dataUrl = parsed.assets?.[oldUrl];
+      if (typeof dataUrl !== 'string' || !/^data:image\/(png|jpeg|jpg|gif|webp);base64,/i.test(dataUrl)) {
+        throw new Error('skin file is missing a background image');
+      }
+      if (!images.has(oldUrl)) {
+        const saved = await api('background.set', { area, dataUrl, forPreset: true });
+        images.set(oldUrl, saved.url);
+      }
+      layer.imageUrl = images.get(oldUrl);
+    }
+  }
+  const desired = typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim() : fallbackName;
+  const names = userSkins();
+  let name = Array.from(desired).slice(0, 24).join('');
+  for (let index = 2; Object.hasOwn(names, name); index += 1) {
+    const suffix = ' ' + index;
+    name = Array.from(desired).slice(0, 24 - suffix.length).join('') + suffix;
+  }
+  return saveUserSkin(name, { skin, appearance });
 }
 
 // ---- helpers.js ----
 // helpers.js — shared helpers for the panels and views.
-function pageScheme() {
-  try {
+function usePageScheme() {
+  const pageRef = React.useRef(null);
+  const [scheme, setScheme] = React.useState('light');
+  React.useEffect(() => {
+    const host = pageRef.current?.parentElement;
+    if (!host) return undefined;
+    // Resolve the host's base color outside the page's skin and custom background.
     const probe = document.createElement('span');
-    probe.style.color = 'var(--dsw-alias-label-primary)';
+    probe.style.color = 'color-mix(in srgb, var(--dsw-alias-bg-base, white) 100%, transparent)';
     probe.style.display = 'none';
-    document.body.appendChild(probe);
-    const color = getComputedStyle(probe).color;
-    probe.remove();
-    const match = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(color);
-    if (!match) return 'light dark';
-    const luminance = (Number(match[1]) * 299 + Number(match[2]) * 587 + Number(match[3]) * 114) / 1000;
-    return luminance > 128 ? 'light' : 'dark';
-  } catch {
-    return 'light dark';
-  }
+    host.appendChild(probe);
+    const read = () => {
+      const color = getComputedStyle(probe).color;
+      const srgb = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/.exec(color);
+      const rgb = srgb || /^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/.exec(color);
+      if (!rgb) return;
+      const [r, g, b] = rgb.slice(1, 4).map(Number);
+      setScheme(r * 0.299 + g * 0.587 + b * 0.114 > (srgb ? 0.5 : 128) ? 'light' : 'dark');
+    };
+    const observer = new MutationObserver(read);
+    const attributeFilter = ['class', 'data-theme', 'data-color-scheme', 'style'];
+    for (let node = host; node; node = node.parentElement) {
+      observer.observe(node, { attributeFilter });
+    }
+    const preference = window.matchMedia('(prefers-color-scheme: dark)');
+    preference.addEventListener('change', read);
+    read();
+    return () => {
+      observer.disconnect();
+      preference.removeEventListener('change', read);
+      probe.remove();
+    };
+  }, []);
+  return [pageRef, scheme];
 }
 const pad = (value) => String(value).padStart(2, '0');
 
 function dayKey(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function studyLocalDayKey(now = new Date()) {
+  const date = new Date(now);
+  if (date.getHours() < 4) date.setDate(date.getDate() - 1);
+  return dayKey(date);
 }
 
 function toLocalInput(iso) {
@@ -1888,8 +2311,10 @@ const PALETTE = [
   '#75C1C4', // 松石
 ];
 
-const colorOfName = (name, overrides) => {
-  if (overrides && overrides[name]) return overrides[name];
+const colorOfName = (name, overrides, kind = 'type') => {
+  const scoped = kind + ':' + name;
+  const saved = Object.hasOwn(overrides || {}, scoped) ? overrides[scoped] : overrides?.[name];
+  if (typeof saved === 'string' && /^#[0-9a-f]{6}$/i.test(saved)) return saved;
   let hash = 0;
   const text = String(name || '');
   for (let index = 0; index < text.length; index += 1) hash = (hash * 31 + text.charCodeAt(index)) % 100000;
@@ -2505,7 +2930,7 @@ function TagChips(props) {
           key: tag,
           className: 'lp-tag',
           title: tag,
-          style: { color: colorOfName(tag, props.colorOverrides), border: `1px solid ${colorOfName(tag, props.colorOverrides)}` },
+          style: { color: colorOfName(tag, props.colorOverrides, 'tag'), border: `1px solid ${colorOfName(tag, props.colorOverrides, 'tag')}` },
         },
         tag,
       ),
@@ -3069,6 +3494,7 @@ function CalendarView(props) {
   const scrollRef = React.useRef(null);
   const band = React.useRef(0);
   const collapsedRef = React.useRef(false);
+  const [split, setSplit] = React.useState(false);
   const [collapsed, setCollapsed] = React.useState(false);
   const [expanded, setExpanded] = React.useState(420);
   // Collapsed always parks at scrollTop 0 so the sticky bar sits above the
@@ -3200,7 +3626,11 @@ function CalendarView(props) {
       const height = Math.round(node.clientHeight || 0);
       if (height <= 0) return;
       const room = Math.max(320, height - 150);
-      const configured = Number(((currentAppearance().size || {}).calendarHeight) || 0);
+      const appearance = currentAppearance();
+      const sideBySide = appearance.layout.calendar === 'auto' && node.clientWidth >= 860;
+      setSplit(sideBySide);
+      if (sideBySide && collapsedRef.current) setCollapse(false);
+      const configured = appearance.size.calendarHeight;
       // A configured height wins, clamped to sane bounds so the day list below
       // always keeps a scrollable surface.
       const capped = Math.max(320, height - 40);
@@ -3218,6 +3648,7 @@ function CalendarView(props) {
   }, []);
 
   const onScroll = (event) => {
+    if (split) return;
     const node = event.currentTarget;
     const at = node.scrollTop;
     if (!collapsedRef.current) {
@@ -3234,6 +3665,7 @@ function CalendarView(props) {
   // Expanding deliberately costs more: reach the top, then keep pushing up
   // through an elastic band before the month comes back.
   const onWheel = (event) => {
+    if (split) return;
     const node = scrollRef.current;
     if (!node) return;
     if (!collapsedRef.current) {
@@ -3291,7 +3723,7 @@ function CalendarView(props) {
 
   return h(
     'div',
-    { className: 'lp-cal-scroll', ref: scrollRef, onScroll, onWheel },
+    { className: 'lp-cal-scroll', 'data-layout': split ? 'split' : 'stacked', ref: scrollRef, onScroll, onWheel },
     h(
       'div',
       {
@@ -3309,6 +3741,7 @@ function CalendarView(props) {
             transition: 'opacity .18s ease',
           },
           'aria-hidden': collapsed,
+          inert: collapsed,
         },
         h(
           'div',
@@ -3381,6 +3814,7 @@ function CalendarView(props) {
                 'data-dim': String(!cell.inMonth),
                 'data-today': String(cell.isToday),
                 'data-selected': String(cell.key === selectedKey),
+                'data-weekend': String(index % 7 >= 5),
                 'data-edge-left': String(leftEdge),
                 'data-edge-right': String(rightEdge),
                 'data-edge-top': String(topEdge),
@@ -3412,6 +3846,7 @@ function CalendarView(props) {
             transition: 'opacity .18s ease',
           },
           'aria-hidden': !collapsed,
+          inert: !collapsed,
         },
         week.map((cell) => {
           const list = byDay.get(cell.key) || [];
@@ -3432,7 +3867,7 @@ function CalendarView(props) {
               },
             },
             h('span', null, labels[(cell.date.getDay() + 6) % 7]),
-            h('strong', { style: { fontSize: 13 } }, String(cell.day)),
+            h('strong', { className: 'lp-week-day' }, String(cell.day)),
             count > 0 ? h('span', { className: 'lp-count' }, String(count)) : null,
           );
         }),
@@ -3459,7 +3894,7 @@ function CalendarView(props) {
     ),
     h(
       'div',
-      { className: 'lp-day', style: { minHeight: expanded } },
+      { className: 'lp-day', style: split ? undefined : { minHeight: expanded } },
       h(
         'div',
         { className: 'lp-day-title' },
@@ -3484,7 +3919,7 @@ function CalendarView(props) {
           // is visible instead of the box sitting half under the bar.
           onFocus: () => {
             const node = scrollRef.current;
-            if (node && node.scrollTop < 48) node.scrollTo({ top: 48, behavior: 'smooth' });
+            if (!split && node && node.scrollTop < 48) node.scrollTo({ top: 48, behavior: 'smooth' });
           },
         }),
         h('button', { className: 'lp-btn', type: 'submit', disabled: !props.draft.trim() }, t('addButton')),
@@ -4397,7 +4832,7 @@ function ItemEditor(props) {
                       type: 'button',
                       className: 'lp-chip',
                       'data-active': String(tags.includes(tag)),
-                      style: { color: colorOfName(tag, props.colorOverrides) },
+                      style: { color: colorOfName(tag, props.colorOverrides, 'tag') },
                       onClick: () => toggleTag(tag),
                     },
                     tag,
@@ -4490,16 +4925,43 @@ function ItemEditor(props) {
 }
 
 // ---- dialogs/settings.js ----
+function AppearanceNumber({ label, value, min, max, positiveMin = min, onChange }) {
+  const [draft, setDraft] = React.useState(String(value));
+  React.useEffect(() => setDraft(String(value)), [value]);
+  return h('label', { className: 'lp-field' },
+    h('span', null, label),
+    h('input', {
+      className: 'lp-input', type: 'number', min, max, step: 1, value: draft,
+      onChange: (event) => {
+        const text = event.target.value;
+        setDraft(text);
+        const number = Number(text);
+        if (text && Number.isInteger(number) && number >= min && number <= max && (number === 0 || number >= positiveMin)) {
+          onChange(number);
+        }
+      },
+      onBlur: () => setDraft(String(value)),
+    }),
+  );
+}
+
+const SETTINGS_NUMBERS = {
+  leadTaskDays: [0, 60], leadProjectDays: [0, 120], notifyGapMinutes: [1, 720],
+  nonUrgentQuotaPerWindow: [0, 50], maxRemindersPerWindow: [1, 50], maxDeferHours: [0, 720],
+  longTermReminderHours: [0, 720], archiveAfterDays: [1, 3650], deleteAfterDays: [7, 3650],
+};
+
 function SettingsModal(props) {
   const t = props.t;
   const [form, setForm] = React.useState(props.settings || {});
   React.useEffect(() => {
     if (props.settings) setForm(props.settings);
   }, [props.settings]);
-  const [appearance, setAppearance] = React.useState(() => loadAppearance());
+  const [appearance, setAppearance] = React.useState(() => currentAppearance());
   const [page, setPage] = React.useState(props.initialPage || 'tags');
   const [error, setError] = React.useState('');
   const [busy, setBusy] = React.useState(false);
+  const [preview, setPreview] = React.useState(false);
   const [calendarInfo, setCalendarInfo] = React.useState(null);
   const [refreshingRegion, setRefreshingRegion] = React.useState(false);
   React.useEffect(() => {
@@ -4518,46 +4980,26 @@ function SettingsModal(props) {
     typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
   );
   const [feedback, setFeedback] = React.useState('');
-  const [typesText, setTypesText] = React.useState(((props.settings || {}).taskTypes || []).join(', '));
-  const [tagsText, setTagsText] = React.useState(((props.settings || {}).tags || []).join(', '));
+  const [types, setTypes] = React.useState(props.settings?.taskTypes || []);
+  const [tags, setTags] = React.useState(props.settings?.tags || []);
   const [tagDraft, setTagDraft] = React.useState('');
   const [selectedTag, setSelectedTag] = React.useState('');
   const [tagLibDraft, setTagLibDraft] = React.useState('');
   const [selectedTagLib, setSelectedTagLib] = React.useState('');
   const [studyMode, setStudyMode] = React.useState(true);
-  const [skinChoice, setSkinChoice] = React.useState(() => `builtin:${currentSkin()}`);
+  const [skinChoice, setSkinChoice] = React.useState(() => currentSkinChoice());
   const [skinName, setSkinName] = React.useState('');
+  React.useEffect(() => {
+    const sync = () => setSkinChoice(currentSkinChoice());
+    window.addEventListener('lp-skin-change', sync);
+    return () => window.removeEventListener('lp-skin-change', sync);
+  }, []);
+  React.useEffect(() => onAppearanceChange(setAppearance), []);
   React.useEffect(() => {
     // Plugin-level switches live in the plugin manager; read them for gating only.
     api('config')
       .then((next) => {
-        setStudyMode(next.studyMode !== false);
-      })
-      .catch(() => {});
-    // Mirror the notification preference for the background reminder loop.
-    try {
-      const savedNotify = (props.settings || {}).systemNotify;
-      if (savedNotify !== undefined) localStorage.setItem('lpSystemNotify', savedNotify === false ? 'off' : 'on');
-    } catch {}
-    // The host owns the files, so its answer wins over a stale local URL.
-    api('background.info')
-      .then((info) => {
-        setAppearance((current) => {
-          const next = {
-            ...current,
-            background: {
-              planning: {
-                ...current.background.planning,
-                imageUrl: info.planning || current.background.planning.imageUrl || '',
-              },
-              study: { ...current.background.study, imageUrl: info.study || current.background.study.imageUrl || '' },
-            },
-          };
-          applyAppearance(next);
-          const areasWithImage = ['planning', 'study'].filter((area) => next.background[area] && next.background[area].imageUrl);
-          hydrateBackgrounds(next, areasWithImage).catch(() => {});
-          return next;
-        });
+        setStudyMode(next.studyPanel !== false);
       })
       .catch(() => {});
   }, []);
@@ -4567,7 +5009,6 @@ function SettingsModal(props) {
   const bgStudyRef = React.useRef(null);
 
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
-  const setAppear = (patch) => setAppearance((current) => ({ ...current, ...patch }));
 
   const textField = (key, label) =>
     h(
@@ -4589,30 +5030,23 @@ function SettingsModal(props) {
       h('input', {
         className: 'lp-input',
         type: 'number',
+        min: SETTINGS_NUMBERS[key][0],
+        max: SETTINGS_NUMBERS[key][1],
+        step: 1,
         value: form[key] ?? 0,
-        onChange: (event) => set(key, Number(event.target.value)),
+        onChange: (event) => set(key, event.target.value),
       }),
     );
 
-  const parseList = (text) =>
-    text
-      .split(',')
-      .map((entry) => entry.trim())
-      .filter(Boolean);
-
   const colorOverrides = form.colorOverrides || {};
-  const setColor = (name, color) => set('colorOverrides', { ...colorOverrides, [name]: color });
-  const clearColor = (name) => {
-    const next = { ...colorOverrides };
-    delete next[name];
-    set('colorOverrides', next);
-  };
+  const setColor = (kind, name, color) => setForm((current) =>
+    ({ ...current, colorOverrides: { ...current.colorOverrides, [kind + ':' + name]: color } }));
 
-  const colorSwatches = (name) =>
+  const colorSwatches = (kind, name) =>
     h(
       'div',
       { className: 'lp-field' },
-      h('label', null, `${t('tagColor')} · ${name}`),
+      h('label', null, `${t(kind === 'tag' ? 'tagLibraryColor' : 'tagColor')} · ${name}`),
       h(
         'div',
         { className: 'lp-swatch-panel' },
@@ -4621,23 +5055,22 @@ function SettingsModal(props) {
             key: color,
             type: 'button',
             className: 'lp-swatch',
-            'data-active': String((colorOverrides[name] || colorOfName(name, colorOverrides)) === color),
+            'data-active': String(colorOfName(name, colorOverrides, kind) === color),
+            'aria-label': color,
             style: { background: color },
-            onClick: () => setColor(name, color),
+            onClick: () => setColor(kind, name, color),
           }),
         ),
-        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => clearColor(name) }, t('colorReset')),
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setColor(kind, name, null) }, t('colorReset')),
       ),
     );
 
   const addTag = () => {
     const name = tagDraft.trim();
     if (!name) return;
-    const list = parseList(typesText);
-    if (!list.includes(name)) {
-      setTypesText([...list, name].join(', '));
-      const color = PALETTE[list.length % PALETTE.length];
-      setColor(name, color);
+    if (!types.includes(name)) {
+      setTypes([...types, name]);
+      setColor('type', name, PALETTE[types.length % PALETTE.length]);
     }
     setSelectedTag(name);
     setTagDraft('');
@@ -4646,23 +5079,21 @@ function SettingsModal(props) {
   const addTagLib = () => {
     const name = tagLibDraft.trim();
     if (!name) return;
-    const list = parseList(tagsText);
-    if (!list.includes(name)) {
-      setTagsText([...list, name].join(', '));
-      const color = PALETTE[list.length % PALETTE.length];
-      setColor(name, color);
+    if (!tags.includes(name)) {
+      setTags([...tags, name]);
+      setColor('tag', name, PALETTE[tags.length % PALETTE.length]);
     }
     setSelectedTagLib(name);
     setTagLibDraft('');
   };
 
   const removeType = (name) => {
-    setTypesText(parseList(typesText).filter((entry) => entry !== name).join(', '));
+    setTypes(types.filter((entry) => entry !== name));
     setSelectedTag('');
   };
 
   const removeTagLib = (name) => {
-    setTagsText(parseList(tagsText).filter((entry) => entry !== name).join(', '));
+    setTags(tags.filter((entry) => entry !== name));
     setSelectedTagLib('');
   };
 
@@ -4674,7 +5105,30 @@ function SettingsModal(props) {
       setPage('notify');
       return;
     }
+    const previous = props.settings || {};
+    for (const [key, [min, max]] of Object.entries(SETTINGS_NUMBERS)) {
+      if (String(form[key]) === String(previous[key])) continue;
+      const number = Number(form[key]);
+      if (form[key] === '' || !Number.isInteger(number) || number < min || number > max) {
+        setError(t('settingsNumberRange').replace('{min}', min).replace('{max}', max));
+        setPage('notify');
+        return;
+      }
+    }
+    const changed = (keys) => keys.some((key) => String(form[key]) !== String(previous[key]));
+    if (changed(['archiveAfterDays', 'deleteAfterDays']) && Number(form.deleteAfterDays) < Number(form.archiveAfterDays)) {
+      setError(t('settingsRetentionOrder'));
+      setPage('notify');
+      return;
+    }
+    if (changed(['nonUrgentQuotaPerWindow', 'maxRemindersPerWindow']) &&
+      Number(form.nonUrgentQuotaPerWindow) > Number(form.maxRemindersPerWindow)) {
+      setError(t('settingsQuotaOrder'));
+      setPage('notify');
+      return;
+    }
     setBusy(true);
+    setError('');
     const patch = {
       weekdayWindows: String(form.weekdayWindows ?? ''),
       weekendWindows: String(form.weekendWindows ?? ''),
@@ -4688,21 +5142,29 @@ function SettingsModal(props) {
       longTermReminderHours: Number(form.longTermReminderHours ?? 12),
       maxRemindersPerWindow: Number(form.maxRemindersPerWindow ?? 6),
       systemNotify: form.systemNotify !== false,
-      taskTypes: parseList(typesText),
-      tags: parseList(tagsText),
+      taskTypes: types,
+      tags,
       colorOverrides,
       adviceRegion: (form.adviceRegion || '').trim(),
       calendarAutoRefresh: form.calendarAutoRefresh !== false,
       adviceRegionLocked: form.adviceRegionLocked === true,
       dailyAdvice: form.dailyAdvice !== false,
     };
-    api('settings.save', { patch })
+    for (const key of Object.keys(patch)) {
+      if (JSON.stringify(previous[key]) === JSON.stringify(patch[key])) delete patch[key];
+    }
+    flushAppearanceSave()
+      .then(() => Object.keys(patch).length ? api('settings.save', { patch }) : previous)
       .then((data) => {
-        applyAppearance(appearance);
         props.onSaved(data);
       })
       .catch((err) => setError(err.message))
       .finally(() => setBusy(false));
+  };
+
+  const close = () => {
+    if (busy) return;
+    flushAppearanceSave().then(props.onClose).catch((err) => setError(err.message));
   };
 
   const report = (value) => {
@@ -4739,13 +5201,16 @@ function SettingsModal(props) {
     }
   };
 
-  const testNotify = () => {
-    if (typeof Notification === 'undefined') {
-      report('unsupported');
-      return;
-    }
+  const testNotify = async () => {
+    const title = t('noticeTitle');
+    const message = t('notifyTestBody');
     try {
-      new Notification(t('noticeTitle'), { body: t('notifyTestBody') });
+      const result = await api('notifications.test', { title, message });
+      if (!result.sent) {
+        if (typeof Notification === 'undefined') { report('unsupported'); return; }
+        if (Notification.permission !== 'granted') { report(Notification.permission); return; }
+        new Notification(title, { body: message });
+      }
       setFeedback(t('notifySent'));
     } catch (error) {
       setFeedback(t('notifyFailed').replace('{e}', (error && error.message) || 'send failed'));
@@ -4795,69 +5260,42 @@ function SettingsModal(props) {
     const file = event.target.files && event.target.files[0];
     event.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result || '');
-      api('background.set', { area, dataUrl })
+    const owner = currentSkinChoice();
+    readImageData(file).then((dataUrl) => api('background.set', { area, dataUrl, forPreset: true }))
         .then((saved) => {
-          const next = {
-            ...appearance,
-            background: {
-              ...appearance.background,
-              [area]: { ...appearance.background[area], imageUrl: saved.url },
-            },
-          };
-          if (area === 'planning' && window.confirm(t('bgSyncAsk'))) {
-            return api('background.set', { area: 'study', dataUrl }).then((studySaved) => {
-              next.background.study = { ...next.background.study, imageUrl: studySaved.url };
-              return next;
-            });
-          }
-          return next;
-        })
-        .then((next) => {
-          setAppearance(next);
-          // Only the area that just changed needs its bytes.
-          return hydrateBackgrounds(next, [area]).then((result) => {
+          const layer = { mode: 'image', imageUrl: saved.url };
+          const layers = { [area]: layer };
+          if (area === 'planning' && currentSkinChoice() === owner && window.confirm(t('bgSyncAsk'))) layers.study = layer;
+          const next = updateSkinBackground(owner, layers);
+          if (!next) return;
+          return hydrateBackgrounds(next, Object.keys(layers)).then((result) => {
+            if (currentSkinChoice() !== owner) return;
             if (result.failed.length > 0) setError(t('bgLoadFailed'));
             else setError('');
           });
         })
         .catch((err) => setError(err.message));
-    };
-    reader.readAsDataURL(file);
   };
 
   const clearBackground = (area) => {
-    api('background.clear', { area })
-      .then(() => {
-        const next = {
-          ...appearance,
-          background: { ...appearance.background, [area]: { ...appearance.background[area], imageUrl: '' } },
-        };
-        setAppearance(next);
-        applyAppearance(next);
-      })
-      .catch((err) => setError(err.message));
+    updateSkinBackground(currentSkinChoice(), { [area]: { mode: 'none', imageUrl: '' } });
   };
 
   const setBackgroundLayer = (area, patch) => {
     const layer = appearance.background[area];
-    const next = {
-      ...appearance,
-      background: {
-        ...appearance.background,
-        [area]: { ...layer, ...patch, mask: { ...(layer.mask || {}), ...(patch.mask || {}) } },
-      },
-    };
-    setAppearance(next);
-    applyAppearance(next);
+    const next = updateSkinBackground(currentSkinChoice(), {
+      [area]: { ...patch, mask: { ...layer.mask, ...patch.mask } },
+    });
+    if (next) hydrateBackgrounds(next, [area]).catch(() => {});
   };
 
   const chooseSkin = (value) => {
+    migrateSkinProfiles();
     const next = applySkinChoice(value);
-    setSkinChoice(value);
+    setSkinChoice(currentSkinChoice());
     setAppearance(next);
+    setError('');
+    saveActiveSkin().catch((err) => setError(err.message));
     hydrateBackgrounds(next).catch(() => {});
   };
 
@@ -4868,8 +5306,10 @@ function SettingsModal(props) {
       return;
     }
     try {
+      const clean = Array.from(name).slice(0, 24).join('');
+      if (Object.hasOwn(userSkins(), clean) && !window.confirm(t('skinOverwrite'))) return;
       const saved = saveUserSkin(name);
-      setSkinChoice(`user:${saved}`);
+      chooseSkin(`user:${saved}`);
       setSkinName('');
       setFeedback(t('skinSaved'));
     } catch (err) {
@@ -4880,42 +5320,61 @@ function SettingsModal(props) {
 
   const removeCurrentSkin = () => {
     const name = skinChoice.slice(5);
+    if (!window.confirm(t('skinDeleteConfirm').replace('{name}', name))) return;
     if (!deleteUserSkin(name)) return;
-    setSkinChoice(`builtin:${currentSkin()}`);
+    chooseSkin(`builtin:${currentSkin()}`);
     setFeedback(t('skinDeleted'));
   };
 
   const setFont = (key, value) => {
-    const fallback = Number((APPEARANCE_DEFAULTS.font || {})[key]) || 13;
-    const next = { ...appearance, font: { ...appearance.font, [key]: Number(value) || fallback } };
-    setAppearance(next);
-    applyAppearance(next);
+    const current = currentAppearance();
+    applyAppearance({ ...current, font: { ...current.font, [key]: value } });
   };
 
   const setSize = (key, value) => {
-    const next = { ...appearance, size: { ...appearance.size, [key]: Number(value) || 0 } };
-    setAppearance(next);
-    applyAppearance(next);
+    const current = currentAppearance();
+    applyAppearance({ ...current, size: { ...current.size, [key]: value } });
   };
 
   const setAccent = (area, value) => {
-    const next = { ...appearance, accent: { ...appearance.accent, [area]: value } };
-    setAppearance(next);
-    applyAppearance(next);
+    const current = currentAppearance();
+    applyAppearance({ ...current, accent: { ...current.accent, [area]: value } });
   };
 
-  const numberInput = (key, label, value, onChange) =>
-    h(
-      'div',
-      { className: 'lp-field' },
-      h('label', null, label),
-      h('input', {
-        className: 'lp-input',
-        type: 'number',
-        value,
-        onChange: (event) => onChange(key, event.target.value),
-      }),
-    );
+  const setLayout = (key, value) => {
+    const current = currentAppearance();
+    applyAppearance({ ...current, layout: { ...current.layout, [key]: value } });
+  };
+
+  const layoutInput = (key, label) => h('label', { className: 'lp-field' },
+    h('span', null, t(label)),
+    h('select', { className: 'lp-select', value: appearance.layout[key], onChange: (event) => setLayout(key, event.target.value) },
+      APPEARANCE_LAYOUTS[key].map((option) => h('option', { key: option, value: option }, t('layout_' + option))),
+    ),
+  );
+
+  const skinNameLabel = () => listSkinOptions(t).find((option) => option.value === skinChoice)?.label || t('skinDefault');
+
+  const exportSkin = async () => {
+    try {
+      const blob = new Blob([await exportAppearance(skinNameLabel())], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'life-planner-skin-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) { setError(err.message); }
+  };
+
+  const numberInput = (key, label, value, onChange) => {
+    const [min, max] = APPEARANCE_LIMITS[key] || [8, 64];
+    return h(AppearanceNumber, { key: skinChoice + ':' + key, label, value, min, max,
+      positiveMin: key === 'calendarHeight' ? 320 : min,
+      onChange: (next) => onChange(key, next) });
+  };
 
   const backgroundFields = (area) => {
     const layer = appearance.background[area];
@@ -4924,7 +5383,7 @@ function SettingsModal(props) {
     const setLayer = (patch) => setBackgroundLayer(area, patch);
     return h(
       'div',
-      { className: 'lp-field' },
+      { className: 'lp-field lp-settings-background' },
       h('label', null, area === 'study' ? t('fBgStudy') : t('fBgPlanning')),
       h(Dropdown, {
         value: layer.mode || 'none',
@@ -5062,7 +5521,7 @@ function SettingsModal(props) {
     h('div', null, h('strong', null, t(label)), hint ? h('div', { className: 'lp-meta' }, t(hint)) : null),
     h(Switch, { label: t(label), value, onChange }));
 
-  const classification = ({ title, hint, list, draft, onDraft, onAdd, placeholder, addLabel, selected, onSelect, empty, onRemove }) => {
+  const classification = ({ kind, title, hint, list, draft, onDraft, onAdd, placeholder, addLabel, selected, onSelect, empty, onRemove }) => {
     const active = list.includes(selected) ? selected : list[0];
     return group(title,
       h('form', { className: 'lp-toolbar', onSubmit: (event) => { event.preventDefault(); onAdd(); } },
@@ -5074,7 +5533,7 @@ function SettingsModal(props) {
       active ? h('div', { className: 'lp-settings-classification' },
         h(Dropdown, { value: active, onChange: onSelect, options: list.map((name) => ({ value: name, label: name })) }),
         h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => onRemove(active) }, t('delete')),
-        colorSwatches(active))
+        colorSwatches(kind, active))
       : h('div', { className: 'lp-meta' }, t(empty)),
       hint ? h('div', { className: 'lp-meta' }, t(hint)) : null,
     );
@@ -5082,12 +5541,12 @@ function SettingsModal(props) {
 
   const tagsPage = () => h('div', { className: 'lp-settings-sections' },
     classification({
-      title: 'sectionTags', hint: 'taskTypeAutoHint', list: parseList(typesText), draft: tagDraft, onDraft: setTagDraft,
+      kind: 'type', title: 'sectionTags', hint: 'taskTypeAutoHint', list: types, draft: tagDraft, onDraft: setTagDraft,
       onAdd: addTag, placeholder: 'tagNamePlaceholder', addLabel: 'addTag', selected: selectedTag, onSelect: setSelectedTag,
       empty: 'noTags', onRemove: removeType,
     }),
     classification({
-      title: 'sectionTagLibrary', list: parseList(tagsText), draft: tagLibDraft, onDraft: setTagLibDraft,
+      kind: 'tag', title: 'sectionTagLibrary', list: tags, draft: tagLibDraft, onDraft: setTagLibDraft,
       onAdd: addTagLib, placeholder: 'tagLibName', addLabel: 'tagLibAdd', selected: selectedTagLib, onSelect: setSelectedTagLib,
       empty: 'tagLibEmpty', onRemove: removeTagLib,
     }));
@@ -5146,10 +5605,7 @@ function SettingsModal(props) {
       'div',
       { className: 'lp-settings-sections' },
       group('sectionNotify',
-        switchRow('fSystemNotify', 'fSystemNotifyHint', form.systemNotify !== false, (next) => {
-          set('systemNotify', next);
-          try { localStorage.setItem('lpSystemNotify', next ? 'on' : 'off'); } catch {}
-        }),
+        switchRow('fSystemNotify', 'fSystemNotifyHint', form.systemNotify !== false, (next) => set('systemNotify', next)),
         h(
           'div',
           { className: 'lp-toolbar', style: { marginTop: 6 } },
@@ -5172,7 +5628,8 @@ function SettingsModal(props) {
         h('div', { className: 'lp-setting-grid' },
           numberField('leadTaskDays', t('fLeadTaskDays')),
           numberField('leadProjectDays', t('fLeadProjectDays')),
-          numberField('longTermReminderHours', t('fLongTermHours')))),
+          numberField('longTermReminderHours', t('fLongTermHours'))),
+        h('div', { className: 'lp-meta' }, t('settingsLeadHint'))),
       group('sectionTask', h('div', { className: 'lp-setting-grid' },
         numberField('archiveAfterDays', t('fArchiveDays')),
         numberField('deleteAfterDays', t('fDeleteDays')))),
@@ -5190,18 +5647,21 @@ function SettingsModal(props) {
         h(Dropdown, {
           value: skinChoice,
           onChange: chooseSkin,
-          options: listSkinOptions(),
+          options: listSkinOptions(t),
         }),
+        h('div', { className: 'lp-meta' }, t('skinAppearanceOwner').replace('{name}', skinNameLabel())),
         h(
           'div',
           { className: 'lp-toolbar', style: { marginTop: 6 } },
           h('input', {
             className: 'lp-input',
             value: skinName,
+            maxLength: 24,
+            'aria-label': t('skinNamePlaceholder'),
             placeholder: t('skinNamePlaceholder'),
             onChange: (event) => setSkinName(event.target.value),
           }),
-          h('button', { className: 'lp-btn', type: 'button', onClick: saveCurrentSkin }, t('skinSaveAs')),
+          h('button', { className: 'lp-btn', type: 'button', onClick: saveCurrentSkin, disabled: !skinName.trim() }, t('skinSaveAs')),
           skinChoice.indexOf('user:') === 0
             ? h('button', { className: 'lp-btn-ghost', type: 'button', onClick: removeCurrentSkin }, t('skinDelete'))
             : null,
@@ -5214,17 +5674,7 @@ function SettingsModal(props) {
             {
               className: 'lp-btn-ghost',
               type: 'button',
-              onClick: () => {
-                const blob = new Blob([exportAppearance()], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `life-planner-skin-${new Date().toISOString().slice(0, 10)}.json`;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                URL.revokeObjectURL(url);
-              },
+              onClick: exportSkin,
             },
             t('skinExport'),
           ),
@@ -5238,12 +5688,12 @@ function SettingsModal(props) {
               const file = event.target.files && event.target.files[0];
               event.target.value = '';
               if (!file) return;
+              const legacySkin = currentSkin();
               file
                 .text()
-                .then((text) => {
-                  const next = importAppearance(text);
-                  setAppearance(next);
-                  hydrateBackgrounds(next).catch(() => {});
+                .then((text) => importAppearance(text, file.name.replace(/\.json$/i, '') || t('skinImport'), legacySkin))
+                .then((name) => {
+                  chooseSkin('user:' + name);
                   setFeedback(t('skinImported'));
                 })
                 .catch((err) => setError(err.message));
@@ -5270,10 +5720,15 @@ function SettingsModal(props) {
       h(
         'div',
         { className: 'lp-setting-grid' },
+        layoutInput('calendar', 'layoutCalendar'),
         numberInput('calendarHeight', t('fCalHeight'), appearance.size.calendarHeight, setSize),
+        studyMode ? layoutInput('studyToday', 'layoutStudyToday') : null,
+        studyMode ? layoutInput('studyPlan', 'layoutStudyPlan') : null,
+        layoutInput('spacing', 'layoutSpacing'),
+        layoutInput('fontFamily', 'layoutFontFamily'),
       ),
       h('div', { className: 'lp-meta' }, t('fCalHeightHint'))),
-      group('sectionMistake',
+      studyMode ? group('sectionMistake',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -5287,33 +5742,21 @@ function SettingsModal(props) {
         numberInput('mistakeAnswer', t('fMistakeAnswerFs'), appearance.font.mistakeAnswer, setFont),
         numberInput('mistakeReason', t('fMistakeReasonFs'), appearance.font.mistakeReason, setFont),
       ),
-      h('div', { className: 'lp-meta' }, t('fMistakeHint'))),
+      h('div', { className: 'lp-meta' }, t('fMistakeHint'))) : null,
       group('sectionAccent',
       h(
         'div',
         { className: 'lp-row2' },
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('fAccentPlanning')),
-          h('input', {
-            className: 'lp-input',
-            type: 'color',
-            value: appearance.accent.planning || '#4f7cff',
-            onChange: (event) => setAccent('planning', event.target.value),
-          }),
-        ),
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('fAccentStudy')),
-          h('input', {
-            className: 'lp-input',
-            type: 'color',
-            value: appearance.accent.study || '#3fa66a',
-            onChange: (event) => setAccent('study', event.target.value),
-          }),
-        ),
+        APPEARANCE_AREAS.filter((area) => studyMode || area === 'planning').map((area) => {
+          const title = t(area === 'study' ? 'fAccentStudy' : 'fAccentPlanning');
+          const value = appearance.accent[area];
+          return h('div', { className: 'lp-field', key: area },
+            h('label', null, title),
+            h('div', { className: 'lp-settings-color' },
+              h('input', { className: 'lp-input', type: 'color', 'aria-label': title,
+                value: value || (currentSkin() === 'clawd' ? '#a35039' : '#4f7cff'), onChange: (event) => setAccent(area, event.target.value) }),
+              h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setAccent(area, ''), disabled: !value }, t('colorReset'))));
+        }),
       )),
       group('sectionBackground',
       h(
@@ -5327,13 +5770,14 @@ function SettingsModal(props) {
             className: 'lp-input',
             type: 'range',
             min: 0,
-            max: 0.6,
+            max: 0.9,
             step: 0.05,
             value: appearance.surface ?? 0.15,
+            'aria-label': t('fSurface'),
+            disabled: !APPEARANCE_AREAS.some((area) => (area === 'planning' || studyMode) &&
+              (appearance.background[area].mode === 'color' || (appearance.background[area].mode === 'image' && appearance.background[area].imageUrl))),
             onChange: (event) => {
-              const next = { ...appearance, surface: Number(event.target.value) };
-              setAppearance(next);
-              applyAppearance(next);
+              applyAppearance({ ...currentAppearance(), surface: Number(event.target.value) });
             },
           }),
           h('span', { className: 'lp-meta' }, `${Math.round((appearance.surface ?? 0.15) * 100)}%`),
@@ -5350,13 +5794,21 @@ function SettingsModal(props) {
     { key: 'notify', label: t('tabNotify') },
     { key: 'appearance', label: t('tabAppearance') },
   ];
+  const hasPendingSettings = JSON.stringify(form) !== JSON.stringify(props.settings || {}) ||
+    JSON.stringify(types) !== JSON.stringify(props.settings?.taskTypes || []) ||
+    JSON.stringify(tags) !== JSON.stringify(props.settings?.tags || []);
+
+  if (preview) {
+    return h('div', { className: 'lp-settings-preview' },
+      h('button', { type: 'button', className: 'lp-btn', autoFocus: true, onClick: () => setPreview(false) }, t('settingsReturn')));
+  }
 
   return h(
     Modal,
     {
-      title: `${t('settings')} · v0.9.40`,
+      title: `${t('settings')} · v0.9.41`,
       className: 'lp-settings',
-      onClose: props.onClose,
+      onClose: close,
     },
     h('div', { className: 'lp-settings-layout' },
       h('nav', { className: 'lp-settings-nav', 'aria-label': t('settings') },
@@ -5382,8 +5834,11 @@ function SettingsModal(props) {
       h(
         'div',
         { className: 'lp-modal-actions' },
-        h('button', { className: 'lp-btn-ghost', onClick: props.onClose, disabled: busy }, t('cancel')),
-        h('button', { className: 'lp-btn', onClick: save, disabled: busy }, t('save')),
+        page === 'appearance' ? h('button', { type: 'button', className: 'lp-btn-ghost', onClick: () => setPreview(true), disabled: busy }, t('settingsPreview')) : null,
+        h('button', { className: 'lp-btn-ghost', onClick: close, disabled: busy }, t(page === 'appearance' ? 'close' : 'cancel')),
+        page !== 'appearance' || hasPendingSettings
+          ? h('button', { className: 'lp-btn', onClick: save, disabled: busy }, t('save'))
+          : null,
       ),
   );
 }
@@ -5569,26 +6024,7 @@ function Panel(props) {
     };
   }, []);
   const [tab, setTab] = React.useState('calendar');
-  const pageRef = React.useRef(null);
-  // Native controls (checkbox, datetime picker, select popup) follow the
-  // `color-scheme` value, so sample the actual panel background instead of
-  // trusting a media query: the app theme can differ from the OS theme.
-  const [scheme, setScheme] = React.useState('light');
-
-  React.useEffect(() => {
-    const node = pageRef.current;
-    if (!node) return undefined;
-    const read = () => {
-      const parts = window.getComputedStyle(node).backgroundColor.match(/\d+(\.\d+)?/g);
-      if (!parts || parts.length < 3) return;
-      const [r, g, b] = parts.map(Number);
-      setScheme((r * 299 + g * 587 + b * 114) / 1000 > 128 ? 'light' : 'dark');
-    };
-    read();
-    const observer = new MutationObserver(read);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'style'] });
-    return () => observer.disconnect();
-  }, []);
+  const [pageRef, scheme] = usePageScheme();
 
   const [snapshot, setSnapshot] = React.useState(cached ? cached.snapshot : null);
   const [error, setError] = React.useState('');
@@ -5723,7 +6159,7 @@ function Panel(props) {
 
   const items = (snapshot && snapshot.items) || [];
   const taskTypes =
-    settings && Array.isArray(settings.taskTypes) && settings.taskTypes.length > 0
+    settings && Array.isArray(settings.taskTypes)
       ? settings.taskTypes
       : ['学习', '工作', '生活', '其他'];
   const colorOverrides = (settings && settings.colorOverrides) || {};
@@ -6005,6 +6441,8 @@ function Panel(props) {
               leadProjectDays: 8,
               notifyGapMinutes: 3,
               nonUrgentQuotaPerWindow: 2,
+              maxRemindersPerWindow: 6,
+              longTermReminderHours: 12,
               maxDeferHours: 48,
               archiveAfterDays: 30,
               deleteAfterDays: 90,
@@ -6401,8 +6839,6 @@ function MistakeTab(props) {
               'div',
               {
                 className: 'lp-study-grid lp-mistake-grid',
-                // A fixed card height is what enables line clamping + ellipsis.
-                'data-fixed': String(Number((currentAppearance().size || {}).mistakeHeight) > 0),
               },
               group.items.map((item) =>
                 h(
@@ -6581,12 +7017,37 @@ function MistakeTab(props) {
 }
 
 // ---- panels/study-overview.js ----
+function TodayStudyProgress({ t, tasks }) {
+  if (!tasks.length) return null;
+  const done = (task) => task.state === 'done' || task.doneToday === true;
+  const completed = tasks.filter(done).length;
+  const label = t('studyTodayCompleted').replace('{n}', completed).replace('{total}', tasks.length);
+  return h('div', { className: 'lp-group lp-today-study-progress' },
+    h('div', { className: 'lp-group-head lp-today-study-head' },
+      h('strong', null, t('studyTodayTasks')),
+      h('span', { className: 'lp-meta', role: 'status' }, label),
+    ),
+    tasks.map((task) =>
+      h('div', { key: task.id, className: 'lp-tree-row lp-today-study-task', 'data-done': String(done(task)) },
+        h('span', { className: 'lp-title', title: task.title }, task.title),
+        h('div', { className: 'lp-today-study-targets lp-meta' },
+          h('span', null, `${t('studyNewLabel')} ${task.answeredNew ?? 0}/${task.targetNew ?? task.dailyNew ?? 0}`),
+          h('span', null, `${t('studyReviewLabel')} ${task.answeredReview ?? 0}/${task.targetReview ?? task.dailyReview ?? 0}`),
+          done(task) ? h('span', { className: 'lp-today-study-done' }, t('studyDone')) : null,
+        ),
+      ),
+    ),
+  );
+}
+
 function StudyOverview(props) {
   const t = props.t;
   // The learning data comes from the parent page, which every tab shares.
   const data = props.data || null;
   const [tip, setTip] = React.useState(null);
   const [error, setError] = React.useState('');
+  const [studyTasks, setStudyTasks] = React.useState(null);
+  const [progressError, setProgressError] = React.useState('');
   const loadTip = () => api('tip').then(setTip).catch((err) => setError(err.message));
   const reload = () => {
     if (typeof props.onReload === 'function') props.onReload();
@@ -6596,6 +7057,27 @@ function StudyOverview(props) {
     loadTip();
     const timer = setInterval(loadTip, 30000);
     return () => clearInterval(timer);
+  }, []);
+  React.useEffect(() => {
+    let active = true;
+    const loadProgress = () => {
+      if (document.visibilityState === 'hidden') return;
+      api('study-tasks').then((rows) => {
+        if (!active) return;
+        setStudyTasks(Array.isArray(rows) ? rows : []);
+        setProgressError('');
+      }).catch((err) => {
+        if (active) setProgressError(err.message);
+      });
+    };
+    loadProgress();
+    const timer = setInterval(loadProgress, 10000);
+    document.addEventListener('visibilitychange', loadProgress);
+    return () => {
+      active = false;
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', loadProgress);
+    };
   }, []);
   const finishPlan = (entry) =>
     api('plan.done', { id: entry.id })
@@ -6609,35 +7091,33 @@ function StudyOverview(props) {
   const topics = (data && data.topics) || [];
   const due = topics.filter((topic) => topic.due);
   // Study days roll over at 04:00, like the host-side scheduler.
-  const todayKey = dayKey(new Date(Date.now() - 4 * 3600 * 1000));
+  const todayKey = studyLocalDayKey();
   const todayPlan = ((data && data.plan) || []).filter((entry) => entry.date === todayKey);
+  const todayTasks = (studyTasks || []).filter((task) => task.state !== 'todo' && !task.scheduled);
   const dueMistakes = ((data && data.mistakes) || []).filter((entry) => entry.due);
+  const date = new Date(todayKey + 'T12:00:00');
   // Mastery is owned by the tutor: the page only displays it.
   const masteryLabel = (value) => `${Math.min(10, Math.max(0, Number(value) || 0))}/10`;
   return h(
     'div',
-    { className: 'lp-body' },
+    { className: 'lp-body lp-study-today' },
     error ? h('div', { className: 'lp-err' }, error) : null,
-    h(
-          'div',
-          { className: 'lp-card', style: { marginBottom: 8 } },
-          h('div', { className: 'lp-card-title' }, t('studyTipTitle')),
-          tip ? h('div', { className: 'lp-meta' }, t(tip.source === 'deepseek' ? 'tipDeepSeek' : 'tipLocal')) : null,
-          h(
-            'div',
-            { className: 'lp-card-meta', style: { whiteSpace: 'pre-wrap', lineHeight: 1.6 } },
-            tip?.text || t('tipPending'),
-          ),
-    ),
-    h(
+    progressError ? h('div', { className: 'lp-err', role: 'alert' }, progressError) : null,
+    h('header', { className: 'lp-study-today-head' },
+      h('h2', null, t('dayLabel').replace('{m}', String(date.getMonth() + 1)).replace('{d}', String(date.getDate())),
+        h('small', null, weekdayLabels(t)[(date.getDay() + 6) % 7])),
+      h('button', { className: 'lp-btn-ghost', type: 'button', onClick: props.onOpenPlan }, t('studyTabPlan') + ' ›')),
+    h('div', { className: 'lp-study-today-grid' },
+    h('section', { className: 'lp-card lp-study-today-primary' },
+    h('div', { className: 'lp-card-title' }, t('studyTodayPlan')),
+    h(TodayStudyProgress, { t, tasks: todayTasks }),
+    todayPlan.length ? h(
       'div',
       { className: 'lp-toolbar' },
-      h('span', { className: 'lp-meta' }, `1. ${t('studyTodayPlan')} ${todayPlan.filter((entry) => !entry.doneAt).length}/${todayPlan.length}`),
-      h('span', { className: 'lp-meta' }, `· ${t('studyDue')} ${due.length}`),
-      h('div', { style: { flex: 1 } }),
-    ),
+          h('span', { className: 'lp-meta' }, t('studyTodayCompleted').replace('{n}', todayPlan.filter((entry) => entry.doneAt).length).replace('{total}', todayPlan.length)),
+    ) : null,
     todayPlan.length === 0
-      ? h('div', { className: 'lp-empty' }, t('studyNoTodayPlan'))
+      ? studyTasks && !todayTasks.length ? h('div', { className: 'lp-empty' }, t('studyNoTodayPlan')) : null
       : todayPlan.map((entry) =>
           h(
             'div',
@@ -6661,9 +7141,12 @@ function StudyOverview(props) {
               : h('button', { className: 'lp-btn-ghost', onClick: () => finishPlan(entry) }, t('studyFinish')),
           ),
         ),
-    h('div', { className: 'lp-section' }, `2. ${t('studyDue')} · ${due.length}`),
+    ),
+    h('aside', { className: 'lp-study-today-review' },
+    h('section', { className: 'lp-card' },
+    h('div', { className: 'lp-study-today-card-title' }, h('strong', null, t('studyDue')), h('span', { className: 'lp-meta' }, due.length)),
     due.length === 0
-      ? h('div', { className: 'lp-empty' }, t('studyNoDue'))
+      ? h('div', { className: 'lp-meta' }, t('studyNoDue'))
       : due.map((topic) =>
           h(
             'div',
@@ -6671,9 +7154,11 @@ function StudyOverview(props) {
             h('span', { className: 'lp-title' }, topic.title),
           ),
         ),
-    h('div', { className: 'lp-section' }, `3. ${t('studyMistakeReview')} · ${dueMistakes.length}`),
+    ),
+    h('section', { className: 'lp-card' },
+    h('div', { className: 'lp-study-today-card-title' }, h('strong', null, t('studyMistakeReview')), h('span', { className: 'lp-meta' }, dueMistakes.length)),
     dueMistakes.length === 0
-      ? h('div', { className: 'lp-empty' }, t('studyNoMistake'))
+      ? h('div', { className: 'lp-meta' }, t('studyNoMistake'))
       : dueMistakes.map((mistake) =>
           h(
             'div',
@@ -6683,6 +7168,14 @@ function StudyOverview(props) {
             h('button', { className: 'lp-btn-ghost', onClick: () => finishMistake(mistake) }, t('studyFinish')),
           ),
         ),
+    )),
+    ),
+    h('details', { className: 'lp-card lp-study-advice' },
+      h('summary', null,
+        h('strong', null, t('studyTipTitle')),
+        tip ? h('span', { className: 'lp-meta' }, t(tip.source === 'deepseek' ? 'tipDeepSeek' : 'tipLocal')) : null,
+        h('span', { className: 'lp-advice-excerpt' }, tip?.text?.split('\n').find((line) => line.trim()) || t('tipPending'))),
+      h('div', { className: 'lp-advice-copy' }, tip?.text || t('tipPending'))),
     subjects.map((subject) =>
       h(
         'div',
@@ -6840,7 +7333,8 @@ function StudyPlanTab(props) {
   const future = tasks.filter((task) => taskState(task) === 'todo').sort((a, b) =>
     String(a.scheduledAt || '~').localeCompare(String(b.scheduledAt || '~')));
   const taskById = new Map(tasks.map((task) => [task.id, task]));
-  const upcoming = data.plan.filter((entry) => !entry.doneAt && entry.date >= dayKey(new Date(Date.now() - 4 * 3600000)));
+  const todayKey = studyLocalDayKey();
+  const upcoming = data.plan.filter((entry) => !entry.doneAt && entry.date >= todayKey);
   const fail = (error) => props.onError(error.message);
   const change = (method, body, reload) => {
     props.onError('');
@@ -6906,7 +7400,7 @@ function StudyPlanTab(props) {
   };
 
   const sectionTitle = (label, count, action) => h('div', { className: 'lp-study-section-head' },
-    h('h3', null, label), h('span', { className: 'lp-badge' }, count), action);
+    h('h3', null, label), h('span', { className: 'lp-study-section-count' }, count), action);
   const editTitle = (value, action) => h('button', {
     type: 'button',
     className: 'lp-title lp-study-task-title',
@@ -7030,10 +7524,11 @@ function StudyPlanTab(props) {
       h('section', { className: 'lp-card lp-study-section', ...dropZone('active') },
         sectionTitle(t('studyTaskList'), active.length,
           h('button', { className: 'lp-btn', type: 'button', onClick: () => setShowNew(true) }, '+ ' + t('studyTaskAdd'))),
-        weekMinutes !== null ? h('div', { className: 'lp-meta' }, t('studyWeekPlan').replace('{n}', weekMinutes)) : null,
+        weekMinutes !== null ? h('div', { className: 'lp-meta lp-study-lane-meta' }, t('studyWeekPlan').replace('{n}', weekMinutes)) : null,
         active.length ? active.map(renderTask) : h('div', { className: 'lp-empty' }, t('studyNoActive'))),
       h('section', { className: 'lp-card lp-study-section', ...dropZone('future') },
         sectionTitle(t('studyUpcoming'), future.length),
+        weekMinutes !== null ? h('div', { className: 'lp-meta lp-study-lane-meta lp-study-lane-spacer', 'aria-hidden': true }) : null,
         future.length ? future.map(renderTask) : h('div', { className: 'lp-empty' }, t('studyDropFuture')))),
     h('section', { className: 'lp-card lp-study-section' },
       sectionTitle(t('studySubjects'), data.subjects.length, h('button', {
@@ -7488,22 +7983,8 @@ function ShelfTab(props) {
 function StudyPanel(props) {
   const t = props.t;
   const [tab, setTab] = React.useState('today');
-  const pageRef = React.useRef(null);
-  const [scheme, setScheme] = React.useState(props.scheme || 'light');
-  React.useEffect(() => {
-    const node = pageRef.current;
-    if (!node) return undefined;
-    const read = () => {
-      const parts = window.getComputedStyle(node).backgroundColor.match(/\d+(\.\d+)?/g);
-      if (!parts || parts.length < 3) return;
-      const [r, g, b] = parts.map(Number);
-      setScheme((r * 299 + g * 587 + b * 114) / 1000 > 128 ? 'light' : 'dark');
-    };
-    read();
-    const observer = new MutationObserver(read);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'style'] });
-    return () => observer.disconnect();
-  }, []);
+  const [pageRef, scheme] = usePageScheme();
+  const [settings, setSettings] = React.useState(null);
   const [data, setData] = React.useState(null);
   const [shelf, setShelf] = React.useState([]);
   const [mistakes, setMistakes] = React.useState([]);
@@ -7612,6 +8093,8 @@ function StudyPanel(props) {
           ),
         ),
       ),
+      h('button', { className: 'lp-btn-ghost', type: 'button',
+        onClick: () => api('settings').then(setSettings).catch((err) => setError(err.message)) }, t('settings')),
     ),
     error
       ? h('div', { className: 'lp-err', style: { padding: '8px 14px', margin: 0 } }, error)
@@ -7619,7 +8102,7 @@ function StudyPanel(props) {
     loading.learning && !data
       ? h('div', { className: 'lp-empty' }, t('loading'))
       : tab === 'today'
-        ? h(StudyOverview, { t, data, onReload: loadLearning })
+        ? h(StudyOverview, { t, data, onReload: loadLearning, onOpenPlan: () => setTab('plan') })
         : null,
     tab === 'plan' ? h(StudyPlanTab, { t, data, shelf, onReload: loadLearning, onError: setError }) : null,
     tab === 'shelf'
@@ -7637,6 +8120,8 @@ function StudyPanel(props) {
         ? h('div', { className: 'lp-empty' }, t('loading'))
         : h(StudyHabitTab, { t, data: habits })
       : null,
+    settings ? h(SettingsModal, { t, settings, initialPage: 'appearance',
+      onClose: () => setSettings(null), onSaved: () => setSettings(null) }) : null,
   );
 }
 
@@ -7666,39 +8151,40 @@ return {
     seat('skin', () => applySkin(currentSkin()));
     seat('appearance', () => {
       const initial = loadAppearance();
-      applyAppearance(initial);
+      applyAppearance(initial, { persist: false });
       // Paint first, then warm the images in idle time: a 2 MB photo must never
       // delay the panel. The second one follows the first.
       const warm = () => {
         hydrateBackgrounds(initial, ['planning'])
-          .then(() => hydrateBackgrounds(initial, ['study']))
+          .then(() => {
+            if (currentAppearance() === initial) return hydrateBackgrounds(initial, ['study']);
+          })
           .catch(() => {});
       };
       // The durable appearance lives on the host, so adopt it when it arrives.
-      api('ui')
+      const storedAppearance = api('ui')
         .then((ui) => {
-          if (!ui || (!ui.appearance && !ui.skins)) return;
+          if (!ui) return;
           setHostUi(ui);
+          restoreHostSkin(ui.activeSkin, ui.skinChoice);
           const merged = loadAppearance();
-          applyAppearance(merged);
+          applyAppearance(merged, { persist: false });
           hydrateBackgrounds(merged).catch(() => {});
         })
         .catch(() => {});
       // Read the stored images the same way the settings dialog does, so the
       // background is live on boot instead of only after opening settings.
       const syncBackgrounds = () =>
-        api('background.info')
+        storedAppearance.then(() => api('background.info'))
           .then((info) => {
             if (!info) return;
-            const current = loadAppearance();
-            const next = {
-              ...current,
-              background: {
-                planning: { ...current.background.planning, imageUrl: info.planning || current.background.planning.imageUrl || '' },
-                study: { ...current.background.study, imageUrl: info.study || current.background.study.imageUrl || '' },
-              },
-            };
-            applyAppearance(next);
+            setLegacyBackgroundAssets({
+              planning: info.assets?.planning || info.planning,
+              study: info.assets?.study || info.study,
+            });
+            migrateSkinProfiles();
+            const next = loadAppearance();
+            applyAppearance(next, { persist: false });
             hydrateBackgrounds(next).catch(() => {});
           })
           .catch(() => {});
@@ -7731,7 +8217,7 @@ return {
     seat('main:study', () =>
       ctx.slots.inject('main', () =>
         ctx.slots.register({ name: 'main', key: 'life-planner-study' }, () =>
-          h(StudyPanel, { t, scheme: pageScheme() }),
+          h(StudyPanel, { t }),
         ),
       ),
     );

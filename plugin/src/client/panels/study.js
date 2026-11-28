@@ -1,22 +1,8 @@
 function StudyPanel(props) {
   const t = props.t;
   const [tab, setTab] = React.useState('today');
-  const pageRef = React.useRef(null);
-  const [scheme, setScheme] = React.useState(props.scheme || 'light');
-  React.useEffect(() => {
-    const node = pageRef.current;
-    if (!node) return undefined;
-    const read = () => {
-      const parts = window.getComputedStyle(node).backgroundColor.match(/\d+(\.\d+)?/g);
-      if (!parts || parts.length < 3) return;
-      const [r, g, b] = parts.map(Number);
-      setScheme((r * 299 + g * 587 + b * 114) / 1000 > 128 ? 'light' : 'dark');
-    };
-    read();
-    const observer = new MutationObserver(read);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'style'] });
-    return () => observer.disconnect();
-  }, []);
+  const [pageRef, scheme] = usePageScheme();
+  const [settings, setSettings] = React.useState(null);
   const [data, setData] = React.useState(null);
   const [shelf, setShelf] = React.useState([]);
   const [mistakes, setMistakes] = React.useState([]);
@@ -125,6 +111,8 @@ function StudyPanel(props) {
           ),
         ),
       ),
+      h('button', { className: 'lp-btn-ghost', type: 'button',
+        onClick: () => api('settings').then(setSettings).catch((err) => setError(err.message)) }, t('settings')),
     ),
     error
       ? h('div', { className: 'lp-err', style: { padding: '8px 14px', margin: 0 } }, error)
@@ -132,7 +120,7 @@ function StudyPanel(props) {
     loading.learning && !data
       ? h('div', { className: 'lp-empty' }, t('loading'))
       : tab === 'today'
-        ? h(StudyOverview, { t, data, onReload: loadLearning })
+        ? h(StudyOverview, { t, data, onReload: loadLearning, onOpenPlan: () => setTab('plan') })
         : null,
     tab === 'plan' ? h(StudyPlanTab, { t, data, shelf, onReload: loadLearning, onError: setError }) : null,
     tab === 'shelf'
@@ -150,5 +138,7 @@ function StudyPanel(props) {
         ? h('div', { className: 'lp-empty' }, t('loading'))
         : h(StudyHabitTab, { t, data: habits })
       : null,
+    settings ? h(SettingsModal, { t, settings, initialPage: 'appearance',
+      onClose: () => setSettings(null), onSaved: () => setSettings(null) }) : null,
   );
 }

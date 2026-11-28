@@ -6,6 +6,7 @@ function CalendarView(props) {
   const scrollRef = React.useRef(null);
   const band = React.useRef(0);
   const collapsedRef = React.useRef(false);
+  const [split, setSplit] = React.useState(false);
   const [collapsed, setCollapsed] = React.useState(false);
   const [expanded, setExpanded] = React.useState(420);
   // Collapsed always parks at scrollTop 0 so the sticky bar sits above the
@@ -137,7 +138,11 @@ function CalendarView(props) {
       const height = Math.round(node.clientHeight || 0);
       if (height <= 0) return;
       const room = Math.max(320, height - 150);
-      const configured = Number(((currentAppearance().size || {}).calendarHeight) || 0);
+      const appearance = currentAppearance();
+      const sideBySide = appearance.layout.calendar === 'auto' && node.clientWidth >= 860;
+      setSplit(sideBySide);
+      if (sideBySide && collapsedRef.current) setCollapse(false);
+      const configured = appearance.size.calendarHeight;
       // A configured height wins, clamped to sane bounds so the day list below
       // always keeps a scrollable surface.
       const capped = Math.max(320, height - 40);
@@ -155,6 +160,7 @@ function CalendarView(props) {
   }, []);
 
   const onScroll = (event) => {
+    if (split) return;
     const node = event.currentTarget;
     const at = node.scrollTop;
     if (!collapsedRef.current) {
@@ -171,6 +177,7 @@ function CalendarView(props) {
   // Expanding deliberately costs more: reach the top, then keep pushing up
   // through an elastic band before the month comes back.
   const onWheel = (event) => {
+    if (split) return;
     const node = scrollRef.current;
     if (!node) return;
     if (!collapsedRef.current) {
@@ -228,7 +235,7 @@ function CalendarView(props) {
 
   return h(
     'div',
-    { className: 'lp-cal-scroll', ref: scrollRef, onScroll, onWheel },
+    { className: 'lp-cal-scroll', 'data-layout': split ? 'split' : 'stacked', ref: scrollRef, onScroll, onWheel },
     h(
       'div',
       {
@@ -246,6 +253,7 @@ function CalendarView(props) {
             transition: 'opacity .18s ease',
           },
           'aria-hidden': collapsed,
+          inert: collapsed,
         },
         h(
           'div',
@@ -318,6 +326,7 @@ function CalendarView(props) {
                 'data-dim': String(!cell.inMonth),
                 'data-today': String(cell.isToday),
                 'data-selected': String(cell.key === selectedKey),
+                'data-weekend': String(index % 7 >= 5),
                 'data-edge-left': String(leftEdge),
                 'data-edge-right': String(rightEdge),
                 'data-edge-top': String(topEdge),
@@ -349,6 +358,7 @@ function CalendarView(props) {
             transition: 'opacity .18s ease',
           },
           'aria-hidden': !collapsed,
+          inert: !collapsed,
         },
         week.map((cell) => {
           const list = byDay.get(cell.key) || [];
@@ -369,7 +379,7 @@ function CalendarView(props) {
               },
             },
             h('span', null, labels[(cell.date.getDay() + 6) % 7]),
-            h('strong', { style: { fontSize: 13 } }, String(cell.day)),
+            h('strong', { className: 'lp-week-day' }, String(cell.day)),
             count > 0 ? h('span', { className: 'lp-count' }, String(count)) : null,
           );
         }),
@@ -396,7 +406,7 @@ function CalendarView(props) {
     ),
     h(
       'div',
-      { className: 'lp-day', style: { minHeight: expanded } },
+      { className: 'lp-day', style: split ? undefined : { minHeight: expanded } },
       h(
         'div',
         { className: 'lp-day-title' },
@@ -421,7 +431,7 @@ function CalendarView(props) {
           // is visible instead of the box sitting half under the bar.
           onFocus: () => {
             const node = scrollRef.current;
-            if (node && node.scrollTop < 48) node.scrollTo({ top: 48, behavior: 'smooth' });
+            if (!split && node && node.scrollTop < 48) node.scrollTo({ top: 48, behavior: 'smooth' });
           },
         }),
         h('button', { className: 'lp-btn', type: 'submit', disabled: !props.draft.trim() }, t('addButton')),

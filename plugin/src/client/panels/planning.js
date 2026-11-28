@@ -15,26 +15,7 @@ function Panel(props) {
     };
   }, []);
   const [tab, setTab] = React.useState('calendar');
-  const pageRef = React.useRef(null);
-  // Native controls (checkbox, datetime picker, select popup) follow the
-  // `color-scheme` value, so sample the actual panel background instead of
-  // trusting a media query: the app theme can differ from the OS theme.
-  const [scheme, setScheme] = React.useState('light');
-
-  React.useEffect(() => {
-    const node = pageRef.current;
-    if (!node) return undefined;
-    const read = () => {
-      const parts = window.getComputedStyle(node).backgroundColor.match(/\d+(\.\d+)?/g);
-      if (!parts || parts.length < 3) return;
-      const [r, g, b] = parts.map(Number);
-      setScheme((r * 299 + g * 587 + b * 114) / 1000 > 128 ? 'light' : 'dark');
-    };
-    read();
-    const observer = new MutationObserver(read);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'style'] });
-    return () => observer.disconnect();
-  }, []);
+  const [pageRef, scheme] = usePageScheme();
 
   const [snapshot, setSnapshot] = React.useState(cached ? cached.snapshot : null);
   const [error, setError] = React.useState('');
@@ -169,7 +150,7 @@ function Panel(props) {
 
   const items = (snapshot && snapshot.items) || [];
   const taskTypes =
-    settings && Array.isArray(settings.taskTypes) && settings.taskTypes.length > 0
+    settings && Array.isArray(settings.taskTypes)
       ? settings.taskTypes
       : ['学习', '工作', '生活', '其他'];
   const colorOverrides = (settings && settings.colorOverrides) || {};
@@ -451,6 +432,8 @@ function Panel(props) {
               leadProjectDays: 8,
               notifyGapMinutes: 3,
               nonUrgentQuotaPerWindow: 2,
+              maxRemindersPerWindow: 6,
+              longTermReminderHours: 12,
               maxDeferHours: 48,
               archiveAfterDays: 30,
               deleteAfterDays: 90,

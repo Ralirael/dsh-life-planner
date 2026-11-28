@@ -228,7 +228,7 @@ function ItemEditor(props) {
                       type: 'button',
                       className: 'lp-chip',
                       'data-active': String(tags.includes(tag)),
-                      style: { color: colorOfName(tag, props.colorOverrides) },
+                      style: { color: colorOfName(tag, props.colorOverrides, 'tag') },
                       onClick: () => toggleTag(tag),
                     },
                     tag,

@@ -416,7 +416,7 @@ function TagChips(props) {
           key: tag,
           className: 'lp-tag',
           title: tag,
-          style: { color: colorOfName(tag, props.colorOverrides), border: `1px solid ${colorOfName(tag, props.colorOverrides)}` },
+          style: { color: colorOfName(tag, props.colorOverrides, 'tag'), border: `1px solid ${colorOfName(tag, props.colorOverrides, 'tag')}` },
         },
         tag,
       ),

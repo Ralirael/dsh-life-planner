@@ -1,13 +1,40 @@
+function AppearanceNumber({ label, value, min, max, positiveMin = min, onChange }) {
+  const [draft, setDraft] = React.useState(String(value));
+  React.useEffect(() => setDraft(String(value)), [value]);
+  return h('label', { className: 'lp-field' },
+    h('span', null, label),
+    h('input', {
+      className: 'lp-input', type: 'number', min, max, step: 1, value: draft,
+      onChange: (event) => {
+        const text = event.target.value;
+        setDraft(text);
+        const number = Number(text);
+        if (text && Number.isInteger(number) && number >= min && number <= max && (number === 0 || number >= positiveMin)) {
+          onChange(number);
+        }
+      },
+      onBlur: () => setDraft(String(value)),
+    }),
+  );
+}
+
+const SETTINGS_NUMBERS = {
+  leadTaskDays: [0, 60], leadProjectDays: [0, 120], notifyGapMinutes: [1, 720],
+  nonUrgentQuotaPerWindow: [0, 50], maxRemindersPerWindow: [1, 50], maxDeferHours: [0, 720],
+  longTermReminderHours: [0, 720], archiveAfterDays: [1, 3650], deleteAfterDays: [7, 3650],
+};
+
 function SettingsModal(props) {
   const t = props.t;
   const [form, setForm] = React.useState(props.settings || {});
   React.useEffect(() => {
     if (props.settings) setForm(props.settings);
   }, [props.settings]);
-  const [appearance, setAppearance] = React.useState(() => loadAppearance());
+  const [appearance, setAppearance] = React.useState(() => currentAppearance());
   const [page, setPage] = React.useState(props.initialPage || 'tags');
   const [error, setError] = React.useState('');
   const [busy, setBusy] = React.useState(false);
+  const [preview, setPreview] = React.useState(false);
   const [calendarInfo, setCalendarInfo] = React.useState(null);
   const [refreshingRegion, setRefreshingRegion] = React.useState(false);
   React.useEffect(() => {
@@ -26,46 +53,26 @@ function SettingsModal(props) {
     typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
   );
   const [feedback, setFeedback] = React.useState('');
-  const [typesText, setTypesText] = React.useState(((props.settings || {}).taskTypes || []).join(', '));
-  const [tagsText, setTagsText] = React.useState(((props.settings || {}).tags || []).join(', '));
+  const [types, setTypes] = React.useState(props.settings?.taskTypes || []);
+  const [tags, setTags] = React.useState(props.settings?.tags || []);
   const [tagDraft, setTagDraft] = React.useState('');
   const [selectedTag, setSelectedTag] = React.useState('');
   const [tagLibDraft, setTagLibDraft] = React.useState('');
   const [selectedTagLib, setSelectedTagLib] = React.useState('');
   const [studyMode, setStudyMode] = React.useState(true);
-  const [skinChoice, setSkinChoice] = React.useState(() => `builtin:${currentSkin()}`);
+  const [skinChoice, setSkinChoice] = React.useState(() => currentSkinChoice());
   const [skinName, setSkinName] = React.useState('');
+  React.useEffect(() => {
+    const sync = () => setSkinChoice(currentSkinChoice());
+    window.addEventListener('lp-skin-change', sync);
+    return () => window.removeEventListener('lp-skin-change', sync);
+  }, []);
+  React.useEffect(() => onAppearanceChange(setAppearance), []);
   React.useEffect(() => {
     // Plugin-level switches live in the plugin manager; read them for gating only.
     api('config')
       .then((next) => {
-        setStudyMode(next.studyMode !== false);
-      })
-      .catch(() => {});
-    // Mirror the notification preference for the background reminder loop.
-    try {
-      const savedNotify = (props.settings || {}).systemNotify;
-      if (savedNotify !== undefined) localStorage.setItem('lpSystemNotify', savedNotify === false ? 'off' : 'on');
-    } catch {}
-    // The host owns the files, so its answer wins over a stale local URL.
-    api('background.info')
-      .then((info) => {
-        setAppearance((current) => {
-          const next = {
-            ...current,
-            background: {
-              planning: {
-                ...current.background.planning,
-                imageUrl: info.planning || current.background.planning.imageUrl || '',
-              },
-              study: { ...current.background.study, imageUrl: info.study || current.background.study.imageUrl || '' },
-            },
-          };
-          applyAppearance(next);
-          const areasWithImage = ['planning', 'study'].filter((area) => next.background[area] && next.background[area].imageUrl);
-          hydrateBackgrounds(next, areasWithImage).catch(() => {});
-          return next;
-        });
+        setStudyMode(next.studyPanel !== false);
       })
       .catch(() => {});
   }, []);
@@ -75,7 +82,6 @@ function SettingsModal(props) {
   const bgStudyRef = React.useRef(null);
 
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
-  const setAppear = (patch) => setAppearance((current) => ({ ...current, ...patch }));
 
   const textField = (key, label) =>
     h(
@@ -97,30 +103,23 @@ function SettingsModal(props) {
       h('input', {
         className: 'lp-input',
         type: 'number',
+        min: SETTINGS_NUMBERS[key][0],
+        max: SETTINGS_NUMBERS[key][1],
+        step: 1,
         value: form[key] ?? 0,
-        onChange: (event) => set(key, Number(event.target.value)),
+        onChange: (event) => set(key, event.target.value),
       }),
     );
 
-  const parseList = (text) =>
-    text
-      .split(',')
-      .map((entry) => entry.trim())
-      .filter(Boolean);
-
   const colorOverrides = form.colorOverrides || {};
-  const setColor = (name, color) => set('colorOverrides', { ...colorOverrides, [name]: color });
-  const clearColor = (name) => {
-    const next = { ...colorOverrides };
-    delete next[name];
-    set('colorOverrides', next);
-  };
+  const setColor = (kind, name, color) => setForm((current) =>
+    ({ ...current, colorOverrides: { ...current.colorOverrides, [kind + ':' + name]: color } }));
 
-  const colorSwatches = (name) =>
+  const colorSwatches = (kind, name) =>
     h(
       'div',
       { className: 'lp-field' },
-      h('label', null, `${t('tagColor')} · ${name}`),
+      h('label', null, `${t(kind === 'tag' ? 'tagLibraryColor' : 'tagColor')} · ${name}`),
       h(
         'div',
         { className: 'lp-swatch-panel' },
@@ -129,23 +128,22 @@ function SettingsModal(props) {
             key: color,
             type: 'button',
             className: 'lp-swatch',
-            'data-active': String((colorOverrides[name] || colorOfName(name, colorOverrides)) === color),
+            'data-active': String(colorOfName(name, colorOverrides, kind) === color),
+            'aria-label': color,
             style: { background: color },
-            onClick: () => setColor(name, color),
+            onClick: () => setColor(kind, name, color),
           }),
         ),
-        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => clearColor(name) }, t('colorReset')),
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setColor(kind, name, null) }, t('colorReset')),
       ),
     );
 
   const addTag = () => {
     const name = tagDraft.trim();
     if (!name) return;
-    const list = parseList(typesText);
-    if (!list.includes(name)) {
-      setTypesText([...list, name].join(', '));
-      const color = PALETTE[list.length % PALETTE.length];
-      setColor(name, color);
+    if (!types.includes(name)) {
+      setTypes([...types, name]);
+      setColor('type', name, PALETTE[types.length % PALETTE.length]);
     }
     setSelectedTag(name);
     setTagDraft('');
@@ -154,23 +152,21 @@ function SettingsModal(props) {
   const addTagLib = () => {
     const name = tagLibDraft.trim();
     if (!name) return;
-    const list = parseList(tagsText);
-    if (!list.includes(name)) {
-      setTagsText([...list, name].join(', '));
-      const color = PALETTE[list.length % PALETTE.length];
-      setColor(name, color);
+    if (!tags.includes(name)) {
+      setTags([...tags, name]);
+      setColor('tag', name, PALETTE[tags.length % PALETTE.length]);
     }
     setSelectedTagLib(name);
     setTagLibDraft('');
   };
 
   const removeType = (name) => {
-    setTypesText(parseList(typesText).filter((entry) => entry !== name).join(', '));
+    setTypes(types.filter((entry) => entry !== name));
     setSelectedTag('');
   };
 
   const removeTagLib = (name) => {
-    setTagsText(parseList(tagsText).filter((entry) => entry !== name).join(', '));
+    setTags(tags.filter((entry) => entry !== name));
     setSelectedTagLib('');
   };
 
@@ -182,7 +178,30 @@ function SettingsModal(props) {
       setPage('notify');
       return;
     }
+    const previous = props.settings || {};
+    for (const [key, [min, max]] of Object.entries(SETTINGS_NUMBERS)) {
+      if (String(form[key]) === String(previous[key])) continue;
+      const number = Number(form[key]);
+      if (form[key] === '' || !Number.isInteger(number) || number < min || number > max) {
+        setError(t('settingsNumberRange').replace('{min}', min).replace('{max}', max));
+        setPage('notify');
+        return;
+      }
+    }
+    const changed = (keys) => keys.some((key) => String(form[key]) !== String(previous[key]));
+    if (changed(['archiveAfterDays', 'deleteAfterDays']) && Number(form.deleteAfterDays) < Number(form.archiveAfterDays)) {
+      setError(t('settingsRetentionOrder'));
+      setPage('notify');
+      return;
+    }
+    if (changed(['nonUrgentQuotaPerWindow', 'maxRemindersPerWindow']) &&
+      Number(form.nonUrgentQuotaPerWindow) > Number(form.maxRemindersPerWindow)) {
+      setError(t('settingsQuotaOrder'));
+      setPage('notify');
+      return;
+    }
     setBusy(true);
+    setError('');
     const patch = {
       weekdayWindows: String(form.weekdayWindows ?? ''),
       weekendWindows: String(form.weekendWindows ?? ''),
@@ -196,21 +215,29 @@ function SettingsModal(props) {
       longTermReminderHours: Number(form.longTermReminderHours ?? 12),
       maxRemindersPerWindow: Number(form.maxRemindersPerWindow ?? 6),
       systemNotify: form.systemNotify !== false,
-      taskTypes: parseList(typesText),
-      tags: parseList(tagsText),
+      taskTypes: types,
+      tags,
       colorOverrides,
       adviceRegion: (form.adviceRegion || '').trim(),
       calendarAutoRefresh: form.calendarAutoRefresh !== false,
       adviceRegionLocked: form.adviceRegionLocked === true,
       dailyAdvice: form.dailyAdvice !== false,
     };
-    api('settings.save', { patch })
+    for (const key of Object.keys(patch)) {
+      if (JSON.stringify(previous[key]) === JSON.stringify(patch[key])) delete patch[key];
+    }
+    flushAppearanceSave()
+      .then(() => Object.keys(patch).length ? api('settings.save', { patch }) : previous)
       .then((data) => {
-        applyAppearance(appearance);
         props.onSaved(data);
       })
       .catch((err) => setError(err.message))
       .finally(() => setBusy(false));
+  };
+
+  const close = () => {
+    if (busy) return;
+    flushAppearanceSave().then(props.onClose).catch((err) => setError(err.message));
   };
 
   const report = (value) => {
@@ -247,13 +274,16 @@ function SettingsModal(props) {
     }
   };
 
-  const testNotify = () => {
-    if (typeof Notification === 'undefined') {
-      report('unsupported');
-      return;
-    }
+  const testNotify = async () => {
+    const title = t('noticeTitle');
+    const message = t('notifyTestBody');
     try {
-      new Notification(t('noticeTitle'), { body: t('notifyTestBody') });
+      const result = await api('notifications.test', { title, message });
+      if (!result.sent) {
+        if (typeof Notification === 'undefined') { report('unsupported'); return; }
+        if (Notification.permission !== 'granted') { report(Notification.permission); return; }
+        new Notification(title, { body: message });
+      }
       setFeedback(t('notifySent'));
     } catch (error) {
       setFeedback(t('notifyFailed').replace('{e}', (error && error.message) || 'send failed'));
@@ -303,69 +333,42 @@ function SettingsModal(props) {
     const file = event.target.files && event.target.files[0];
     event.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result || '');
-      api('background.set', { area, dataUrl })
+    const owner = currentSkinChoice();
+    readImageData(file).then((dataUrl) => api('background.set', { area, dataUrl, forPreset: true }))
         .then((saved) => {
-          const next = {
-            ...appearance,
-            background: {
-              ...appearance.background,
-              [area]: { ...appearance.background[area], imageUrl: saved.url },
-            },
-          };
-          if (area === 'planning' && window.confirm(t('bgSyncAsk'))) {
-            return api('background.set', { area: 'study', dataUrl }).then((studySaved) => {
-              next.background.study = { ...next.background.study, imageUrl: studySaved.url };
-              return next;
-            });
-          }
-          return next;
-        })
-        .then((next) => {
-          setAppearance(next);
-          // Only the area that just changed needs its bytes.
-          return hydrateBackgrounds(next, [area]).then((result) => {
+          const layer = { mode: 'image', imageUrl: saved.url };
+          const layers = { [area]: layer };
+          if (area === 'planning' && currentSkinChoice() === owner && window.confirm(t('bgSyncAsk'))) layers.study = layer;
+          const next = updateSkinBackground(owner, layers);
+          if (!next) return;
+          return hydrateBackgrounds(next, Object.keys(layers)).then((result) => {
+            if (currentSkinChoice() !== owner) return;
             if (result.failed.length > 0) setError(t('bgLoadFailed'));
             else setError('');
           });
         })
         .catch((err) => setError(err.message));
-    };
-    reader.readAsDataURL(file);
   };
 
   const clearBackground = (area) => {
-    api('background.clear', { area })
-      .then(() => {
-        const next = {
-          ...appearance,
-          background: { ...appearance.background, [area]: { ...appearance.background[area], imageUrl: '' } },
-        };
-        setAppearance(next);
-        applyAppearance(next);
-      })
-      .catch((err) => setError(err.message));
+    updateSkinBackground(currentSkinChoice(), { [area]: { mode: 'none', imageUrl: '' } });
   };
 
   const setBackgroundLayer = (area, patch) => {
     const layer = appearance.background[area];
-    const next = {
-      ...appearance,
-      background: {
-        ...appearance.background,
-        [area]: { ...layer, ...patch, mask: { ...(layer.mask || {}), ...(patch.mask || {}) } },
-      },
-    };
-    setAppearance(next);
-    applyAppearance(next);
+    const next = updateSkinBackground(currentSkinChoice(), {
+      [area]: { ...patch, mask: { ...layer.mask, ...patch.mask } },
+    });
+    if (next) hydrateBackgrounds(next, [area]).catch(() => {});
   };
 
   const chooseSkin = (value) => {
+    migrateSkinProfiles();
     const next = applySkinChoice(value);
-    setSkinChoice(value);
+    setSkinChoice(currentSkinChoice());
     setAppearance(next);
+    setError('');
+    saveActiveSkin().catch((err) => setError(err.message));
     hydrateBackgrounds(next).catch(() => {});
   };
 
@@ -376,8 +379,10 @@ function SettingsModal(props) {
       return;
     }
     try {
+      const clean = Array.from(name).slice(0, 24).join('');
+      if (Object.hasOwn(userSkins(), clean) && !window.confirm(t('skinOverwrite'))) return;
       const saved = saveUserSkin(name);
-      setSkinChoice(`user:${saved}`);
+      chooseSkin(`user:${saved}`);
       setSkinName('');
       setFeedback(t('skinSaved'));
     } catch (err) {
@@ -388,42 +393,61 @@ function SettingsModal(props) {
 
   const removeCurrentSkin = () => {
     const name = skinChoice.slice(5);
+    if (!window.confirm(t('skinDeleteConfirm').replace('{name}', name))) return;
     if (!deleteUserSkin(name)) return;
-    setSkinChoice(`builtin:${currentSkin()}`);
+    chooseSkin(`builtin:${currentSkin()}`);
     setFeedback(t('skinDeleted'));
   };
 
   const setFont = (key, value) => {
-    const fallback = Number((APPEARANCE_DEFAULTS.font || {})[key]) || 13;
-    const next = { ...appearance, font: { ...appearance.font, [key]: Number(value) || fallback } };
-    setAppearance(next);
-    applyAppearance(next);
+    const current = currentAppearance();
+    applyAppearance({ ...current, font: { ...current.font, [key]: value } });
   };
 
   const setSize = (key, value) => {
-    const next = { ...appearance, size: { ...appearance.size, [key]: Number(value) || 0 } };
-    setAppearance(next);
-    applyAppearance(next);
+    const current = currentAppearance();
+    applyAppearance({ ...current, size: { ...current.size, [key]: value } });
   };
 
   const setAccent = (area, value) => {
-    const next = { ...appearance, accent: { ...appearance.accent, [area]: value } };
-    setAppearance(next);
-    applyAppearance(next);
+    const current = currentAppearance();
+    applyAppearance({ ...current, accent: { ...current.accent, [area]: value } });
   };
 
-  const numberInput = (key, label, value, onChange) =>
-    h(
-      'div',
-      { className: 'lp-field' },
-      h('label', null, label),
-      h('input', {
-        className: 'lp-input',
-        type: 'number',
-        value,
-        onChange: (event) => onChange(key, event.target.value),
-      }),
-    );
+  const setLayout = (key, value) => {
+    const current = currentAppearance();
+    applyAppearance({ ...current, layout: { ...current.layout, [key]: value } });
+  };
+
+  const layoutInput = (key, label) => h('label', { className: 'lp-field' },
+    h('span', null, t(label)),
+    h('select', { className: 'lp-select', value: appearance.layout[key], onChange: (event) => setLayout(key, event.target.value) },
+      APPEARANCE_LAYOUTS[key].map((option) => h('option', { key: option, value: option }, t('layout_' + option))),
+    ),
+  );
+
+  const skinNameLabel = () => listSkinOptions(t).find((option) => option.value === skinChoice)?.label || t('skinDefault');
+
+  const exportSkin = async () => {
+    try {
+      const blob = new Blob([await exportAppearance(skinNameLabel())], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'life-planner-skin-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) { setError(err.message); }
+  };
+
+  const numberInput = (key, label, value, onChange) => {
+    const [min, max] = APPEARANCE_LIMITS[key] || [8, 64];
+    return h(AppearanceNumber, { key: skinChoice + ':' + key, label, value, min, max,
+      positiveMin: key === 'calendarHeight' ? 320 : min,
+      onChange: (next) => onChange(key, next) });
+  };
 
   const backgroundFields = (area) => {
     const layer = appearance.background[area];
@@ -432,7 +456,7 @@ function SettingsModal(props) {
     const setLayer = (patch) => setBackgroundLayer(area, patch);
     return h(
       'div',
-      { className: 'lp-field' },
+      { className: 'lp-field lp-settings-background' },
       h('label', null, area === 'study' ? t('fBgStudy') : t('fBgPlanning')),
       h(Dropdown, {
         value: layer.mode || 'none',
@@ -570,7 +594,7 @@ function SettingsModal(props) {
     h('div', null, h('strong', null, t(label)), hint ? h('div', { className: 'lp-meta' }, t(hint)) : null),
     h(Switch, { label: t(label), value, onChange }));
 
-  const classification = ({ title, hint, list, draft, onDraft, onAdd, placeholder, addLabel, selected, onSelect, empty, onRemove }) => {
+  const classification = ({ kind, title, hint, list, draft, onDraft, onAdd, placeholder, addLabel, selected, onSelect, empty, onRemove }) => {
     const active = list.includes(selected) ? selected : list[0];
     return group(title,
       h('form', { className: 'lp-toolbar', onSubmit: (event) => { event.preventDefault(); onAdd(); } },
@@ -582,7 +606,7 @@ function SettingsModal(props) {
       active ? h('div', { className: 'lp-settings-classification' },
         h(Dropdown, { value: active, onChange: onSelect, options: list.map((name) => ({ value: name, label: name })) }),
         h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => onRemove(active) }, t('delete')),
-        colorSwatches(active))
+        colorSwatches(kind, active))
       : h('div', { className: 'lp-meta' }, t(empty)),
       hint ? h('div', { className: 'lp-meta' }, t(hint)) : null,
     );
@@ -590,12 +614,12 @@ function SettingsModal(props) {
 
   const tagsPage = () => h('div', { className: 'lp-settings-sections' },
     classification({
-      title: 'sectionTags', hint: 'taskTypeAutoHint', list: parseList(typesText), draft: tagDraft, onDraft: setTagDraft,
+      kind: 'type', title: 'sectionTags', hint: 'taskTypeAutoHint', list: types, draft: tagDraft, onDraft: setTagDraft,
       onAdd: addTag, placeholder: 'tagNamePlaceholder', addLabel: 'addTag', selected: selectedTag, onSelect: setSelectedTag,
       empty: 'noTags', onRemove: removeType,
     }),
     classification({
-      title: 'sectionTagLibrary', list: parseList(tagsText), draft: tagLibDraft, onDraft: setTagLibDraft,
+      kind: 'tag', title: 'sectionTagLibrary', list: tags, draft: tagLibDraft, onDraft: setTagLibDraft,
       onAdd: addTagLib, placeholder: 'tagLibName', addLabel: 'tagLibAdd', selected: selectedTagLib, onSelect: setSelectedTagLib,
       empty: 'tagLibEmpty', onRemove: removeTagLib,
     }));
@@ -654,10 +678,7 @@ function SettingsModal(props) {
       'div',
       { className: 'lp-settings-sections' },
       group('sectionNotify',
-        switchRow('fSystemNotify', 'fSystemNotifyHint', form.systemNotify !== false, (next) => {
-          set('systemNotify', next);
-          try { localStorage.setItem('lpSystemNotify', next ? 'on' : 'off'); } catch {}
-        }),
+        switchRow('fSystemNotify', 'fSystemNotifyHint', form.systemNotify !== false, (next) => set('systemNotify', next)),
         h(
           'div',
           { className: 'lp-toolbar', style: { marginTop: 6 } },
@@ -680,7 +701,8 @@ function SettingsModal(props) {
         h('div', { className: 'lp-setting-grid' },
           numberField('leadTaskDays', t('fLeadTaskDays')),
           numberField('leadProjectDays', t('fLeadProjectDays')),
-          numberField('longTermReminderHours', t('fLongTermHours')))),
+          numberField('longTermReminderHours', t('fLongTermHours'))),
+        h('div', { className: 'lp-meta' }, t('settingsLeadHint'))),
       group('sectionTask', h('div', { className: 'lp-setting-grid' },
         numberField('archiveAfterDays', t('fArchiveDays')),
         numberField('deleteAfterDays', t('fDeleteDays')))),
@@ -698,18 +720,21 @@ function SettingsModal(props) {
         h(Dropdown, {
           value: skinChoice,
           onChange: chooseSkin,
-          options: listSkinOptions(),
+          options: listSkinOptions(t),
         }),
+        h('div', { className: 'lp-meta' }, t('skinAppearanceOwner').replace('{name}', skinNameLabel())),
         h(
           'div',
           { className: 'lp-toolbar', style: { marginTop: 6 } },
           h('input', {
             className: 'lp-input',
             value: skinName,
+            maxLength: 24,
+            'aria-label': t('skinNamePlaceholder'),
             placeholder: t('skinNamePlaceholder'),
             onChange: (event) => setSkinName(event.target.value),
           }),
-          h('button', { className: 'lp-btn', type: 'button', onClick: saveCurrentSkin }, t('skinSaveAs')),
+          h('button', { className: 'lp-btn', type: 'button', onClick: saveCurrentSkin, disabled: !skinName.trim() }, t('skinSaveAs')),
           skinChoice.indexOf('user:') === 0
             ? h('button', { className: 'lp-btn-ghost', type: 'button', onClick: removeCurrentSkin }, t('skinDelete'))
             : null,
@@ -722,17 +747,7 @@ function SettingsModal(props) {
             {
               className: 'lp-btn-ghost',
               type: 'button',
-              onClick: () => {
-                const blob = new Blob([exportAppearance()], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `life-planner-skin-${new Date().toISOString().slice(0, 10)}.json`;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                URL.revokeObjectURL(url);
-              },
+              onClick: exportSkin,
             },
             t('skinExport'),
           ),
@@ -746,12 +761,12 @@ function SettingsModal(props) {
               const file = event.target.files && event.target.files[0];
               event.target.value = '';
               if (!file) return;
+              const legacySkin = currentSkin();
               file
                 .text()
-                .then((text) => {
-                  const next = importAppearance(text);
-                  setAppearance(next);
-                  hydrateBackgrounds(next).catch(() => {});
+                .then((text) => importAppearance(text, file.name.replace(/\.json$/i, '') || t('skinImport'), legacySkin))
+                .then((name) => {
+                  chooseSkin('user:' + name);
                   setFeedback(t('skinImported'));
                 })
                 .catch((err) => setError(err.message));
@@ -778,10 +793,15 @@ function SettingsModal(props) {
       h(
         'div',
         { className: 'lp-setting-grid' },
+        layoutInput('calendar', 'layoutCalendar'),
         numberInput('calendarHeight', t('fCalHeight'), appearance.size.calendarHeight, setSize),
+        studyMode ? layoutInput('studyToday', 'layoutStudyToday') : null,
+        studyMode ? layoutInput('studyPlan', 'layoutStudyPlan') : null,
+        layoutInput('spacing', 'layoutSpacing'),
+        layoutInput('fontFamily', 'layoutFontFamily'),
       ),
       h('div', { className: 'lp-meta' }, t('fCalHeightHint'))),
-      group('sectionMistake',
+      studyMode ? group('sectionMistake',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -795,33 +815,21 @@ function SettingsModal(props) {
         numberInput('mistakeAnswer', t('fMistakeAnswerFs'), appearance.font.mistakeAnswer, setFont),
         numberInput('mistakeReason', t('fMistakeReasonFs'), appearance.font.mistakeReason, setFont),
       ),
-      h('div', { className: 'lp-meta' }, t('fMistakeHint'))),
+      h('div', { className: 'lp-meta' }, t('fMistakeHint'))) : null,
       group('sectionAccent',
       h(
         'div',
         { className: 'lp-row2' },
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('fAccentPlanning')),
-          h('input', {
-            className: 'lp-input',
-            type: 'color',
-            value: appearance.accent.planning || '#4f7cff',
-            onChange: (event) => setAccent('planning', event.target.value),
-          }),
-        ),
-        h(
-          'div',
-          { className: 'lp-field' },
-          h('label', null, t('fAccentStudy')),
-          h('input', {
-            className: 'lp-input',
-            type: 'color',
-            value: appearance.accent.study || '#3fa66a',
-            onChange: (event) => setAccent('study', event.target.value),
-          }),
-        ),
+        APPEARANCE_AREAS.filter((area) => studyMode || area === 'planning').map((area) => {
+          const title = t(area === 'study' ? 'fAccentStudy' : 'fAccentPlanning');
+          const value = appearance.accent[area];
+          return h('div', { className: 'lp-field', key: area },
+            h('label', null, title),
+            h('div', { className: 'lp-settings-color' },
+              h('input', { className: 'lp-input', type: 'color', 'aria-label': title,
+                value: value || (currentSkin() === 'clawd' ? '#a35039' : '#4f7cff'), onChange: (event) => setAccent(area, event.target.value) }),
+              h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setAccent(area, ''), disabled: !value }, t('colorReset'))));
+        }),
       )),
       group('sectionBackground',
       h(
@@ -835,13 +843,14 @@ function SettingsModal(props) {
             className: 'lp-input',
             type: 'range',
             min: 0,
-            max: 0.6,
+            max: 0.9,
             step: 0.05,
             value: appearance.surface ?? 0.15,
+            'aria-label': t('fSurface'),
+            disabled: !APPEARANCE_AREAS.some((area) => (area === 'planning' || studyMode) &&
+              (appearance.background[area].mode === 'color' || (appearance.background[area].mode === 'image' && appearance.background[area].imageUrl))),
             onChange: (event) => {
-              const next = { ...appearance, surface: Number(event.target.value) };
-              setAppearance(next);
-              applyAppearance(next);
+              applyAppearance({ ...currentAppearance(), surface: Number(event.target.value) });
             },
           }),
           h('span', { className: 'lp-meta' }, `${Math.round((appearance.surface ?? 0.15) * 100)}%`),
@@ -858,13 +867,21 @@ function SettingsModal(props) {
     { key: 'notify', label: t('tabNotify') },
     { key: 'appearance', label: t('tabAppearance') },
   ];
+  const hasPendingSettings = JSON.stringify(form) !== JSON.stringify(props.settings || {}) ||
+    JSON.stringify(types) !== JSON.stringify(props.settings?.taskTypes || []) ||
+    JSON.stringify(tags) !== JSON.stringify(props.settings?.tags || []);
+
+  if (preview) {
+    return h('div', { className: 'lp-settings-preview' },
+      h('button', { type: 'button', className: 'lp-btn', autoFocus: true, onClick: () => setPreview(false) }, t('settingsReturn')));
+  }
 
   return h(
     Modal,
     {
       title: `${t('settings')} · v__PLUGIN_VERSION__`,
       className: 'lp-settings',
-      onClose: props.onClose,
+      onClose: close,
     },
     h('div', { className: 'lp-settings-layout' },
       h('nav', { className: 'lp-settings-nav', 'aria-label': t('settings') },
@@ -890,8 +907,11 @@ function SettingsModal(props) {
       h(
         'div',
         { className: 'lp-modal-actions' },
-        h('button', { className: 'lp-btn-ghost', onClick: props.onClose, disabled: busy }, t('cancel')),
-        h('button', { className: 'lp-btn', onClick: save, disabled: busy }, t('save')),
+        page === 'appearance' ? h('button', { type: 'button', className: 'lp-btn-ghost', onClick: () => setPreview(true), disabled: busy }, t('settingsPreview')) : null,
+        h('button', { className: 'lp-btn-ghost', onClick: close, disabled: busy }, t(page === 'appearance' ? 'close' : 'cancel')),
+        page !== 'appearance' || hasPendingSettings
+          ? h('button', { className: 'lp-btn', onClick: save, disabled: busy }, t('save'))
+          : null,
       ),
   );
 }

@@ -163,8 +163,6 @@ function MistakeTab(props) {
               'div',
               {
                 className: 'lp-study-grid lp-mistake-grid',
-                // A fixed card height is what enables line clamping + ellipsis.
-                'data-fixed': String(Number((currentAppearance().size || {}).mistakeHeight) > 0),
               },
               group.items.map((item) =>
                 h(

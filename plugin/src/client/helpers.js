@@ -1,24 +1,49 @@
 // helpers.js — shared helpers for the panels and views.
-function pageScheme() {
-  try {
+function usePageScheme() {
+  const pageRef = React.useRef(null);
+  const [scheme, setScheme] = React.useState('light');
+  React.useEffect(() => {
+    const host = pageRef.current?.parentElement;
+    if (!host) return undefined;
+    // Resolve the host's base color outside the page's skin and custom background.
     const probe = document.createElement('span');
-    probe.style.color = 'var(--dsw-alias-label-primary)';
+    probe.style.color = 'color-mix(in srgb, var(--dsw-alias-bg-base, white) 100%, transparent)';
     probe.style.display = 'none';
-    document.body.appendChild(probe);
-    const color = getComputedStyle(probe).color;
-    probe.remove();
-    const match = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(color);
-    if (!match) return 'light dark';
-    const luminance = (Number(match[1]) * 299 + Number(match[2]) * 587 + Number(match[3]) * 114) / 1000;
-    return luminance > 128 ? 'light' : 'dark';
-  } catch {
-    return 'light dark';
-  }
+    host.appendChild(probe);
+    const read = () => {
+      const color = getComputedStyle(probe).color;
+      const srgb = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/.exec(color);
+      const rgb = srgb || /^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/.exec(color);
+      if (!rgb) return;
+      const [r, g, b] = rgb.slice(1, 4).map(Number);
+      setScheme(r * 0.299 + g * 0.587 + b * 0.114 > (srgb ? 0.5 : 128) ? 'light' : 'dark');
+    };
+    const observer = new MutationObserver(read);
+    const attributeFilter = ['class', 'data-theme', 'data-color-scheme', 'style'];
+    for (let node = host; node; node = node.parentElement) {
+      observer.observe(node, { attributeFilter });
+    }
+    const preference = window.matchMedia('(prefers-color-scheme: dark)');
+    preference.addEventListener('change', read);
+    read();
+    return () => {
+      observer.disconnect();
+      preference.removeEventListener('change', read);
+      probe.remove();
+    };
+  }, []);
+  return [pageRef, scheme];
 }
 const pad = (value) => String(value).padStart(2, '0');
 
 function dayKey(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function studyLocalDayKey(now = new Date()) {
+  const date = new Date(now);
+  if (date.getHours() < 4) date.setDate(date.getDate() - 1);
+  return dayKey(date);
 }
 
 function toLocalInput(iso) {
@@ -78,8 +103,10 @@ const PALETTE = [
   '#75C1C4', // 松石
 ];
 
-const colorOfName = (name, overrides) => {
-  if (overrides && overrides[name]) return overrides[name];
+const colorOfName = (name, overrides, kind = 'type') => {
+  const scoped = kind + ':' + name;
+  const saved = Object.hasOwn(overrides || {}, scoped) ? overrides[scoped] : overrides?.[name];
+  if (typeof saved === 'string' && /^#[0-9a-f]{6}$/i.test(saved)) return saved;
   let hash = 0;
   const text = String(name || '');
   for (let index = 0; index < text.length; index += 1) hash = (hash * 31 + text.charCodeAt(index)) % 100000;

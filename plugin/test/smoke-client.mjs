@@ -43,7 +43,8 @@ const fakeWindow = {
   },
 }
 
-const run = new Function('window', code.replace('__internals: {', '__internals: { BoardView, MistakeTab, anchoredMenuPosition,'))
+const run = new Function('window', code.replace('__internals: {',
+  '__internals: { BoardView, MistakeTab, StudyOverview, TodayStudyProgress, studyLocalDayKey, listSkinOptions, applySkin, applySkinChoice, setHostUi, setLegacyBackgroundAssets, anchoredMenuPosition, profileForSkin, normalizeAppearance, colorOfName,'))
 run(fakeWindow)
 
 if (!captured) throw new Error('client.js never called window.__ModuleLoader__.load')
@@ -178,7 +179,69 @@ const anchored = plugin.__internals.anchoredMenuPosition(
 )
 assert(anchored.top + 200 < 258 && anchored.left + anchored.width <= 262, 'menus flip above a bottom-right trigger and fit in the viewport')
 
+const { StudyOverview, TodayStudyProgress, studyLocalDayKey, listSkinOptions, applySkin } = plugin.__internals
+assert(studyLocalDayKey(new Date(2026, 10, 27, 3, 59)) === '2026-11-26' &&
+  studyLocalDayKey(new Date(2026, 10, 27, 4)) === '2026-11-27', 'today study switches dates at local 04:00')
+const offeredSkins = listSkinOptions((key) => key)
+assert(offeredSkins.some((skin) => skin.value === 'builtin:default') &&
+  offeredSkins.some((skin) => skin.value === 'builtin:clawd'), 'Clawd and Default are both selectable presets')
+assert(applySkin('clawd') === 'clawd' && applySkin('default') === 'default', 'built-in presets switch in both directions')
+const { applySkinChoice, setHostUi, setLegacyBackgroundAssets } = plugin.__internals
+const legacyImg = '/life-planner/api/background?asset=' + 'a'.repeat(64) + '.png'
+const clawdImg = '/life-planner/api/background?asset=' + 'b'.repeat(64) + '.png'
+setLegacyBackgroundAssets({ planning: legacyImg })
+setHostUi({
+  appearance: { font: { base: 22 }, surface: 0.45, background: { planning: { mode: 'image', imageUrl: '/life-planner/api/background?area=planning&v=5' } } },
+  skinBackgrounds: { 'builtin:clawd': { study: { mode: 'image', imageUrl: clawdImg } } },
+})
+const clawdBackground = applySkinChoice('builtin:clawd').background
+const defaultBackground = applySkinChoice('builtin:default').background
+assert(clawdBackground.planning.mode === 'none' && clawdBackground.study.imageUrl === clawdImg &&
+  defaultBackground.planning.imageUrl === legacyImg && defaultBackground.study.imageUrl !== clawdImg,
+  'each skin restores only its own images, and the legacy default is carried forward')
+const { profileForSkin, colorOfName } = plugin.__internals
+setHostUi({
+  activeSkin: 'clawd',
+  appearance: { font: { base: 22 }, surface: 0.45 },
+  skins: { Notes: { skin: 'default', appearance: { font: { base: 18 } } }, Removed: {} },
+  skinProfiles: {
+    'builtin:clawd': { skin: 'clawd', appearance: { font: { base: 14, tab: 20 }, size: { mistakeHeight: 280 },
+      surface: 0.6, layout: { studyToday: 'stacked' }, background: { study: { mode: 'image', imageUrl: clawdImg, mask: { on: true, width: 60 } } } } },
+    'user:Removed': null,
+  },
+})
+const clawdProfile = profileForSkin('builtin:clawd').appearance
+const defaultProfile = profileForSkin('builtin:default').appearance
+assert(defaultProfile.font.base === 22 && defaultProfile.surface === 0.45 && clawdProfile.font.base === 14 &&
+  clawdProfile.font.tab === 20 && clawdProfile.size.mistakeHeight === 280 && clawdProfile.surface === 0.6 &&
+  clawdProfile.layout.studyToday === 'stacked' && clawdProfile.background.study.mask.width === 60,
+  'a skin round-trips its type scale, card dimensions, layers, transparency and layout as one profile')
+assert(profileForSkin('user:Notes').appearance.font.base === 18 &&
+  !listSkinOptions((key) => key).some((option) => option.value === 'user:Removed'), 'legacy named skins restore and deleted entries stay hidden')
+assert(colorOfName('same', { same: '#aabbcc', 'tag:same': '#112233' }) === '#aabbcc' &&
+  colorOfName('same', { same: '#aabbcc', 'tag:same': '#112233' }, 'tag') === '#112233', 'tag and type colors are independent')
+
 const originalUseState = ReactStub.useState
+try {
+  const tasks = [
+    { id: 'now', state: 'doing', title: '背单词', answeredNew: 2, targetNew: 5, answeredReview: 3, targetReview: 10 },
+    { id: 'done', state: 'done', title: '复习', answeredNew: 4, targetNew: 4 },
+    { id: 'future', state: 'todo', title: '未来任务', scheduled: true },
+  ]
+  let stateIndex = 0
+  ReactStub.useState = (initial) => originalUseState(stateIndex++ === 2 ? tasks : initial)
+  const t = (key) => ({ studyTodayCompleted: '{n}/{total} complete', studyNewLabel: 'New', studyReviewLabel: 'Review' }[key] || key)
+  const overview = descendants(StudyOverview({ t, data: { plan: [] }, onOpenPlan() {} }))
+  const progressView = overview.find((node) => node.type === TodayStudyProgress)
+  const progress = descendants(progressView.type(progressView.props))
+  assert(progressView.props.tasks.length === 2 && !overview.some((node) => node.children.includes('studyNoTodayPlan')),
+    'today shows modern study tasks even with no legacy plan and excludes future tasks')
+  assert(progress.some((node) => node.props.role === 'status' && node.children.includes('1/2 complete')) &&
+    progress.some((node) => node.children.includes('New 2/5')) &&
+    progress.some((node) => node.children.includes('Review 3/10')), 'today counts completion and shows new and review progress')
+} finally {
+  ReactStub.useState = originalUseState
+}
 const mistakeState = []
 let callIndex = 0
 ReactStub.useState = (initial) => {

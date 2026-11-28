@@ -23,39 +23,40 @@ return {
     seat('skin', () => applySkin(currentSkin()));
     seat('appearance', () => {
       const initial = loadAppearance();
-      applyAppearance(initial);
+      applyAppearance(initial, { persist: false });
       // Paint first, then warm the images in idle time: a 2 MB photo must never
       // delay the panel. The second one follows the first.
       const warm = () => {
         hydrateBackgrounds(initial, ['planning'])
-          .then(() => hydrateBackgrounds(initial, ['study']))
+          .then(() => {
+            if (currentAppearance() === initial) return hydrateBackgrounds(initial, ['study']);
+          })
           .catch(() => {});
       };
       // The durable appearance lives on the host, so adopt it when it arrives.
-      api('ui')
+      const storedAppearance = api('ui')
         .then((ui) => {
-          if (!ui || (!ui.appearance && !ui.skins)) return;
+          if (!ui) return;
           setHostUi(ui);
+          restoreHostSkin(ui.activeSkin, ui.skinChoice);
           const merged = loadAppearance();
-          applyAppearance(merged);
+          applyAppearance(merged, { persist: false });
           hydrateBackgrounds(merged).catch(() => {});
         })
         .catch(() => {});
       // Read the stored images the same way the settings dialog does, so the
       // background is live on boot instead of only after opening settings.
       const syncBackgrounds = () =>
-        api('background.info')
+        storedAppearance.then(() => api('background.info'))
           .then((info) => {
             if (!info) return;
-            const current = loadAppearance();
-            const next = {
-              ...current,
-              background: {
-                planning: { ...current.background.planning, imageUrl: info.planning || current.background.planning.imageUrl || '' },
-                study: { ...current.background.study, imageUrl: info.study || current.background.study.imageUrl || '' },
-              },
-            };
-            applyAppearance(next);
+            setLegacyBackgroundAssets({
+              planning: info.assets?.planning || info.planning,
+              study: info.assets?.study || info.study,
+            });
+            migrateSkinProfiles();
+            const next = loadAppearance();
+            applyAppearance(next, { persist: false });
             hydrateBackgrounds(next).catch(() => {});
           })
           .catch(() => {});
@@ -88,7 +89,7 @@ return {
     seat('main:study', () =>
       ctx.slots.inject('main', () =>
         ctx.slots.register({ name: 'main', key: 'life-planner-study' }, () =>
-          h(StudyPanel, { t, scheme: pageScheme() }),
+          h(StudyPanel, { t }),
         ),
       ),
     );

@@ -12,9 +12,10 @@ import z from '@deepseek-ai/schemastery'
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, cpSync, writeFileSync, chmodSync, statSync, rmSync, realpathSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { basename, dirname, isAbsolute, join, relative as relativePath, resolve, sep } from 'node:path'
+import { basename, dirname, extname, isAbsolute, join, relative as relativePath, resolve, sep, toNamespacedPath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
+import { createHash, randomUUID } from 'node:crypto'
 import { fetchCalendarContext, deepSeekAdvice } from './src/host/daily-advice.js'
 import { calendarAdvice, shouldRefreshCalendar } from './src/host/calendar-advice.js'
 
@@ -534,6 +535,8 @@ const BACKGROUND_MIME = {
 
 /** Backgrounds live beside the database so a skin export stays small. */
 const BACKGROUND_AREAS = ['planning', 'study']
+const BACKGROUND_IMAGES = join(BACKGROUND_DIR, 'images')
+const legacyBackgroundCache = new Map()
 const PLUGIN_DIR = dirname(fileURLToPath(import.meta.url))
 /** Bundled default background, used when the appearance asks for it. */
 const DEFAULT_BACKGROUND = join(PLUGIN_DIR, 'assets', 'default-background.webp')
@@ -561,7 +564,49 @@ function backgroundUrl(area) {
   return `${API_PREFIX}/background?area=${area}&v=${Math.round(statSync(file).mtimeMs)}`
 }
 
-function saveBackgroundImage(rawArea, dataUrl) {
+function backgroundAssetPath(name) {
+  const match = /^([a-f0-9]{64})\.([a-z]+)$/.exec(String(name || ''))
+  return match && Object.hasOwn(BACKGROUND_MIME, match[2]) ? join(BACKGROUND_IMAGES, name) : null
+}
+
+function saveBackgroundAsset(buffer, ext) {
+  const name = createHash('sha256').update(buffer).digest('hex') + '.' + ext
+  mkdirSync(BACKGROUND_IMAGES, { recursive: true })
+  const target = backgroundAssetPath(name)
+  if (!existsSync(target)) {
+    const temporary = join(BACKGROUND_IMAGES, randomUUID() + '.tmp')
+    try {
+      writeFileSync(temporary, buffer, { flag: 'wx' })
+      renameSync(toNamespacedPath(temporary), toNamespacedPath(target))
+    } finally {
+      if (existsSync(temporary)) unlinkSync(temporary)
+    }
+  }
+  return `${API_PREFIX}/background?asset=${name}`
+}
+
+function validSkinChoice(choice) {
+  return typeof choice === 'string' &&
+    (/^builtin:[a-z][a-z0-9-]{0,31}$/.test(choice) || /^user:[^\u0000-\u001f]{1,24}$/u.test(choice))
+}
+
+function legacyBackgroundAsset(area) {
+  const file = backgroundFile(area)
+  if (!file) return null
+  const stat = statSync(file)
+  const previous = legacyBackgroundCache.get(file)
+  if (previous?.mtime === stat.mtimeMs && previous.size === stat.size) return previous.url
+  let url
+  try {
+    url = saveBackgroundAsset(readFileSync(file), extname(file).slice(1))
+  } catch {
+    return null
+  }
+  legacyBackgroundCache.set(file, { mtime: stat.mtimeMs, size: stat.size, url })
+  return url
+}
+
+function saveBackgroundImage(rawArea, dataUrl, forPreset = false) {
   const area = requireBackgroundArea(rawArea)
   const match = /^data:image\/([a-zA-Z+]+);base64,([A-Za-z0-9+/=\s]+)$/.exec(String(dataUrl || ''))
   if (!match) throw new Error('不支持的图片数据')
@@ -569,6 +614,7 @@ function saveBackgroundImage(rawArea, dataUrl) {
   const ext = raw === 'jpeg' ? 'jpg' : raw
   if (!BACKGROUND_MIME[ext]) throw new Error(`不支持的图片类型：${ext}`)
   const buffer = Buffer.from(match[2], 'base64')
+  if (forPreset) return { area, url: saveBackgroundAsset(buffer, ext) }
   mkdirSync(BACKGROUND_DIR, { recursive: true })
   for (const previous of Object.keys(BACKGROUND_MIME)) {
     const file = join(BACKGROUND_DIR, `${area}.${previous}`)
@@ -1443,12 +1489,15 @@ function createStore() {
     if (lastSendAt && now.getTime() - lastSendAt < gap) return
 
     const candidates = []
-    const longTermMs = Math.max(1, Number(settings.longTermReminderHours) || 12) * 3600000
-    for (const item of allItems()) {
+    const longTermMs = Number(settings.longTermReminderHours) * 3600000
+    const currentItems = allItems()
+    const parents = new Set(currentItems.filter((item) => !item.archivedAt).map((item) => item.parentId))
+    for (const item of currentItems) {
       if (!isTaskLike(item.kind) || item.completedAt || item.archivedAt) continue
       if (planTaskIds.has(item.id)) continue
       const last = item.lastNotifiedAt ? new Date(item.lastNotifiedAt).getTime() : 0
       if (!item.dueAt) {
+        if (longTermMs <= 0) continue
         if (item.startAt && Date.parse(item.startAt) > now.getTime()) continue
         // Long-term work has no deadline to count down; it recurs on its own
         // cadence and queues behind anything that is actually due.
@@ -1468,7 +1517,7 @@ function createStore() {
           ? Number(item.remindLeadMinutes)
           : daysLeft <= 3
             ? Math.min(120, Math.max(15, Math.floor(span / 120000)))
-            : (item.kind === 'project' ? Number(settings.leadProjectDays) : Number(settings.leadTaskDays)) * 1440
+            : (item.kind === 'project' || parents.has(item.id) ? Number(settings.leadProjectDays) : Number(settings.leadTaskDays)) * 1440
       if (remaining > leadMinutes * 60000) continue
       const interval = intervalMinutesLeft(remaining) * 60000
       if (last && now.getTime() - last < interval) continue
@@ -3690,12 +3739,15 @@ function createStore() {
     },
 
     saveUiState(key, value) {
-      write(() =>
-        db
-          .prepare('INSERT OR REPLACE INTO ui_state (key,value) VALUES (?,?)')
-          .run(String(key), JSON.stringify(value === undefined ? null : value)),
-      )
+      this.saveUiStates({ [key]: value })
       return { key: String(key) }
+    },
+
+    saveUiStates(patch) {
+      write(() => {
+        const statement = db.prepare('INSERT OR REPLACE INTO ui_state (key,value) VALUES (?,?)')
+        for (const [key, value] of Object.entries(patch)) statement.run(key, JSON.stringify(value ?? null))
+      })
     },
 
     listLearning() {
@@ -5024,6 +5076,10 @@ export function apply(ctx, config = {}) {
   const updateSettings = (patch) => {
     const previous = store.readSettings()
     const next = store.saveSettings(patch)
+    if (previous.dailyAdvice !== false && next.dailyAdvice === false) {
+      studyJob?.abort()
+      store.todayTip(new Date(), true)
+    }
     if (previous.adviceRegion !== next.adviceRegion) {
       studyJob?.abort()
       refreshCalendar(new Date(), { force: true, refreshStudy: true })
@@ -5161,8 +5217,14 @@ export function apply(ctx, config = {}) {
       webCtx.webServer.register({
         kind: 'prefix',
         path: API_PREFIX,
-        handler: async (req, res) => {
-          if (webCtx.connection.requestRejection(req) !== undefined) {
+        auth: 'required',
+        handler: async (req, res, peer) => {
+          // New hosts authenticate at dispatch. Older ones pass no peer.
+          const authorized = peer === undefined
+            ? typeof webCtx.connection?.requestRejection === 'function' &&
+              webCtx.connection.requestRejection(req) === undefined
+            : peer?.principal?.kind === 'owner'
+          if (!authorized) {
             writeJson(res, 403, { ok: false, error: 'forbidden' })
             return
           }
@@ -5210,6 +5272,10 @@ export function apply(ctx, config = {}) {
                 data: {
                   appearance: store.readUiState('appearance'),
                   skins: store.readUiState('skins'),
+                  activeSkin: store.readUiState('activeSkin'),
+                  skinChoice: store.readUiState('skinChoice'),
+                  skinBackgrounds: store.readUiState('skinBackgrounds'),
+                  skinProfiles: store.readUiState('skinProfiles'),
                 },
               })
               return
@@ -5256,8 +5322,10 @@ export function apply(ctx, config = {}) {
             if (req.method === 'GET' && method === 'background') {
               const requested = url.searchParams.get('area')
               const area = requested === 'study' ? 'study' : requested === 'default' ? 'default' : 'planning'
-              const file = area === 'default' ? (existsSync(DEFAULT_BACKGROUND) ? DEFAULT_BACKGROUND : null) : backgroundFile(area)
-              if (!file) {
+              const asset = url.searchParams.get('asset')
+              const file = asset ? backgroundAssetPath(asset)
+                : area === 'default' ? DEFAULT_BACKGROUND : backgroundFile(area)
+              if (!file || !existsSync(file)) {
                 res.writeHead(404)
                 res.end('no background')
                 return
@@ -5265,7 +5333,7 @@ export function apply(ctx, config = {}) {
               const ext = file.split('.').pop().toLowerCase()
               // A versioned URL never changes, so the shell may keep it for good;
               // an unversioned one must not be cached.
-              const versioned = url.searchParams.has('v')
+              const versioned = Boolean(asset) || url.searchParams.has('v')
               res.writeHead(200, {
                 'content-type': BACKGROUND_MIME[ext] || 'application/octet-stream',
                 'cache-control': versioned ? 'private, max-age=31536000, immutable' : 'no-store',
@@ -5281,6 +5349,10 @@ export function apply(ctx, config = {}) {
                   default: existsSync(DEFAULT_BACKGROUND) ? DEFAULT_BACKGROUND_URL : null,
                   planning: backgroundUrl('planning'),
                   study: backgroundUrl('study'),
+                  assets: {
+                    planning: legacyBackgroundAsset('planning'),
+                    study: legacyBackgroundAsset('study'),
+                  },
                 },
               })
               return
@@ -5423,7 +5495,7 @@ export function apply(ctx, config = {}) {
                 return
               }
               case 'background.set': {
-                writeJson(res, 200, { ok: true, data: saveBackgroundImage(body.area, body.dataUrl) })
+                writeJson(res, 200, { ok: true, data: saveBackgroundImage(body.area, body.dataUrl, body.forPreset === true) })
                 return
               }
               case 'background.clear': {
@@ -5431,8 +5503,39 @@ export function apply(ctx, config = {}) {
                 return
               }
               case 'ui.save': {
-                if (body.appearance !== undefined) store.saveUiState('appearance', body.appearance)
-                if (body.skins !== undefined) store.saveUiState('skins', body.skins)
+                if (body.skinChoice !== undefined && !validSkinChoice(body.skinChoice)) throw new Error('invalid skin choice')
+                if (body.activeSkin !== undefined && (typeof body.activeSkin !== 'string' || !/^[a-z][a-z0-9-]{0,31}$/.test(body.activeSkin))) {
+                  throw new Error('invalid skin preset')
+                }
+                const patch = {}
+                for (const key of ['activeSkin', 'skinChoice', 'appearance', 'skins']) {
+                  if (body[key] !== undefined) patch[key] = body[key]
+                }
+                if (body.skinBackgrounds !== undefined) {
+                  const entries = Object.entries(body.skinBackgrounds || {})
+                  if (entries.some(([choice, value]) => !validSkinChoice(choice) || !value || Array.isArray(value) || typeof value !== 'object')) {
+                    throw new Error('invalid skin background')
+                  }
+                  patch.skinBackgrounds = {
+                    ...store.readUiState('skinBackgrounds'), ...Object.fromEntries(entries),
+                  }
+                }
+                if (body.skinProfiles !== undefined) {
+                  if (!body.skinProfiles || typeof body.skinProfiles !== 'object' || Array.isArray(body.skinProfiles)) {
+                    throw new Error('invalid skin profiles')
+                  }
+                  const entries = Object.entries(body.skinProfiles)
+                  for (const [choice, profile] of entries) {
+                    if (!validSkinChoice(choice) || (profile === null && !choice.startsWith('user:')) ||
+                      (profile !== null && (!['default', 'clawd', 'compact', 'large'].includes(profile?.skin) ||
+                        !profile.appearance || typeof profile.appearance !== 'object' || Array.isArray(profile.appearance) ||
+                        (choice.startsWith('builtin:') && choice.slice(8) !== profile.skin)))) {
+                      throw new Error('invalid skin profile')
+                    }
+                  }
+                  patch.skinProfiles = { ...store.readUiState('skinProfiles'), ...Object.fromEntries(entries) }
+                }
+                store.saveUiStates(patch)
                 writeJson(res, 200, { ok: true, data: { saved: true } })
                 return
               }
@@ -5561,6 +5664,13 @@ export function apply(ctx, config = {}) {
               case 'notifications.system': {
                 store.ackSystemNotification(body.id)
                 writeJson(res, 200, { ok: true, data: { saved: true } })
+                return
+              }
+              case 'notifications.test': {
+                const title = String(body.title || 'Life Planner').slice(0, 100)
+                const message = String(body.message || '').slice(0, 400)
+                const sent = !DEV && await hostNotify(title, message)
+                writeJson(res, 200, { ok: true, data: { sent } })
                 return
               }
               case 'dev.scan': {

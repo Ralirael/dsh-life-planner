@@ -130,7 +130,8 @@ function StudyPlanTab(props) {
   const future = tasks.filter((task) => taskState(task) === 'todo').sort((a, b) =>
     String(a.scheduledAt || '~').localeCompare(String(b.scheduledAt || '~')));
   const taskById = new Map(tasks.map((task) => [task.id, task]));
-  const upcoming = data.plan.filter((entry) => !entry.doneAt && entry.date >= dayKey(new Date(Date.now() - 4 * 3600000)));
+  const todayKey = studyLocalDayKey();
+  const upcoming = data.plan.filter((entry) => !entry.doneAt && entry.date >= todayKey);
   const fail = (error) => props.onError(error.message);
   const change = (method, body, reload) => {
     props.onError('');
@@ -196,7 +197,7 @@ function StudyPlanTab(props) {
   };
 
   const sectionTitle = (label, count, action) => h('div', { className: 'lp-study-section-head' },
-    h('h3', null, label), h('span', { className: 'lp-badge' }, count), action);
+    h('h3', null, label), h('span', { className: 'lp-study-section-count' }, count), action);
   const editTitle = (value, action) => h('button', {
     type: 'button',
     className: 'lp-title lp-study-task-title',
@@ -320,10 +321,11 @@ function StudyPlanTab(props) {
       h('section', { className: 'lp-card lp-study-section', ...dropZone('active') },
         sectionTitle(t('studyTaskList'), active.length,
           h('button', { className: 'lp-btn', type: 'button', onClick: () => setShowNew(true) }, '+ ' + t('studyTaskAdd'))),
-        weekMinutes !== null ? h('div', { className: 'lp-meta' }, t('studyWeekPlan').replace('{n}', weekMinutes)) : null,
+        weekMinutes !== null ? h('div', { className: 'lp-meta lp-study-lane-meta' }, t('studyWeekPlan').replace('{n}', weekMinutes)) : null,
         active.length ? active.map(renderTask) : h('div', { className: 'lp-empty' }, t('studyNoActive'))),
       h('section', { className: 'lp-card lp-study-section', ...dropZone('future') },
         sectionTitle(t('studyUpcoming'), future.length),
+        weekMinutes !== null ? h('div', { className: 'lp-meta lp-study-lane-meta lp-study-lane-spacer', 'aria-hidden': true }) : null,
         future.length ? future.map(renderTask) : h('div', { className: 'lp-empty' }, t('studyDropFuture')))),
     h('section', { className: 'lp-card lp-study-section' },
       sectionTitle(t('studySubjects'), data.subjects.length, h('button', {
