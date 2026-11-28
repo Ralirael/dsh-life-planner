@@ -1,17 +1,12 @@
-function Icon(props) {
-  const size = props.size || 18;
+function SidebarIcon({ size = 18, variant = 'planning' } = {}) {
+  const path = variant === 'study'
+    ? 'M12 6.3C9.2 4.2 6 4.1 3.3 5.5v13.2c2.8-1.3 5.9-1.2 8.7.9 2.8-2.1 5.9-2.2 8.7-.9V5.5C18 4.1 14.8 4.2 12 6.3ZM12 6.3v13.3'
+    : 'M8.5 5H6.3A2.3 2.3 0 0 0 4 7.3v11.4A2.3 2.3 0 0 0 6.3 21h11.4a2.3 2.3 0 0 0 2.3-2.3V7.3A2.3 2.3 0 0 0 17.7 5h-2.2M10 3h4a1.5 1.5 0 0 1 0 3h-4a1.5 1.5 0 0 1 0-3ZM8.5 13l2.1 2.1 4.9-5';
   return h(
     'svg',
-    { width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': true, style: { display: 'block' } },
+    { width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': true, focusable: 'false', style: { display: 'block' } },
     h('path', {
-      d: 'M4 5.5A1.5 1.5 0 0 1 5.5 4h4l1.6 2H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z',
-      fill: 'none',
-      stroke: 'currentColor',
-      strokeWidth: 1.6,
-      strokeLinejoin: 'round',
-    }),
-    h('path', {
-      d: 'M8.5 13.5l2 2 4-4.5',
+      d: path,
       fill: 'none',
       stroke: 'currentColor',
       strokeWidth: 1.6,
@@ -51,11 +46,36 @@ function keyActivate(handler) {
   };
 }
 
-/**
- * One dialog shell for every modal: a fixed backdrop, Esc to close, the first
- * focusable child focused on open, Tab cycling inside, and a click on the
- * backdrop closing it. Callers keep their own title and action buttons.
- */
+function DialogActions({ children }) {
+  return h('footer', { className: 'lp-modal-actions' }, ...(Array.isArray(children) ? children : [children]));
+}
+
+function dialogField(label, attributes, tag = 'input') {
+  return h('label', { className: 'lp-field' },
+    h('span', null, label),
+    h(tag, { className: 'lp-input', ...attributes }),
+  );
+}
+
+function dialogSelect(label, attributes) {
+  return h('div', { className: 'lp-field' },
+    h('span', null, label),
+    h(Dropdown, { label, ...attributes }),
+  );
+}
+
+function DialogDisclosure({ title, hint, open, children }) {
+  return h('details', { className: 'lp-dialog-disclosure', open },
+    h('summary', null,
+      h('span', { className: 'lp-chevron', 'data-direction': 'right', 'aria-hidden': true }),
+      h('span', null, title),
+      hint ? h('span', { className: 'lp-dialog-disclosure-hint' }, hint) : null,
+    ),
+    h('div', { className: 'lp-dialog-disclosure-body' }, ...(Array.isArray(children) ? children : [children])),
+  );
+}
+
+/** Keep a trailing DialogActions outside the scrollable body. */
 function Modal(props) {
   const panelRef = React.useRef(null);
   const closeRef = React.useRef(props.onClose);
@@ -69,7 +89,7 @@ function Modal(props) {
     const focusables = () =>
       Array.from(
         node.querySelectorAll(
-          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]',
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, a[href], [tabindex]',
         ),
       ).filter((element) => element.getClientRects().length > 0 && element.tabIndex >= 0);
     const first = focusables()[0];
@@ -114,6 +134,8 @@ function Modal(props) {
     : props.children === undefined
       ? []
       : [props.children];
+  const last = children[children.length - 1];
+  const footer = last?.type === DialogActions ? last : null;
   return h(
     'div',
     {
@@ -134,9 +156,12 @@ function Modal(props) {
         style: props.wide ? { width: 'min(760px,100%)' } : undefined,
         onClick: (event) => event.stopPropagation(),
       },
-      // Spread the children back into argument position: an array child would
-      // make React ask for keys on dialog content that never needs any.
-      ...[props.title ? h('div', { className: 'lp-modal-title' }, props.title) : null, ...children],
+      props.title ? h('header', { className: 'lp-modal-heading' },
+        h('h2', { className: 'lp-modal-title' }, props.title),
+        props.titleMeta ? h('span', { className: 'lp-dialog-version' }, props.titleMeta) : null,
+      ) : null,
+      h('div', { className: 'lp-modal-body' }, ...(footer ? children.slice(0, -1) : children)),
+      footer,
     ),
   );
 }
@@ -361,6 +386,7 @@ function Dropdown(props) {
         style: { background: controlSurface(0.45), backdropFilter: 'blur(6px)' },
         'data-lp-surface': 'control',
         'aria-haspopup': 'listbox',
+        'aria-label': props.label ? [props.label, current?.label].filter(Boolean).join(' · ') : undefined,
         'aria-expanded': String(menu.open),
         'aria-controls': menu.open ? menu.menuId : undefined,
         'aria-activedescendant':

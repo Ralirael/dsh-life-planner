@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-life-planner",
-  "version": "0.9.41",
+  "version": "0.9.42",
   "private": true,
   "dependencies": {
     "@deepseek-ai/schemastery": "~3.19.0",

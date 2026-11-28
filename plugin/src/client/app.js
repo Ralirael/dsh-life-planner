@@ -75,7 +75,7 @@ return {
       ctx.slots.inject('sidebar.panellist', () =>
         ctx.slots.register(
           { name: 'sidebar.panellist', id: 'life-planner', order: 20, label: () => t('navLabel') },
-          Icon,
+          (props) => h(SidebarIcon, { ...props, variant: 'planning' }),
         ),
       ),
     );
@@ -98,7 +98,7 @@ return {
       ctx.slots.inject('sidebar.panellist', () =>
         ctx.slots.register(
           { name: 'sidebar.panellist', id: 'life-planner-study', order: 21, label: () => t('studyNav') },
-          Icon,
+          (props) => h(SidebarIcon, { ...props, variant: 'study' }),
         ),
       ),
     );

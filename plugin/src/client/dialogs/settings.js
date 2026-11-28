@@ -590,6 +590,10 @@ function SettingsModal(props) {
 
   const group = (title, ...children) => h('section', { className: 'lp-settings-group' },
     h('h3', { className: 'lp-form-section' }, t(title)), ...children);
+  const advanced = (title, ...children) => h(DialogDisclosure, {
+    title: t(title),
+    open: page === 'notify' && error ? true : undefined,
+  }, ...children);
   const switchRow = (label, hint, value, onChange) => h('div', { className: 'lp-settings-switch' },
     h('div', null, h('strong', null, t(label)), hint ? h('div', { className: 'lp-meta' }, t(hint)) : null),
     h(Switch, { label: t(label), value, onChange }));
@@ -606,13 +610,14 @@ function SettingsModal(props) {
       active ? h('div', { className: 'lp-settings-classification' },
         h(Dropdown, { value: active, onChange: onSelect, options: list.map((name) => ({ value: name, label: name })) }),
         h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => onRemove(active) }, t('delete')),
-        colorSwatches(kind, active))
+        h(DialogDisclosure, { title: t(kind === 'tag' ? 'tagLibraryColor' : 'tagColor') },
+          colorSwatches(kind, active)))
       : h('div', { className: 'lp-meta' }, t(empty)),
       hint ? h('div', { className: 'lp-meta' }, t(hint)) : null,
     );
   };
 
-  const tagsPage = () => h('div', { className: 'lp-settings-sections' },
+  const tagsPage = () => h('div', { className: 'lp-settings-sections lp-settings-collections' },
     classification({
       kind: 'type', title: 'sectionTags', hint: 'taskTypeAutoHint', list: types, draft: tagDraft, onDraft: setTagDraft,
       onAdd: addTag, placeholder: 'tagNamePlaceholder', addLabel: 'addTag', selected: selectedTag, onSelect: setSelectedTag,
@@ -658,7 +663,7 @@ function SettingsModal(props) {
           h('button', { type: 'button', className: 'lp-btn-ghost', onClick: refreshNow, disabled: refreshingRegion || regionDraftChanged }, t('calendarRefreshNow')))),
       group('studyTipTitle',
         switchRow('tipDeepSeek', 'settingsStudyAdviceHint', form.dailyAdvice !== false, (next) => set('dailyAdvice', next))),
-      group('sectionData',
+      advanced('sectionData',
         h(
           'div',
           { className: 'lp-toolbar' },
@@ -689,7 +694,7 @@ function SettingsModal(props) {
           h('span', { className: 'lp-settings-status' }, t('notifyState').replace('{s}', t('notifyPermission_' + permission))),
         ),
       ),
-      group('settingsNotifyWindows',
+      advanced('settingsNotifyWindows',
         h('div', { className: 'lp-setting-grid' },
           textField('weekdayWindows', t('fWeekdayWindows')),
           textField('weekendWindows', t('fWeekendWindows')),
@@ -697,13 +702,13 @@ function SettingsModal(props) {
           numberField('nonUrgentQuotaPerWindow', t('fQuota')),
           numberField('maxRemindersPerWindow', t('fMaxPerWindow')),
           numberField('maxDeferHours', t('fMaxDefer')))),
-      group('settingsNotifyLead',
+      advanced('settingsNotifyLead',
         h('div', { className: 'lp-setting-grid' },
           numberField('leadTaskDays', t('fLeadTaskDays')),
           numberField('leadProjectDays', t('fLeadProjectDays')),
           numberField('longTermReminderHours', t('fLongTermHours'))),
         h('div', { className: 'lp-meta' }, t('settingsLeadHint'))),
-      group('sectionTask', h('div', { className: 'lp-setting-grid' },
+      advanced('sectionTask', h('div', { className: 'lp-setting-grid' },
         numberField('archiveAfterDays', t('fArchiveDays')),
         numberField('deleteAfterDays', t('fDeleteDays')))),
     );
@@ -723,6 +728,8 @@ function SettingsModal(props) {
           options: listSkinOptions(t),
         }),
         h('div', { className: 'lp-meta' }, t('skinAppearanceOwner').replace('{name}', skinNameLabel())),
+      )),
+      advanced('skinManage',
         h(
           'div',
           { className: 'lp-toolbar', style: { marginTop: 6 } },
@@ -773,9 +780,9 @@ function SettingsModal(props) {
             },
           }),
         ),
-      )),
+      ),
 
-      group('sectionFont',
+      advanced('sectionFont',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -789,7 +796,7 @@ function SettingsModal(props) {
         numberInput('base', t('fFontBase'), appearance.font.base, setFont),
       ),
       h('div', { className: 'lp-meta' }, t('fFontHint'))),
-      group('sectionSize',
+      advanced('sectionSize',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -801,7 +808,7 @@ function SettingsModal(props) {
         layoutInput('fontFamily', 'layoutFontFamily'),
       ),
       h('div', { className: 'lp-meta' }, t('fCalHeightHint'))),
-      studyMode ? group('sectionMistake',
+      studyMode ? advanced('sectionMistake',
       h(
         'div',
         { className: 'lp-setting-grid' },
@@ -816,7 +823,7 @@ function SettingsModal(props) {
         numberInput('mistakeReason', t('fMistakeReasonFs'), appearance.font.mistakeReason, setFont),
       ),
       h('div', { className: 'lp-meta' }, t('fMistakeHint'))) : null,
-      group('sectionAccent',
+      advanced('sectionAccent',
       h(
         'div',
         { className: 'lp-row2' },
@@ -831,7 +838,7 @@ function SettingsModal(props) {
               h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setAccent(area, ''), disabled: !value }, t('colorReset'))));
         }),
       )),
-      group('sectionBackground',
+      advanced('sectionBackground',
       h(
         'div',
         { className: 'lp-field' },
@@ -905,8 +912,8 @@ function SettingsModal(props) {
         page === 'tags' ? tagsPage() : page === 'general' ? generalPage() : page === 'notify' ? notifyPage() : appearancePage()),
     ),
       h(
-        'div',
-        { className: 'lp-modal-actions' },
+        DialogActions,
+        null,
         page === 'appearance' ? h('button', { type: 'button', className: 'lp-btn-ghost', onClick: () => setPreview(true), disabled: busy }, t('settingsPreview')) : null,
         h('button', { className: 'lp-btn-ghost', onClick: close, disabled: busy }, t(page === 'appearance' ? 'close' : 'cancel')),
         page !== 'appearance' || hasPendingSettings

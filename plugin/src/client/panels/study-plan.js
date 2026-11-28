@@ -352,212 +352,137 @@ function StudyPlanTab(props) {
           },
         })))) : null,
     scheduling ? h(Modal, { title: t('studySetStart') + ' · ' + scheduling.title, onClose: () => setScheduling(null) },
-      h('form', { onSubmit: saveSchedule },
+      h('form', { id: 'lp-study-schedule-form', className: 'lp-dialog-stack', onSubmit: saveSchedule },
         h('label', { className: 'lp-field' }, t('studyStartOptional'), h('input', {
           className: 'lp-input', type: 'datetime-local', value: startAt,
           onChange: (event) => setStartAt(event.target.value),
         })),
         h('p', { className: 'lp-meta' }, t('studyStartHint')),
         scheduleError ? h('p', { className: 'lp-err', role: 'alert' }, scheduleError) : null,
-        h('div', { className: 'lp-modal-actions' },
-          h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setScheduling(null) }, t('cancel')),
-          h('button', { className: 'lp-btn', type: 'submit', disabled: savingSchedule }, t('save'))))) : null,
-    editingTask
-      ? h(
-          Modal,
-          { title: `${t('studyTaskEdit')} · ${editingTask.title}`, onClose: () => setEditingTask(null) },
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskTitle')),
-              h('input', {
-                className: 'lp-input',
-                value: taskForm.title,
-                onChange: (event) => setTaskForm({ ...taskForm, title: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskPath')),
-              h('input', {
-                className: 'lp-input',
-                value: taskForm.workspacePath,
-                onChange: (event) => setTaskForm({ ...taskForm, workspacePath: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskTemplate')),
-              h(Dropdown, {
-                value: taskForm.template,
-                onChange: (value) => setTaskForm({ ...taskForm, template: value }),
-                options: TEMPLATE_OPTIONS,
-              }),
-            ),
-
-            h('div', { className: 'lp-field' },
-              h('label', null, t('studyGrading')),
-              h(Dropdown, {
-                value: taskForm.grading,
-                onChange: (grading) => setTaskForm({ ...taskForm, grading }),
-                options: ['strict', 'neutral', 'lenient'].map((value) => ({ value, label: t('studyGrading_' + value) })),
-              }),
-            ),
-
-            h('div', { className: 'lp-field' },
-              h('label', null, t('studySubjects')),
-              h(Dropdown, {
-                value: taskForm.subjectId,
-                onChange: (subjectId) => setTaskForm({ ...taskForm, subjectId }),
-                options: [{ value: '', label: t('studyNoSubjectLink') },
-                  ...data.subjects.map((subject) => ({ value: subject.id, label: subject.title }))],
-              }),
-            ),
-            h(ShelfPicker, {
-              t,
-              items: props.shelf,
-              selected: taskShelf,
-              onChange: setTaskShelf,
-            }),
-            h(
-              'div',
-              { className: 'lp-modal-actions' },
-              h(
-                'button',
-                {
-                  className: 'lp-btn-ghost',
-                  onClick: () => {
-                    const id = editingTask.id;
-                    if (!window.confirm(t('studyTaskDeleteConfirm'))) return;
-                    api('studytask.delete', { id })
-                      .then(() => {
-                        setEditingTask(null);
-                        return reloadTasks(true);
-                      })
-                      .catch((err) => props.onError(err.message));
-                  },
-                },
-                t('delete'),
-              ),
-              h('button', { className: 'lp-btn-ghost', onClick: () => setEditingTask(null) }, t('cancel')),
-              h('button', { className: 'lp-btn', onClick: saveTask }, t('save')),
-            ),
-        )
-      : null,
-    showNew
-      ? h(
-          Modal,
-          { title: t('studyTaskNew'), onClose: () => setShowNew(false) },
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskTitle')),
-              h('input', {
-                className: 'lp-input',
-                value: newTitle,
-                onChange: (event) => setNewTitle(event.target.value),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskPath')),
-              h('input', {
-                className: 'lp-input',
-                value: newPath,
-                onChange: (event) => setNewPath(event.target.value),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyTaskTemplate')),
-              h(Dropdown, {
-                value: newTemplate,
-                onChange: setNewTemplate,
-                options: TEMPLATE_OPTIONS,
-              }),
-            ),
-            h(ShelfPicker, {
-              t,
-              items: props.shelf,
-              selected: newShelf,
-              onChange: setNewShelf,
-            }),
-            h(
-              'div',
-              { className: 'lp-modal-actions' },
-              h('button', { className: 'lp-btn-ghost', onClick: () => setShowNew(false) }, t('cancel')),
-              h('button', { className: 'lp-btn', onClick: createTask }, t('studyTaskAdd')),
-            ),
-        )
-      : null,
-    subjectEditing
-      ? h(
-          Modal,
-          { title: t('studySubjectEdit'), onClose: () => setSubjectEditing(null) },
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studySubjectTitle')),
-              h('input', {
-                className: 'lp-input',
-                value: subjectForm.title,
-                onChange: (event) => setSubjectForm({ ...subjectForm, title: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyExamDate')),
-              h('input', {
-                className: 'lp-input',
-                value: subjectForm.examDate,
-                placeholder: t('studyExamDateHint'),
-                onChange: (event) => setSubjectForm({ ...subjectForm, examDate: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('studyNote')),
-              h('input', {
-                className: 'lp-input',
-                value: subjectForm.note,
-                onChange: (event) => setSubjectForm({ ...subjectForm, note: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-modal-actions' },
-              h('button', { className: 'lp-btn-ghost', onClick: () => setSubjectEditing(null) }, t('cancel')),
-              h(
-                'button',
-                {
-                  className: 'lp-btn',
-                  onClick: () => {
-                    const id = subjectEditing.id;
-                    api('subject.update', {
-                      id,
-                      patch: {
-                        title: subjectForm.title.trim(),
-                        examDate: subjectForm.examDate.trim(),
-                        note: subjectForm.note,
-                      },
-                    })
-                      .then(() => {
-                        setSubjectEditing(null);
-                        return props.onReload();
-                      })
-                      .catch((err) => props.onError(err.message));
-                  },
-                },
-                t('save'),
-              ),
-            ),
-        )
-      : null,
+      ),
+      h(DialogActions, null,
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setScheduling(null) }, t('cancel')),
+        h('button', { className: 'lp-btn', type: 'submit', form: 'lp-study-schedule-form', disabled: savingSchedule }, t('save')),
+      ),
+    ) : null,
+    editingTask ? h(
+      Modal,
+      { title: `${t('studyTaskEdit')} · ${editingTask.title}`, onClose: () => setEditingTask(null) },
+      dialogField(t('studyTaskTitle'), {
+        value: taskForm.title,
+        onChange: (event) => setTaskForm({ ...taskForm, title: event.target.value }),
+      }),
+      dialogField(t('studyTaskPath'), {
+        value: taskForm.workspacePath,
+        onChange: (event) => setTaskForm({ ...taskForm, workspacePath: event.target.value }),
+      }),
+      h('div', { className: 'lp-dialog-grid' },
+        dialogSelect(t('studyTaskTemplate'), {
+          value: taskForm.template,
+          onChange: (value) => setTaskForm({ ...taskForm, template: value }),
+          options: TEMPLATE_OPTIONS,
+        }),
+        dialogSelect(t('studyGrading'), {
+          value: taskForm.grading,
+          onChange: (grading) => setTaskForm({ ...taskForm, grading }),
+          options: ['strict', 'neutral', 'lenient'].map((value) => ({ value, label: t('studyGrading_' + value) })),
+        }),
+      ),
+      h(DialogDisclosure, { title: t('studyTaskLinks') },
+        dialogSelect(t('studySubjects'), {
+          value: taskForm.subjectId,
+          onChange: (subjectId) => setTaskForm({ ...taskForm, subjectId }),
+          options: [
+            { value: '', label: t('studyNoSubjectLink') },
+            ...data.subjects.map((subject) => ({ value: subject.id, label: subject.title })),
+          ],
+        }),
+        h(ShelfPicker, { t, items: props.shelf, selected: taskShelf, onChange: setTaskShelf }),
+      ),
+      h(DialogActions, null,
+        h('button', {
+          className: 'lp-btn-ghost lp-dialog-side-action',
+          type: 'button',
+          onClick: () => {
+            const id = editingTask.id;
+            if (!window.confirm(t('studyTaskDeleteConfirm'))) return;
+            api('studytask.delete', { id })
+              .then(() => {
+                setEditingTask(null);
+                return reloadTasks(true);
+              })
+              .catch((err) => props.onError(err.message));
+          },
+        }, t('delete')),
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setEditingTask(null) }, t('cancel')),
+        h('button', { className: 'lp-btn', type: 'button', onClick: saveTask }, t('save')),
+      ),
+    ) : null,
+    showNew ? h(
+      Modal,
+      { title: t('studyTaskNew'), onClose: () => setShowNew(false) },
+      dialogField(t('studyTaskTitle'), {
+        value: newTitle,
+        onChange: (event) => setNewTitle(event.target.value),
+      }),
+      dialogField(t('studyTaskPath'), {
+        value: newPath,
+        onChange: (event) => setNewPath(event.target.value),
+      }),
+      dialogSelect(t('studyTaskTemplate'), {
+        value: newTemplate,
+        onChange: setNewTemplate,
+        options: TEMPLATE_OPTIONS,
+      }),
+      h(DialogDisclosure, { title: t('studyTaskShelf') },
+        h(ShelfPicker, { t, items: props.shelf, selected: newShelf, onChange: setNewShelf }),
+      ),
+      h(DialogActions, null,
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setShowNew(false) }, t('cancel')),
+        h('button', { className: 'lp-btn', type: 'button', onClick: createTask }, t('studyTaskAdd')),
+      ),
+    ) : null,
+    subjectEditing ? h(
+      Modal,
+      { title: t('studySubjectEdit'), onClose: () => setSubjectEditing(null) },
+      h('div', { className: 'lp-dialog-grid' },
+        dialogField(t('studySubjectTitle'), {
+          value: subjectForm.title,
+          onChange: (event) => setSubjectForm({ ...subjectForm, title: event.target.value }),
+        }),
+        dialogField(t('studyExamDate'), {
+          value: subjectForm.examDate,
+          placeholder: t('studyExamDateHint'),
+          onChange: (event) => setSubjectForm({ ...subjectForm, examDate: event.target.value }),
+        }),
+      ),
+      dialogField(t('studyNote'), {
+        rows: 2,
+        value: subjectForm.note,
+        onChange: (event) => setSubjectForm({ ...subjectForm, note: event.target.value }),
+      }, 'textarea'),
+      h(DialogActions, null,
+        h('button', { className: 'lp-btn-ghost', type: 'button', onClick: () => setSubjectEditing(null) }, t('cancel')),
+        h('button', {
+          className: 'lp-btn',
+          type: 'button',
+          onClick: () => {
+            api('subject.update', {
+              id: subjectEditing.id,
+              patch: {
+                title: subjectForm.title.trim(),
+                examDate: subjectForm.examDate.trim(),
+                note: subjectForm.note,
+              },
+            })
+              .then(() => {
+                setSubjectEditing(null);
+                return props.onReload();
+              })
+              .catch((err) => props.onError(err.message));
+          },
+        }, t('save')),
+      ),
+    ) : null,
   );
 }

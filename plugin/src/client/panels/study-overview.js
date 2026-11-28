@@ -77,6 +77,7 @@ function StudyOverview(props) {
   const todayTasks = (studyTasks || []).filter((task) => task.state !== 'todo' && !task.scheduled);
   const dueMistakes = ((data && data.mistakes) || []).filter((entry) => entry.due);
   const date = new Date(todayKey + 'T12:00:00');
+  const adviceLines = (tip?.text?.trim() || t('tipPending')).split(/\r?\n/);
   // Mastery is owned by the tutor: the page only displays it.
   const masteryLabel = (value) => `${Math.min(10, Math.max(0, Number(value) || 0))}/10`;
   return h(
@@ -155,8 +156,8 @@ function StudyOverview(props) {
       h('summary', null,
         h('strong', null, t('studyTipTitle')),
         tip ? h('span', { className: 'lp-meta' }, t(tip.source === 'deepseek' ? 'tipDeepSeek' : 'tipLocal')) : null,
-        h('span', { className: 'lp-advice-excerpt' }, tip?.text?.split('\n').find((line) => line.trim()) || t('tipPending'))),
-      h('div', { className: 'lp-advice-copy' }, tip?.text || t('tipPending'))),
+        h('span', { className: 'lp-advice-excerpt' }, adviceExcerpt(adviceLines) || t('tipPending'))),
+      h('div', { className: 'lp-advice-copy' }, ...adviceBlocks(adviceLines))),
     subjects.map((subject) =>
       h(
         'div',

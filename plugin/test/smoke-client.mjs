@@ -44,7 +44,7 @@ const fakeWindow = {
 }
 
 const run = new Function('window', code.replace('__internals: {',
-  '__internals: { BoardView, MistakeTab, StudyOverview, TodayStudyProgress, studyLocalDayKey, listSkinOptions, applySkin, applySkinChoice, setHostUi, setLegacyBackgroundAssets, anchoredMenuPosition, profileForSkin, normalizeAppearance, colorOfName,'))
+  '__internals: { BoardView, TreeView, Modal, DialogActions, DialogDisclosure, MistakeTab, StudyOverview, TodayStudyProgress, studyLocalDayKey, listSkinOptions, applySkin, applySkinChoice, setHostUi, setLegacyBackgroundAssets, anchoredMenuPosition, profileForSkin, normalizeAppearance, colorOfName, adviceBlocks, adviceExcerpt,'))
 run(fakeWindow)
 
 if (!captured) throw new Error('client.js never called window.__ModuleLoader__.load')
@@ -150,6 +150,18 @@ assert(lunarDateLabel(new Date(2025, 6, 25, 12)).includes('闰六月初一'), 'l
 
 const descendants = (value) => Array.isArray(value) ? value.flatMap(descendants) :
   value && typeof value === 'object' ? [value, ...descendants(value.children)] : []
+const advice = ['', '## **先安排一段复习** ##', '1. 复习错题', '   - 先回想，再核对答案', '2. 预留休息时间', '',
+  '> 参考 [官方说明](https://example.invalid/notes)', '',
+  '<b>原样文本</b> [脚本链接](javascript:alert(1))']
+const { adviceBlocks, adviceExcerpt } = plugin.__internals
+const renderedAdvice = descendants(adviceBlocks(advice))
+assert(adviceExcerpt(advice) === '先安排一段复习' &&
+  ['h4', 'strong', 'ol', 'ul', 'blockquote'].every((tag) => renderedAdvice.some((node) => node.type === tag)),
+  'today’s advice renders headings, emphasis, nested lists and quotes with a plain excerpt')
+const adviceLinks = renderedAdvice.filter((node) => node.type === 'a')
+assert(adviceLinks.length === 1 && adviceLinks[0].props.href === 'https://example.invalid/notes' &&
+  renderedAdvice.some((node) => node.children.includes(advice.at(-1))),
+  'advice keeps embedded HTML and non-web links as literal text')
 const moves = []
 const board = plugin.__internals.BoardView({
   t: (key) => key,
@@ -171,6 +183,23 @@ cards[0].props.onDragStart(drag)
 const columns = descendants(board).filter((entry) => entry.props.className === 'lp-col')
 columns.find((column) => column.props.key === 'doing').props.onDrop(drag)
 assert(moves[1].id === 'a' && moves[1].column === 'doing', 'drop into an empty column requests a status change')
+assert(descendants(board).filter((node) => node.props.className === 'lp-board-count').map((node) => node.children[0]).join(',') === '4,0,0,0',
+  'the board displays the item count in each status lane')
+
+let created = 0
+const emptyBoard = plugin.__internals.BoardView({ t: (key) => key, items: [], onCreate: () => { created++ } })
+descendants(emptyBoard).find((node) => node.props.className === 'lp-board-create').props.onClick()
+const emptyTree = plugin.__internals.TreeView({ t: (key) => key, items: [], onNew: () => { created++ } })
+descendants(emptyTree).find((node) => node.type === 'button' && node.children.includes('newTask')).props.onClick()
+assert(created === 2, 'the empty board and work tree both open the parent view’s task editor')
+
+const { Modal, DialogActions, DialogDisclosure } = plugin.__internals
+const footer = ReactStub.createElement(DialogActions, null, 'Save and cancel')
+const details = DialogDisclosure({ title: 'Advanced', children: 'Optional fields' })
+const modal = descendants(Modal({ title: 'Editor', children: [details, footer] }))
+const modalBody = modal.find((node) => node.props.className === 'lp-modal-body')
+assert(modalBody.children.includes(details) && !modalBody.children.includes(footer) && modal.includes(footer),
+  'advanced fields scroll inside the modal while actions stay outside the body')
 
 const anchored = plugin.__internals.anchoredMenuPosition(
   { left: 233, right: 262, top: 258, bottom: 286, width: 29 },

@@ -230,34 +230,23 @@ function MistakeTab(props) {
       ? h(
           Modal,
           { title: t('mistakeEdit'), onClose: () => setEditing(null) },
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('mistakeQuestion')),
+            dialogField(t('mistakeQuestion'), {
+              rows: 4,
+              value: form.question,
+              onChange: (event) => setForm({ ...form, question: event.target.value }),
+            }, 'textarea'),
+            dialogField(t('mistakeAnswer'), {
+              rows: 3,
+              value: form.answer,
+              onChange: (event) => setForm({ ...form, answer: event.target.value }),
+            }, 'textarea'),
+            h(DialogDisclosure, {
+              title: t('mistakeReason'),
+              hint: form.reason ? t('dialogHasDetails') : undefined,
+            },
               h('textarea', {
                 className: 'lp-input',
-                rows: 4,
-                value: form.question,
-                onChange: (event) => setForm({ ...form, question: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('mistakeAnswer')),
-              h('textarea', {
-                className: 'lp-input',
-                rows: 3,
-                value: form.answer,
-                onChange: (event) => setForm({ ...form, answer: event.target.value }),
-              }),
-            ),
-            h(
-              'div',
-              { className: 'lp-field' },
-              h('label', null, t('mistakeReason')),
-              h('textarea', {
-                className: 'lp-input',
+                'aria-label': t('mistakeReason'),
                 rows: 3,
                 value: form.reason,
                 onChange: (event) => setForm({ ...form, reason: event.target.value }),
@@ -267,8 +256,8 @@ function MistakeTab(props) {
               ? h('div', { className: 'lp-meta' }, `${t('mistakeSource')}: ${editing.taskTitle}`)
               : null,
             h(
-              'div',
-              { className: 'lp-modal-actions' },
+              DialogActions,
+              null,
               h('button', { className: 'lp-btn-ghost', onClick: () => setEditing(null) }, t('cancel')),
               h('button', { className: 'lp-btn', onClick: saveEdit }, t('save')),
             ),
@@ -307,8 +296,8 @@ function MistakeTab(props) {
             sourceList(preview, 'lp-pre-body lp-mistake-sources', t('mistakeMaterialSource')),
             h('div', { className: 'lp-meta' }, preview.createdAt ? dayKey(new Date(preview.createdAt)) : ''),
             h(
-              'div',
-              { className: 'lp-modal-actions' },
+              DialogActions,
+              null,
               h('button', { className: 'lp-btn-ghost', onClick: () => explain(preview) }, t('mistakeExplain')),
               h(
                 'button',
